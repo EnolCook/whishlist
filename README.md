@@ -218,7 +218,14 @@ EXPO_PUBLIC_API_URL=http://localhost:3010 npm --prefix mobile run ios       # ou
 ```
 
 - `EXPO_PUBLIC_API_URL` : adresse du site, fixée au build. Sur l’émulateur Android, `localhost` du Mac est `http://10.0.2.2:<port>`.
-- Profils EAS (`mobile/eas.json`) : `development` (client de dev), `preview` (distribution interne), `production`.
+- Builds EAS (projet `@tat-lonestone/ohyoushouldnt`, `mobile/eas.json`), deux profils :
+
+  | Profil | Commande | App installée | Usage |
+  | --- | --- | --- | --- |
+  | `development` | `npm --prefix mobile run build:dev` (APK Android), `build:ios:dev` (simulateur iOS) | « Oh, mais fallait pas ! (Dev) », `app.ohyoushouldnt.mobile.dev` | client de dev : charge le JavaScript depuis Metro (`npm --prefix mobile start`), avec le catalogue de composants |
+  | `production` | `npm --prefix mobile run build:prod` (AAB Android, envoyé sur Google Play en test interne), `build:ios:prod` (iOS, envoyé sur TestFlight) | « Oh, mais fallait pas ! », `app.ohyoushouldnt.mobile` | l’app autonome sur `https://ohyoushouldnt.app`, signée par EAS, numéro de build incrémenté par EAS |
+
+  La variante vient de `APP_VARIANT` (`mobile/app.config.ts`) : sans elle, c’est la production, y compris pour `run ios|android` ; `APP_VARIANT=development` devant la commande donne le client de dev en local. Les deux apps s’installent côte à côte. L’app Android passe par Google Play (piste de test interne, clé du compte de service dans `mobile/play-service-account.json`, ignorée par git) ; l’app iOS passe par TestFlight (équipe Apple `JW4X82845H`), sans ad hoc ni appareils enregistrés.
 - Vérifications : `npm --prefix mobile run lint`, `typecheck`, `test` ; parcours à la main dans [`specs/005-mobile-list-app/quickstart.md`](specs/005-mobile-list-app/quickstart.md).
 - Captures du site en largeur de téléphone (référence de design) : `DEMO_BASE_URL=http://localhost:3010 npm run demo:capture -- --mobile`.
 
