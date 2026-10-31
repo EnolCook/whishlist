@@ -28,14 +28,16 @@ export default function Login() {
 
   return (
     <AuthLayout
+      testID="login.screen"
       title={t("auth:login.title")}
       description={t("auth:login.description")}
-      below={<Button title={t("auth:login.createAccount")} variant="link" onPress={() => router.push("/register")} />}
+      below={<Button title={t("auth:login.createAccount")} variant="link" onPress={() => router.push("/register")} testID="login.create-account" />}
     >
       {session.status === "signedOut" && session.expired ? <Alert>{t("mobile:session.expired")}</Alert> : null}
-      {session.status === "signedOut" && session.deleted ? <Alert>{t("auth:account.deleted")}</Alert> : null}
+      {session.status === "signedOut" && session.deleted ? <Alert testID="login.deleted">{t("auth:account.deleted")}</Alert> : null}
       <Field label={t("auth:login.email")}>
         <Input
+          testID="login.email"
           accessibilityLabel={t("auth:login.email")}
           value={email}
           onChangeText={setEmail}
@@ -47,6 +49,7 @@ export default function Login() {
       </Field>
       <Field label={t("auth:login.password")}>
         <Input
+          testID="login.password"
           accessibilityLabel={t("auth:login.password")}
           value={password}
           onChangeText={setPassword}
@@ -56,15 +59,16 @@ export default function Login() {
           onSubmitEditing={() => void login.run()}
         />
       </Field>
-      {login.error ? <Alert variant="destructive">{login.error}</Alert> : null}
+      {login.error ? <Alert variant="destructive" testID="login.error">{login.error}</Alert> : null}
       <Button
         title={t("auth:login.submit")}
         fullWidth
+        testID="login.submit"
         disabled={!online || login.busy}
         onPress={() => void login.run()}
       />
       <NetworkNote />
-      <Button title={t("auth:login.forgot")} variant="link" onPress={() => router.push("/forgot-password")} />
+      <Button title={t("auth:login.forgot")} variant="link" onPress={() => router.push("/forgot-password")} testID="login.forgot" />
     </AuthLayout>
   );
 }

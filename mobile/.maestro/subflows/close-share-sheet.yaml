@@ -1,0 +1,25 @@
+# Vérifie que la feuille de partage du système est ouverte, puis la referme.
+appId: app.ohyoushouldnt.mobile
+---
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: ShareSheet.RemoteContainerView
+          timeout: 10000
+      # Zone de fermeture du système, au-dessus de la feuille.
+      - tapOn:
+          id: PopoverDismissRegion
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      # Sélecteur de partage d'Android (resolver ou intentresolver selon la version). Non vérifié sur
+      # émulateur au moment de l'écrire : à confirmer au premier passage Android (T031).
+      - extendedWaitUntil:
+          visible:
+            id: .*:id/(resolver_list|chooser_.*|profile_pager|sem_chooser.*)
+          timeout: 10000
+      - back

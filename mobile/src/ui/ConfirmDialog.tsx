@@ -15,6 +15,7 @@ export function ConfirmDialog({
   destructive = true,
   onConfirm,
   onKeep,
+  testID,
 }: {
   visible: boolean;
   title: string;
@@ -24,6 +25,8 @@ export function ConfirmDialog({
   destructive?: boolean;
   onConfirm: () => void;
   onKeep: () => void;
+  /** Sur le bouton de l'action ; `<testID>-keep` sur « Conserver ». */
+  testID?: string;
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onKeep}>
@@ -41,8 +44,8 @@ export function ConfirmDialog({
               {body ? <CardDescription>{body}</CardDescription> : null}
             </CardHeader>
             <CardContent>
-              <Button title={confirmLabel} variant={destructive ? "destructive" : "default"} fullWidth onPress={onConfirm} />
-              <Button title={keepLabel} variant="neutral" fullWidth onPress={onKeep} />
+              <Button title={confirmLabel} variant={destructive ? "destructive" : "default"} fullWidth onPress={onConfirm} testID={testID} />
+              <Button title={keepLabel} variant="neutral" fullWidth onPress={onKeep} testID={testID ? `${testID}-keep` : undefined} />
             </CardContent>
           </Card>
         </View>

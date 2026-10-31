@@ -1,0 +1,15 @@
+# Sur l'onglet Idées : déplie la catégorie CATEGORY si l'idée ITEM n'est pas visible.
+appId: app.ohyoushouldnt.mobile
+---
+- runFlow:
+    when:
+      notVisible: ${ITEM}
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: ${CATEGORY}.*
+      # Le bouton de la catégorie a pour libellé « <nom> <nombre d'idées> ».
+      - tapOn: ${CATEGORY}.*
+- scrollUntilVisible:
+    element:
+      text: ${ITEM}

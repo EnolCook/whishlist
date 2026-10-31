@@ -1,0 +1,13 @@
+# Depuis « Mes listes » : nouvelle liste TITLE, première catégorie « Livres », pour « Alex ».
+# Attend l'écran de la liste.
+appId: app.ohyoushouldnt.mobile
+---
+- runFlow: fill-new-list.yaml
+- tapOn:
+    id: new-list.title
+- inputText: ${TITLE}
+- runFlow: submit-new-list.yaml
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 20000

@@ -10,6 +10,8 @@ Expo ships breaking changes every SDK release. APIs you remember are likely rena
 
 ## Commands
 
+E2E suite (Maestro): `npm run e2e` — prerequisites, flow conventions and `testID` naming (`<screen>.<element>`, e.g. `login.email`) are in [`.maestro/README.md`](.maestro/README.md). A new screen element a flow acts on gets a `testID`; a new user story gets its flow.
+
 Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 
 ```bash

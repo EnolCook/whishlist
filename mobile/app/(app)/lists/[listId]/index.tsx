@@ -20,7 +20,7 @@ export default function Ideas() {
               onFix={() => router.push({ pathname: "/lists/new", params: { retry: String(list.rejected?.seq) } })}
             />
           ) : null}
-          <Button title={t("addIdea")} fullWidth onPress={() => router.push(`/lists/${list.id}/items/new`)} />
+          <Button testID="list.add-item" title={t("addIdea")} fullWidth onPress={() => router.push(`/lists/${list.id}/items/new`)} />
           <IdeasAccordion list={list} />
         </>
       )}

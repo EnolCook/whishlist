@@ -1,0 +1,100 @@
+# 005 US1 : connexion refusée sans dire quel champ est faux, connexion gardée après réouverture de l'app,
+# déconnexion, mot de passe oublié (même message pour une adresse connue ou non), création de compte,
+# et adresse déjà utilisée (pas de connexion). Voir specs/005-mobile-list-app/spec.md.
+appId: app.ohyoushouldnt.mobile
+name: "005 US1 — Se connecter ou créer un compte"
+tags:
+  - 005-us1
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runScript: ../scripts/unique.js
+
+# Mauvais mot de passe : un seul message, qui ne dit pas lequel des deux est faux.
+- runFlow:
+    file: ../subflows/submit-login.yaml
+    env:
+      EMAIL: alex@example.test
+      PASSWORD: mauvais-mot-de-passe
+- extendedWaitUntil:
+    visible:
+      id: login.error
+    timeout: 10000
+- assertVisible: ${output.t.errors.invalidCredentials}
+- assertNotVisible:
+    id: lists.screen
+
+# Connexion d'Alex, puis déconnexion.
+- runFlow: ../subflows/launch-clean.yaml
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- assertVisible:
+    id: lists.card-demo-list
+
+# Réouverture de l'app : toujours connecté, sans ressaisie.
+- runFlow: ../subflows/relaunch.yaml
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 60000
+- runFlow: ../subflows/logout.yaml
+
+# Mot de passe oublié : même message pour une adresse inconnue et pour une adresse connue.
+- tapOn:
+    id: login.forgot
+- tapOn:
+    id: forgot.email
+- inputText: inconnu-${output.unique}@example.test
+- hideKeyboard:
+    optional: true
+- tapOn:
+    id: forgot.submit
+- extendedWaitUntil:
+    visible:
+      id: forgot.sent
+    timeout: 10000
+- assertVisible: ${output.t.auth.forgot.sent}
+- tapOn:
+    id: forgot.back
+- tapOn:
+    id: login.forgot
+- tapOn:
+    id: forgot.email
+- inputText: alex@example.test
+- hideKeyboard:
+    optional: true
+- tapOn:
+    id: forgot.submit
+- extendedWaitUntil:
+    visible:
+      id: forgot.sent
+    timeout: 10000
+- assertVisible: ${output.t.auth.forgot.sent}
+- tapOn:
+    id: forgot.back
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 10000
+
+# Nouveau compte : connecté, sans liste.
+- runFlow: ../subflows/register.yaml
+- assertVisible:
+    id: lists.empty
+- runFlow: ../subflows/logout.yaml
+
+# Adresse déjà utilisée : même message qu'une inscription, pas de connexion.
+- runFlow:
+    file: ../subflows/submit-register.yaml
+    env:
+      NAME: Alex bis
+      EMAIL: alex@example.test
+- extendedWaitUntil:
+    visible:
+      id: register.sent
+    timeout: 10000
+- assertVisible: ${output.t.auth.register.sent}
+- assertNotVisible:
+    id: lists.screen

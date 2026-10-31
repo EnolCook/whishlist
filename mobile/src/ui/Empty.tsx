@@ -11,14 +11,16 @@ export function Empty({
   description,
   media,
   children,
+  testID,
 }: {
   title: string;
   description?: string;
   media?: ReactNode;
   children?: ReactNode;
+  testID?: string;
 }) {
   return (
-    <View style={{ alignItems: "center", gap: tokens.space[2], paddingVertical: tokens.space[6] }}>
+    <View testID={testID} style={{ alignItems: "center", gap: tokens.space[2], paddingVertical: tokens.space[6] }}>
       {media ? <View style={{ marginBottom: tokens.space[2] }}>{media}</View> : null}
       <Text weight="heading" style={{ textAlign: "center" }}>
         {title}

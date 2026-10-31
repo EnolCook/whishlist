@@ -1,0 +1,12 @@
+# Sur l'onglet Idées : ajoute l'idée NAME (catégorie et « qui » par défaut), revient à la liste.
+appId: app.ohyoushouldnt.mobile
+---
+- runFlow: open-new-item.yaml
+- tapOn:
+    id: item-form.name
+- inputText: ${NAME}
+- runFlow: submit-item-form.yaml
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000

@@ -39,24 +39,26 @@ export default function Register() {
 
   if (checkEmail) {
     return (
-      <AuthLayout title={t("register.title")}>
-        <Alert>{t("register.sent")}</Alert>
-        <Button title={t("register.sentContinue")} fullWidth onPress={() => router.replace("/login")} />
+      <AuthLayout testID="register.screen" title={t("register.title")}>
+        <Alert testID="register.sent">{t("register.sent")}</Alert>
+        <Button title={t("register.sentContinue")} fullWidth onPress={() => router.replace("/login")} testID="register.sent-continue" />
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout
+      testID="register.screen"
       title={t("register.title")}
       description={t("register.description")}
       below={<Button title={t("register.hasAccount")} variant="link" onPress={() => router.replace("/login")} />}
     >
       <Field label={t("register.name")} description={t("register.nameHint")}>
-        <Input accessibilityLabel={t("register.name")} value={displayName} onChangeText={setDisplayName} autoComplete="name" />
+        <Input testID="register.name" accessibilityLabel={t("register.name")} value={displayName} onChangeText={setDisplayName} autoComplete="name" />
       </Field>
       <Field label={t("register.email")}>
         <Input
+          testID="register.email"
           accessibilityLabel={t("register.email")}
           value={email}
           onChangeText={setEmail}
@@ -68,6 +70,7 @@ export default function Register() {
       </Field>
       <Field label={t("register.password")} description={t("register.passwordHint")}>
         <Input
+          testID="register.password"
           accessibilityLabel={t("register.password")}
           value={password}
           onChangeText={setPassword}
@@ -76,8 +79,8 @@ export default function Register() {
           textContentType="newPassword"
         />
       </Field>
-      {register.error ? <Alert variant="destructive">{register.error}</Alert> : null}
-      <Button title={t("register.submit")} fullWidth disabled={!online || register.busy} onPress={() => void register.run()} />
+      {register.error ? <Alert variant="destructive" testID="register.error">{register.error}</Alert> : null}
+      <Button testID="register.submit" title={t("register.submit")} fullWidth disabled={!online || register.busy} onPress={() => void register.run()} />
       <NetworkNote />
     </AuthLayout>
   );

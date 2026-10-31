@@ -23,12 +23,13 @@ export default function MyLists() {
   const { t } = useTranslation("home");
   const { lists, loaded, fetchedAt, refreshing, refresh } = useMyLists();
   const pendingCount = usePendingCount();
-  const newList = <Button title={t("mine.newList")} size="sm" onPress={() => router.push("/lists/new")} />;
+  const newList = <Button title={t("mine.newList")} size="sm" onPress={() => router.push("/lists/new")} testID="lists.new" />;
 
   if (!loaded) return <LiveGiftMark />;
 
   return (
     <Screen
+      testID="lists.screen"
       header={<OfflineBanner fetchedAt={fetchedAt} pendingCount={pendingCount} />}
       onRefresh={() => void refresh()}
       refreshing={refreshing}
@@ -36,14 +37,14 @@ export default function MyLists() {
       <AppHeader />
       <PageTitle title={t("mine.title")} action={lists.length > 0 ? newList : undefined} />
       {lists.length === 0 ? (
-        <Empty title={t("mine.emptyTitle")} description={t("mine.emptyBody")} media={<GiftMark size={64} />}>
-          <Button title={t("mine.newList")} onPress={() => router.push("/lists/new")} />
+        <Empty testID="lists.empty" title={t("mine.emptyTitle")} description={t("mine.emptyBody")} media={<GiftMark size={64} />}>
+          <Button title={t("mine.newList")} onPress={() => router.push("/lists/new")} testID="lists.new" />
         </Empty>
       ) : (
         <View style={{ gap: tokens.space[3] }}>
           {lists.map((list) => (
             <View key={list.id} style={{ gap: tokens.space[2] }}>
-              <Card onPress={() => router.push(`/lists/${list.id}`)} accessibilityLabel={list.title} style={{ paddingVertical: tokens.space[3] }}>
+              <Card testID={`lists.card-${list.id}`} onPress={() => router.push(`/lists/${list.id}`)} accessibilityLabel={list.title} style={{ paddingVertical: tokens.space[3] }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: tokens.space[3], paddingHorizontal: tokens.space[3] }}>
                   <ListCover coverImageUrl={list.coverImageUrl} theme={list.theme} size={48} framed={false} />
                   <View style={{ flex: 1, gap: tokens.space[1] }}>

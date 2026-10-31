@@ -1,0 +1,56 @@
+# 005 US2 : mes listes (Alex voit la liste de démo), nouvelle liste ouverte puis présente dans « Mes listes »,
+# titre vide refusé sans rien créer. Voir specs/005-mobile-list-app/spec.md.
+appId: app.ohyoushouldnt.mobile
+name: "005 US2 — Voir ses listes et en créer une"
+tags:
+  - 005-us2
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runScript: ../scripts/unique.js
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- assertVisible:
+    id: lists.card-demo-list
+
+# Nouvelle liste : elle s'ouvre, puis apparaît dans « Mes listes ».
+- runFlow:
+    file: ../subflows/create-list.yaml
+    env:
+      TITLE: Noël ${output.unique}
+- assertVisible: Noël ${output.unique}
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Noël ${output.unique}
+
+# Titre vide : refusé avec le message du site, on reste sur le formulaire, et rien n'est créé.
+- runFlow: ../subflows/fill-new-list.yaml
+- runFlow: ../subflows/submit-new-list.yaml
+- extendedWaitUntil:
+    visible:
+      id: new-list.error
+    timeout: 10000
+- assertVisible: ${output.t.errors.listNeedsTitle}
+- assertVisible:
+    id: new-list.screen
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+# Toujours deux listes : celle de démo et « Noël ».
+- assertVisible:
+    id: lists\.card-.*(?<!-shadow)
+    index: 1
+- assertNotVisible:
+    id: lists\.card-.*(?<!-shadow)
+    index: 2

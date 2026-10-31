@@ -25,6 +25,7 @@ export default function Licenses() {
   const { t } = useTranslation("mobile");
   return (
     <ScreenList
+      testID="legal-licenses.screen"
       header={
         <>
           <BackLink />

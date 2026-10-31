@@ -1,0 +1,3 @@
+# Suite e2e de l'app mobile : voir README.md.
+flows:
+  - "flows/*.yaml"

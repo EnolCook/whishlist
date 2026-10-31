@@ -1,0 +1,27 @@
+# Ce que la suite e2e ne vérifie pas
+
+Ces vérifications restent manuelles. Elles se font en suivant le `quickstart.md` de la feature, qui reste la preuve qu'une tranche est faite (principe IV de la constitution). La colonne « Story » est lue par `__tests__/e2e/coverage.test.ts` : une story sans parcours doit y figurer avec « story entière ».
+
+Les vérifications « visible sur le site » des stories restent manuelles aussi : la suite vérifie dans l'app.
+
+| Story | Vérification | Raison | Où la faire |
+|-------|--------------|--------|-------------|
+| 005-us1 | Temps de reprise de la session à la réouverture (moins de 2 s, SC-004) | La suite vérifie la reprise sans ressaisie, pas sa durée, qui dépend du build et de la machine | [005 quickstart, US1](../../specs/005-mobile-list-app/quickstart.md#us1--connexion-et-compte) |
+| 005-us1 | Lien de réinitialisation du mot de passe reçu par e-mail | Sort de l'app (e-mail, site) | [005 quickstart, US1](../../specs/005-mobile-list-app/quickstart.md#us1--connexion-et-compte) |
+| 005-us1 | Changement de mot de passe obligatoire à la première connexion (scénario 7) | La base de démo n'a aucun compte marqué ainsi ; il faudrait un compte préparé sur le site | [005 quickstart, US1](../../specs/005-mobile-list-app/quickstart.md#us1--connexion-et-compte) |
+| 005-us1 | Mot de passe changé sur le site, puis retour à la connexion dans l'app | Action sur le site | [005 quickstart, US1](../../specs/005-mobile-list-app/quickstart.md#us1--connexion-et-compte) |
+| 005-us3 | Préremplissage depuis un lien produit | Service externe optionnel (Gemini ou OpenAI) ; sans clé, la suite vérifie seulement que le bouton ne promet pas l'IA | [005 quickstart, US3](../../specs/005-mobile-list-app/quickstart.md#us3--remplir-une-liste) |
+| 005-us4 | Mention du mot de passe de lecture dans l'onglet Partage (scénario 4) | La base de démo n'a pas de liste protégée ; le mot de passe se pose sur le site | [005 quickstart, US4](../../specs/005-mobile-list-app/quickstart.md#us4--partager) |
+| 005-us4 | Partage d'une liste hors ligne, et liste pas encore envoyée (scénario 9) | Demande le mode avion, que seul Android permet ; non joué pour garder le parcours hors ligne court | [005 quickstart, US5](../../specs/005-mobile-list-app/quickstart.md#us5--hors-ligne) |
+| 005-us4 | Scanner le QR code avec un autre téléphone | Demande un second appareil | [005 quickstart, US4](../../specs/005-mobile-list-app/quickstart.md#us4--partager) |
+| 005-us4 | Contenu reçu par la feuille de partage, lien collé, page publique ouverte | Sort de l'app ; la suite vérifie que la feuille s'ouvre et que la copie est confirmée | [005 quickstart, US4](../../specs/005-mobile-list-app/quickstart.md#us4--partager) |
+| 005-us5 | Parcours entier sur iOS | Le simulateur iOS ne permet pas de couper le réseau de l'app ; le parcours tourne sur Android | [005 quickstart, US5](../../specs/005-mobile-list-app/quickstart.md#us5--hors-ligne) |
+| 005-us5 | Changement refusé au moment de l'envoi, conflit avec le site | Demande une action sur le site pendant que l'app est hors ligne | [005 quickstart, US5](../../specs/005-mobile-list-app/quickstart.md#us5--hors-ligne) |
+| 005-us6 | Story entière : ressemblance avec le site, écran par écran | Comparaison visuelle avec les captures du site, à l'œil | [005 quickstart, US6](../../specs/005-mobile-list-app/quickstart.md#us6--design-écran-par-écran) |
+| 006-us1 | Alerte des changements en attente avant la suppression (scénario 9) | Demande des changements faits hors ligne puis le réseau pour supprimer ; trop fragile à enchaîner en automatique | [006 quickstart, US1](../../specs/006-mobile-legal-account/quickstart.md#us1--supprimer-son-compte) |
+| 006-us1 | Liste partagée transmise à l'autre membre, connexion refusée sur le site | Demande deux comptes et le site | [006 quickstart, US1](../../specs/006-mobile-legal-account/quickstart.md#us1--supprimer-son-compte) |
+| 006-us2 | Pages légales lisibles hors ligne (scénario 5) | Demande le mode avion (Android seulement) ; les textes sont embarqués dans l'app | [006 quickstart, US2](../../specs/006-mobile-legal-account/quickstart.md#us2--mentions-légales-et-données-personnelles) |
+| 006-us3 | Export refusé hors ligne, avec l'explication (scénario 4) | Demande le mode avion (Android seulement) | [006 quickstart, US3](../../specs/006-mobile-legal-account/quickstart.md#us3--récupérer-ses-données) |
+| 006-us3 | Contenu du fichier exporté | Le fichier part dans la feuille de partage du système ; la suite vérifie qu'elle s'ouvre sans erreur | [006 quickstart, US3](../../specs/006-mobile-legal-account/quickstart.md#us3--récupérer-ses-données) |
+| 006-us4 | Licences lisibles hors ligne (scénario 2) | Demande le mode avion (Android seulement) ; le texte vient d'un fichier embarqué dans l'app | [006 quickstart, US4](../../specs/006-mobile-legal-account/quickstart.md#us4--version-licences-contact) |
+| 006-us4 | Lien « Nous écrire » | Le simulateur iOS n'a pas d'app Mail ; la suite vérifie que l'entrée est là | [006 quickstart, US4](../../specs/006-mobile-legal-account/quickstart.md#us4--version-licences-contact) |

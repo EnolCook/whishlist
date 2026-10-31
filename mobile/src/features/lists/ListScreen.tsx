@@ -79,6 +79,7 @@ export function ListScreen({ tab, children }: { tab: ListTab; children: (list: V
 
   return (
     <Screen
+      testID="list.screen"
       header={<OfflineBanner fetchedAt={fetchedAt} pendingCount={pendingCount} />}
       onRefresh={() => void refresh()}
       refreshing={refreshing}

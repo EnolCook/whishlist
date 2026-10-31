@@ -1,0 +1,140 @@
+# 005 US5 : sans réseau, la liste reste lisible ; ajouts et modification sont « en attente », survivent à un
+# redémarrage ; la déconnexion prévient qu'ils seraient perdus ; tout part au retour du réseau, sans doublon.
+# Mode avion : Android seulement (R9).
+appId: app.ohyoushouldnt.mobile
+name: "005 US5 — Continuer sans réseau"
+tags:
+  - 005-us5
+  - android-only
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/unique.js
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- runFlow:
+    file: ../subflows/create-list.yaml
+    env:
+      TITLE: Hors ligne ${output.unique}
+
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      id: offline-banner
+    timeout: 20000
+
+# Deux idées ajoutées hors ligne : visibles tout de suite, marquées « en attente ».
+- runFlow:
+    file: ../subflows/add-item.yaml
+    env:
+      NAME: Bougie A ${output.unique}
+- runFlow:
+    file: ../subflows/add-item.yaml
+    env:
+      NAME: Bougie B ${output.unique}
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Bougie B ${output.unique}
+- assertVisible: Bougie A ${output.unique}
+- assertVisible:
+    id: pending-badge
+
+# Une idée modifiée hors ligne : le nouveau nom tout de suite, marqué « en attente ».
+- tapOn:
+    id: item-card.edit
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: item-form.screen
+    timeout: 10000
+- tapOn:
+    id: item-form.name
+- eraseText: 40
+- inputText: Bougie A modifiée ${output.unique}
+- runFlow: ../subflows/submit-item-form.yaml
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Bougie A modifiée ${output.unique}
+- assertVisible:
+    id: pending-badge
+
+# Redémarrage, toujours hors ligne : les changements sont toujours là.
+- runFlow: ../subflows/relaunch.yaml
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 60000
+- assertVisible:
+    id: offline-banner
+
+# Se déconnecter avec des changements en attente : l'app prévient, on garde la session.
+- tapOn:
+    id: open-account
+- scrollUntilVisible:
+    element:
+      id: account.logout
+- tapOn:
+    id: account.logout
+- extendedWaitUntil:
+    visible:
+      id: account.logout-confirm-keep
+    timeout: 10000
+- tapOn:
+    id: account.logout-confirm-keep
+- assertVisible:
+    id: account.screen
+- scrollUntilVisible:
+    element:
+      id: back-link.back
+    direction: UP
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Hors ligne ${output.unique}
+- tapOn: Hors ligne ${output.unique}
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Bougie A modifiée ${output.unique}
+- assertVisible: Bougie B ${output.unique}
+- assertVisible:
+    id: pending-badge
+
+# Retour du réseau : tout part, plus rien en attente, et chaque idée une seule fois.
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible:
+      id: pending-badge
+    timeout: 60000
+- swipe:
+    start: 50%, 25%
+    end: 50%, 80%
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Bougie A modifiée ${output.unique}
+- assertVisible:
+    text: Bougie A modifiée ${output.unique}
+    index: 0
+- assertNotVisible:
+    text: Bougie A modifiée ${output.unique}
+    index: 1
+- assertNotVisible:
+    text: Bougie B ${output.unique}
+    index: 1

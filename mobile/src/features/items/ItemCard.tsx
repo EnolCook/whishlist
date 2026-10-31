@@ -30,7 +30,7 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
 
   return (
     <View style={{ gap: tokens.space[2] }}>
-      <Shadow style={{ backgroundColor: palette.background, padding: tokens.space[3], gap: tokens.space[2] }}>
+      <Shadow testID={`list.item-${item.id}`} style={{ backgroundColor: palette.background, padding: tokens.space[3], gap: tokens.space[2] }}>
         <Text>{item.name}</Text>
         <Stars value={item.priority} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tokens.space[1] }}>
@@ -45,6 +45,7 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
             variant="neutral"
             size="sm"
             onPress={edit}
+            testID="item-card.edit"
           />
           <Button
             title={t("accordion.archive")}
@@ -52,6 +53,7 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
             variant="ghost"
             size="sm"
             onPress={() => void patchItem(list.id, item.id, { archived: true })}
+            testID="item-card.archive"
           />
           {categories.length > 1 ? (
             <View style={{ minWidth: 140, flexGrow: 1 }}>

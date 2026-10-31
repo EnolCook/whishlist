@@ -84,7 +84,7 @@ export default function DeleteAccount() {
   );
 
   return (
-    <Screen>
+    <Screen testID="delete-account.screen">
       <BackLink />
       <PageTitle title={t("auth:account.deleteTitle")} />
       {!online ? (
@@ -98,7 +98,7 @@ export default function DeleteAccount() {
       ) : (
         <>
           <Alert variant="destructive">{t("auth:account.deleteWarning")}</Alert>
-          <Card>
+          <Card testID="delete-account.summary">
             <CardHeader>
               <CardTitle>{t("auth:account.deleteRemoved")}</CardTitle>
             </CardHeader>
@@ -142,8 +142,9 @@ export default function DeleteAccount() {
           ) : null}
           <Card>
             <CardContent>
-              <Field label={t("auth:account.deletePassword")} error={remove.error}>
+              <Field label={t("auth:account.deletePassword")} error={remove.error} errorTestID="delete-account.error">
                 <Input
+                  testID="delete-account.password"
                   accessibilityLabel={t("auth:account.deletePassword")}
                   value={password}
                   onChangeText={setPassword}
@@ -154,13 +155,14 @@ export default function DeleteAccount() {
                 />
               </Field>
               <Button
+                testID="delete-account.confirm"
                 title={t("auth:account.deleteConfirm")}
                 variant="destructive"
                 fullWidth
                 disabled={!password || remove.busy}
                 onPress={() => void remove.run()}
               />
-              <Button title={t("auth:account.deleteCancel")} variant="link" onPress={() => router.back()} />
+              <Button testID="delete-account.cancel" title={t("auth:account.deleteCancel")} variant="link" onPress={() => router.back()} />
             </CardContent>
           </Card>
         </>

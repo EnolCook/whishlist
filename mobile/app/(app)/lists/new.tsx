@@ -61,7 +61,7 @@ export default function NewList() {
   }
 
   return (
-    <Screen>
+    <Screen testID="new-list.screen">
       <BrandHeader />
       <BackLink />
       <Card>
@@ -71,10 +71,11 @@ export default function NewList() {
         </CardHeader>
         <CardContent>
           <Field label={t("newList.titleLabel")}>
-            <Input accessibilityLabel={t("newList.titleLabel")} placeholder={t("newList.titlePlaceholder")} value={title} onChangeText={setTitle} />
+            <Input testID="new-list.title" accessibilityLabel={t("newList.titleLabel")} placeholder={t("newList.titlePlaceholder")} value={title} onChangeText={setTitle} />
           </Field>
           <Field label={t("newList.categoryLabel")} description={t("newList.categoryHint")}>
             <Input
+              testID="new-list.category"
               accessibilityLabel={t("newList.categoryLabel")}
               placeholder={t("newList.categoryPlaceholder")}
               value={category}
@@ -82,10 +83,10 @@ export default function NewList() {
             />
           </Field>
           <Field label={t("newList.personLabel")} description={t("newList.personHint")}>
-            <Input accessibilityLabel={t("newList.personLabel")} placeholder={t("newList.personPlaceholder")} value={person} onChangeText={setPerson} />
+            <Input testID="new-list.person" accessibilityLabel={t("newList.personLabel")} placeholder={t("newList.personPlaceholder")} value={person} onChangeText={setPerson} />
           </Field>
-          {error ? <Alert variant="destructive">{error}</Alert> : null}
-          <Button title={t("newList.submit")} fullWidth disabled={busy} onPress={() => void submit()} />
+          {error ? <Alert variant="destructive" testID="new-list.error">{error}</Alert> : null}
+          <Button testID="new-list.submit" title={t("newList.submit")} fullWidth disabled={busy} onPress={() => void submit()} />
         </CardContent>
       </Card>
     </Screen>

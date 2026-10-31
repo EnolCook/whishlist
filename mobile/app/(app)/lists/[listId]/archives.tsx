@@ -34,7 +34,7 @@ export default function Archives() {
             {archived.length === 0 ? <Empty title={t("archives.empty")} description={t("archives.emptyHint")} /> : null}
             {archived.map((item) => (
               <View key={item.id} style={{ gap: tokens.space[2] }}>
-                <Card>
+                <Card testID={`archives.item-${item.id}`}>
                   <CardContent>
                     <Text weight="heading">{item.name}</Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tokens.space[1] }}>
@@ -42,8 +42,8 @@ export default function Archives() {
                       <Badge>{list.people.find((p) => p.id === item.personId)?.label ?? ""}</Badge>
                       {item.pending ? <PendingBadge /> : null}
                     </View>
-                    <Button title={t("archives.restore")} variant="neutral" onPress={() => void patchItem(list.id, item.id, { archived: false })} />
-                    <Button title={t("archives.deleteForever")} variant="destructive" onPress={() => setToDelete(item)} />
+                    <Button testID="archives.restore" title={t("archives.restore")} variant="neutral" onPress={() => void patchItem(list.id, item.id, { archived: false })} />
+                    <Button testID="archives.delete" title={t("archives.deleteForever")} variant="destructive" onPress={() => setToDelete(item)} />
                   </CardContent>
                 </Card>
                 {item.rejected ? <RejectedAlert seq={item.rejected.seq} errorCode={item.rejected.errorCode} /> : null}

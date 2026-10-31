@@ -1,0 +1,11 @@
+# Ferme l'app et la rouvre sans effacer ses données, avec les mêmes réglages du dev client que launch-clean.
+# L'appelant attend l'écran voulu.
+appId: app.ohyoushouldnt.mobile
+---
+- stopApp
+- launchApp:
+    arguments:
+      EXDevMenuShowFloatingActionButton: "NO"
+      EXDevMenuShowsAtLaunch: "NO"
+      EXDevMenuIsOnboardingFinished: "YES"
+- runFlow: dev-client-reconnect.yaml

@@ -64,7 +64,7 @@ export default function Account() {
   }
 
   return (
-    <Screen>
+    <Screen testID="account.screen">
       <BackLink />
       <PageTitle title={t("auth:account.title")} />
       <Card>
@@ -75,6 +75,7 @@ export default function Account() {
         <CardContent>
           <Field label={t("auth:account.displayName")}>
             <Input
+              testID="account.name"
               accessibilityLabel={t("auth:account.displayName")}
               value={displayName}
               onChangeText={setDisplayName}
@@ -87,7 +88,7 @@ export default function Account() {
           </Field>
           {saveName.error ? <Alert variant="destructive">{saveName.error}</Alert> : null}
           {nameSaved ? <Alert>{t("auth:account.nameSaved")}</Alert> : null}
-          <Button title={t("auth:account.saveName")} fullWidth disabled={!online || saveName.busy} onPress={() => void saveName.run()} />
+          <Button testID="account.save-name" title={t("auth:account.saveName")} fullWidth disabled={!online || saveName.busy} onPress={() => void saveName.run()} />
           <NetworkNote />
         </CardContent>
       </Card>
@@ -105,10 +106,11 @@ export default function Account() {
           <CardDescription>{t("auth:account.dataHint")}</CardDescription>
         </CardHeader>
         <CardContent style={{ alignItems: "flex-start" }}>
-          <Button title={t("content:legal.title")} variant="link" onPress={() => router.push("/legal/mentions")} />
-          <Button title={t("content:privacy.title")} variant="link" onPress={() => router.push("/legal/privacy")} />
+          <Button testID="account.legal" title={t("content:legal.title")} variant="link" onPress={() => router.push("/legal/mentions")} />
+          <Button testID="account.privacy" title={t("content:privacy.title")} variant="link" onPress={() => router.push("/legal/privacy")} />
           <View style={{ gap: tokens.space[1] }}>
             <Button
+              testID="account.export"
               title={t("auth:account.exportAction")}
               variant="link"
               disabled={!online || download.busy}
@@ -117,21 +119,22 @@ export default function Account() {
             <Text size="sm" color={tokens.colors.mutedForeground}>
               {t("auth:account.exportHint")}
             </Text>
-            {download.error ? <Alert variant="destructive">{download.error}</Alert> : null}
+            {download.error ? <Alert variant="destructive" testID="account.export-error">{download.error}</Alert> : null}
             <NetworkNote />
           </View>
-          <Button title={t("mobile:account.licenses")} variant="link" onPress={() => router.push("/legal/licenses")} />
+          <Button testID="account.licenses" title={t("mobile:account.licenses")} variant="link" onPress={() => router.push("/legal/licenses")} />
           <Button
+            testID="account.contact"
             title={t("mobile:account.contact")}
             variant="link"
             onPress={() => void Linking.openURL(`mailto:${CONTACT_EMAIL}`)}
           />
-          <Text size="sm" color={tokens.colors.mutedForeground}>
+          <Text testID="account.version" size="sm" color={tokens.colors.mutedForeground}>
             {t("mobile:account.version", { version: Constants.expoConfig?.version ?? "" })}
           </Text>
         </CardContent>
       </Card>
-      <Button title={t("common:nav.logout")} variant="neutral" fullWidth onPress={logout} />
+      <Button testID="account.logout" title={t("common:nav.logout")} variant="neutral" fullWidth onPress={logout} />
       <Separator />
       <View style={{ gap: tokens.space[2], marginBottom: tokens.space[2] }}>
         <Button
@@ -155,6 +158,7 @@ export default function Account() {
           void signOut();
         }}
         onKeep={() => setConfirmLogout(false)}
+        testID="account.logout-confirm"
       />
     </Screen>
   );

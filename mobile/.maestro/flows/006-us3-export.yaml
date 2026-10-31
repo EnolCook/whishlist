@@ -1,0 +1,24 @@
+# 006 US3 : « Télécharger mes données » ouvre la feuille de partage avec le fichier, sans erreur.
+# Le contenu du fichier se vérifie à la main (exclusions.md).
+appId: app.ohyoushouldnt.mobile
+name: "006 US3 — Récupérer ses données"
+tags:
+  - 006-us3
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runFlow: ../subflows/register.yaml
+- tapOn:
+    id: open-account
+- scrollUntilVisible:
+    element:
+      id: account.export
+- tapOn:
+    id: account.export
+- runFlow:
+    file: ../subflows/close-share-sheet.yaml
+- extendedWaitUntil:
+    visible:
+      id: account.export
+    timeout: 10000
+- assertNotVisible:
+    id: account.export-error

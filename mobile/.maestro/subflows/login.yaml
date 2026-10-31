@@ -1,0 +1,15 @@
+# Connexion avec un compte de démo (alex@ ou camille@example.test) : env EMAIL ; mot de passe DEMO_PASSWORD.
+# Vérifie ensuite la liste de démo : elle n'existe que dans tmp/e2e/wishlist.json, ce qui prouve que l'app
+# parle au serveur local de la suite avant toute écriture (une app pointée ailleurs s'arrête ici).
+appId: app.ohyoushouldnt.mobile
+---
+- runFlow:
+    file: submit-login.yaml
+    env:
+      PASSWORD: ${MAESTRO_DEMO_PASSWORD}
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 20000
+- assertVisible:
+    id: lists.card-demo-list

@@ -1,0 +1,18 @@
+# Remplit et envoie le formulaire de connexion : env EMAIL, PASSWORD. N'attend aucun écran
+# (connexion réussie ou refusée : c'est à l'appelant de vérifier).
+appId: app.ohyoushouldnt.mobile
+---
+- tapOn:
+    id: login.email
+- inputText: ${EMAIL}
+- tapOn:
+    id: login.password
+- inputText: ${PASSWORD}
+- hideKeyboard:
+    optional: true
+- tapOn:
+    id: login.submit
+# iOS propose d'enregistrer le mot de passe après la connexion : « Plus tard ».
+- tapOn:
+    text: Plus tard|Not Now
+    optional: true

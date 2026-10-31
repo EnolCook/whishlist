@@ -17,6 +17,7 @@ export function BackLink({ fallback = "/" }: { fallback?: "/" | `/lists/${string
       title={t("back")}
       variant="link"
       icon={<ChevronLeftIcon size={18} color={tokens.colors.black} />}
+      testID="back-link.back"
       onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))}
     />
   );

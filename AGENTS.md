@@ -13,6 +13,7 @@
 - Données de démo : `npm run demo:data -- tmp/demo-wishlist.json` puis `WISHLIST_DATA_PATH=tmp/demo-wishlist.json npm run dev` (`DEMO_PASSWORD` obligatoire)
 - Captures du guide : `DEMO_BASE_URL=http://localhost:3010 npm run demo:capture` (écrit `public/guide/{fr,en}`) ; `-- --mobile` écrit les captures en largeur de téléphone dans `specs/005-mobile-list-app/design/web-mobile/`
 - App mobile (`mobile/`, package séparé) : `npm --prefix mobile ci`, puis `npm --prefix mobile run lint|typecheck|test` ; simulateur : `EXPO_PUBLIC_API_URL=http://localhost:3010 npm --prefix mobile run ios` (ou `android`) ; types de l'API : `npm --prefix mobile run api:types` après un changement du contrat ; licences affichées par l'app : `npm --prefix mobile run licenses` après un changement de ses dépendances
+- Suite e2e de l'app mobile (Maestro) : `DEMO_PASSWORD=… npm --prefix mobile run e2e` (un parcours : `-- .maestro/flows/<fichier>.yaml`), avec le serveur lancé sur `WISHLIST_DATA_PATH=tmp/e2e/wishlist.json` (port 3010) et l'app (build Debug avec son Metro, ou Release) pointée dessus ; prérequis, variables (`E2E_API_URL`, `E2E_LANG`, `E2E_METRO_URL`) et écriture d'un parcours : `mobile/.maestro/README.md`
 - Image Docker : `docker build -t whishlist:local .` (déploiement : `README.md` et `deploy/DEPLOY-RUNTIPI.md`)
 
 ## Fichiers générés
@@ -22,7 +23,7 @@ La revue de code les ignore :
 - `next-env.d.ts`, `package-lock.json`, `.next/`
 - `public/guide/**` (captures produites par `demo:capture`)
 - `.claude/skills/speckit-*`, `.specify/scripts/`, `.specify/templates/`, `.specify/extensions/` (installés par Spec Kit)
-- `mobile/package-lock.json`, `mobile/src/api/schema.d.ts` (généré depuis le contrat par `api:types`), `mobile/src/legal/licenses.json` (généré par `licenses`), `mobile/ios/`, `mobile/android/` (générés par Expo, non versionnés)
+- `mobile/package-lock.json`, `mobile/src/api/schema.d.ts` (généré depuis le contrat par `api:types`), `mobile/src/legal/licenses.json` (généré par `licenses`), `mobile/ios/`, `mobile/android/` (générés par Expo, non versionnés), `mobile/.maestro/scripts/strings.generated.js` (écrit par `e2e`, non versionné)
 
 ## Conventions
 
@@ -43,7 +44,7 @@ La revue de code les ignore :
   - Le français vouvoie et garde le lexique du produit (« J'offre », « qui », « idée », « liste »).
   - Les liens internes passent par `withLocale` (une URL par langue).
 - **Langue du code** : identifiants en anglais. Les commentaires peuvent être en français ou en anglais.
-- **Variables d'environnement** : une nouvelle variable est ajoutée au tableau du `README.md`, à `.env.example` et à `deploy/compose.prod.yml` (préfixe `WHISHLIST_`). Un service externe reste optionnel : sans sa variable, l'app marche sans lui.
+- **Variables d'environnement** : une nouvelle variable est ajoutée au tableau du `README.md`, à `.env.example` et à `deploy/compose.prod.yml` (préfixe `WHISHLIST_`). Un service externe reste optionnel : sans sa variable, l'app marche sans lui. Les variables de la commande e2e (`E2E_API_URL`, `E2E_LANG`, `E2E_METRO_URL`) ne configurent pas l'app : elles sont documentées dans `mobile/.maestro/README.md` seulement.
 - **Données** : aucune donnée personnelle ni identifiant réel dans le dépôt. `data/seed.json` et la démo n'utilisent que des comptes fictifs (`@example.test`).
 - **Commits** : en français, préfixés `feat:`, `fix:` ou `chore:`.
 
@@ -52,7 +53,8 @@ La revue de code les ignore :
 - `node:test` + `tsx`, dans `tests/domain/<module>.test.ts`. Un test qui touche le store travaille sur un fichier temporaire (`mkdtemp`), jamais sur `data/wishlist.json`.
 - App mobile : jest-expo + Testing Library dans `mobile/__tests__/`. La base locale y est une base SQLite en mémoire (`__tests__/helpers/memory-db.ts`), le serveur un faux `fetch` (`__tests__/helpers/fetch.ts`).
 - Chaque règle métier et chaque cas limite (validation, erreur, limite, droit d'accès) a un test de domaine.
-- Il n'y a pas de test e2e : un parcours utilisateur se vérifie à la main sur la base de démo, décrit dans le `quickstart.md` de la feature (principe IV : une tranche n'est faite que si un parcours réel la confirme).
+- App mobile, parcours e2e : une suite Maestro dans `mobile/.maestro/`. Une user story de l'app mobile vient avec son parcours dans `mobile/.maestro/flows/` (tag `<feature>-us<N>`), ou avec une ligne dans `mobile/.maestro/exclusions.md` pour ce qui sort de l'app. Les actions visent des `testID` nommés `<écran>.<élément>`. `npm --prefix mobile test` vérifie que chaque `id:` d'un parcours existe dans l'app et que chaque story a son parcours.
+- Le site n'a pas de test e2e. Pour le site comme pour l'app, un parcours utilisateur se vérifie aussi à la main sur la base de démo, décrit dans le `quickstart.md` de la feature (principe IV : une tranche n'est faite que si un parcours réel la confirme).
 
 ## Workflow
 

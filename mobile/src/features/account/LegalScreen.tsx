@@ -16,6 +16,7 @@ export function LegalScreen({
   intro,
   sitePath,
   children,
+  testID,
 }: {
   eyebrow: string;
   title: string;
@@ -23,10 +24,11 @@ export function LegalScreen({
   /** Page du site au même contenu ; aucune pour les licences de l'app. */
   sitePath?: string;
   children: ReactNode;
+  testID?: string;
 }) {
   const { t } = useTranslation("mobile");
   return (
-    <Screen>
+    <Screen testID={testID}>
       <BackLink />
       <ContentPage eyebrow={eyebrow} title={title} intro={intro}>
         {children}

@@ -1,0 +1,10 @@
+# Envoie le formulaire « Créer une liste ». N'attend aucun écran (c'est à l'appelant de vérifier).
+appId: app.ohyoushouldnt.mobile
+---
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: new-list.submit
+- tapOn:
+    id: new-list.submit

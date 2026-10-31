@@ -17,15 +17,17 @@ export function AuthLayout({
   description,
   children,
   below,
+  testID,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   /** Sous la carte (lien « Créer un compte »). */
   below?: ReactNode;
+  testID?: string;
 }) {
   return (
-    <Screen>
+    <Screen testID={testID}>
       <BrandHeader />
       <Card>
         <CardHeader>

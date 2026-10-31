@@ -1,0 +1,30 @@
+# 006 US4 : version de l'app et licences des logiciels libres, en bas de « Mon compte ».
+# Le lien « Nous écrire » se vérifie à la main (pas d'app Mail sur le simulateur iOS).
+appId: app.ohyoushouldnt.mobile
+name: "006 US4 — Version, licences et contact"
+tags:
+  - 006-us4
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- tapOn:
+    id: open-account
+- scrollUntilVisible:
+    element:
+      id: account.version
+- assertVisible:
+    id: account.version
+    text: .*${APP_VERSION}.*
+- assertVisible:
+    id: account.contact
+- tapOn:
+    id: account.licenses
+- extendedWaitUntil:
+    visible:
+      id: legal-licenses.screen
+    timeout: 10000
+# Chaque licence est une ligne « version · licence » (liste longue : on regarde le haut).
+- assertVisible: .*\d+\.\d+.* · .*

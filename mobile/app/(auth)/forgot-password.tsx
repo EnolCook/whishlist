@@ -27,16 +27,18 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
+      testID="forgot.screen"
       title={t("forgot.title")}
       description={t("forgot.description")}
-      below={<Button title={t("forgot.back")} variant="link" onPress={() => router.replace("/login")} />}
+      below={<Button title={t("forgot.back")} variant="link" onPress={() => router.replace("/login")} testID="forgot.back" />}
     >
       {sent ? (
-        <Alert>{t("forgot.sent")}</Alert>
+        <Alert testID="forgot.sent">{t("forgot.sent")}</Alert>
       ) : (
         <>
           <Field label={t("forgot.email")}>
             <Input
+              testID="forgot.email"
               accessibilityLabel={t("forgot.email")}
               value={email}
               onChangeText={setEmail}
@@ -46,7 +48,7 @@ export default function ForgotPassword() {
             />
           </Field>
           {request.error ? <Alert variant="destructive">{request.error}</Alert> : null}
-          <Button title={t("forgot.submit")} fullWidth disabled={!online || request.busy} onPress={() => void request.run()} />
+          <Button testID="forgot.submit" title={t("forgot.submit")} fullWidth disabled={!online || request.busy} onPress={() => void request.run()} />
           <NetworkNote />
         </>
       )}

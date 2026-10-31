@@ -30,7 +30,7 @@ function EditItem({ listId, item }: { listId: string; item: ViewItem }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   if (!list) return null;
   return (
-    <Screen>
+    <Screen testID="item-form.screen">
       <BackLink fallback={`/lists/${listId}`} />
       <Card>
         <CardHeader>
@@ -46,7 +46,7 @@ function EditItem({ listId, item }: { listId: string; item: ViewItem }) {
             submitLabel={t("form.save")}
             onSubmit={(draft) => void save.submit(draft)}
           />
-          <Button title={t("form.delete")} variant="destructive" fullWidth onPress={() => setConfirmDelete(true)} />
+          <Button testID="item-form.delete" title={t("form.delete")} variant="destructive" fullWidth onPress={() => setConfirmDelete(true)} />
         </CardContent>
       </Card>
       <ConfirmDialog
@@ -55,6 +55,7 @@ function EditItem({ listId, item }: { listId: string; item: ViewItem }) {
         body={t("confirm.deleteIdeaBody", { name: item.name })}
         confirmLabel={t("confirm.deleteIdeaConfirm")}
         keepLabel={t("confirm.deleteIdeaKeep")}
+        testID="item-form.delete-confirm"
         onKeep={() => setConfirmDelete(false)}
         onConfirm={() => {
           setConfirmDelete(false);

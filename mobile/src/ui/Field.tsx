@@ -10,11 +10,13 @@ export function Field({
   label,
   description,
   error,
+  errorTestID,
   children,
 }: {
   label?: string;
   description?: string;
   error?: string | null;
+  errorTestID?: string;
   children: ReactNode;
 }) {
   return (
@@ -22,7 +24,7 @@ export function Field({
       {label ? <FieldLabel>{label}</FieldLabel> : null}
       {children}
       {description ? <FieldDescription>{description}</FieldDescription> : null}
-      {error ? <FieldError>{error}</FieldError> : null}
+      {error ? <FieldError testID={errorTestID}>{error}</FieldError> : null}
     </View>
   );
 }
@@ -39,9 +41,9 @@ export function FieldDescription({ children }: { children: ReactNode }) {
   );
 }
 
-export function FieldError({ children }: { children: ReactNode }) {
+export function FieldError({ children, testID }: { children: ReactNode; testID?: string }) {
   return (
-    <Text size="sm" color={tokens.colors.destructive} accessibilityRole="alert">
+    <Text size="sm" color={tokens.colors.destructive} accessibilityRole="alert" testID={testID}>
       {children}
     </Text>
   );

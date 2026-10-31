@@ -1,0 +1,14 @@
+# Depuis « Mes listes » : Mon compte → Se déconnecter ; attend l'écran de connexion.
+appId: app.ohyoushouldnt.mobile
+---
+- tapOn:
+    id: open-account
+- scrollUntilVisible:
+    element:
+      id: account.logout
+- tapOn:
+    id: account.logout
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 10000

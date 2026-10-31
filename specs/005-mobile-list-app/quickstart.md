@@ -2,6 +2,8 @@
 
 Parcours manuels sur la base de démo, sur **simulateur iOS** et **émulateur Android** (taille d'écran 390 × 844 pour les comparaisons de design). Ils confirment chaque tranche (principe IV), en plus des tests automatiques (`npm --prefix mobile test`).
 
+La partie « dans l'app » de ces parcours est automatisée par la suite e2e (`npm --prefix mobile run e2e`, voir [mobile/.maestro/README.md](../../mobile/.maestro/README.md)). Ce qu'elle ne vérifie pas est listé dans [mobile/.maestro/exclusions.md](../../mobile/.maestro/exclusions.md).
+
 ## Prérequis
 
 ```bash

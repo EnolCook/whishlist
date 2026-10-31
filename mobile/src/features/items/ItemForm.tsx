@@ -97,6 +97,7 @@ export function ItemForm({
     <View style={{ gap: tokens.space[4] }}>
       <Field label={t("form.url")}>
         <Input
+          testID="item-form.url"
           accessibilityLabel={t("form.url")}
           value={draft.url}
           onChangeText={(value) => set("url", value)}
@@ -122,7 +123,7 @@ export function ItemForm({
         </Alert>
       ) : null}
       <Field label={t("form.name")}>
-        <Input accessibilityLabel={t("form.name")} value={draft.name} onChangeText={(value) => set("name", value)} />
+        <Input testID="item-form.name" accessibilityLabel={t("form.name")} value={draft.name} onChangeText={(value) => set("name", value)} />
       </Field>
       <Field label={t("form.type")}>
         <Select label={t("form.type")} value={draft.typeId} options={categories} onChange={(value) => set("typeId", value)} />
@@ -132,6 +133,7 @@ export function ItemForm({
       </Field>
       <Field label={t("form.price")}>
         <Input
+          testID="item-form.price"
           accessibilityLabel={t("form.price")}
           value={draft.price}
           onChangeText={(value) => set("price", value)}
@@ -170,7 +172,7 @@ export function ItemForm({
           {translateError(error)}
         </Alert>
       ) : null}
-      <Button title={busy ? t("common:actions.loading") : submitLabel} fullWidth disabled={busy} onPress={() => onSubmit(draft)} />
+      <Button testID="item-form.submit" title={busy ? t("common:actions.loading") : submitLabel} fullWidth disabled={busy} onPress={() => onSubmit(draft)} />
     </View>
   );
 }

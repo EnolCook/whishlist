@@ -1,0 +1,93 @@
+# 006 US1 : supprimer son propre compte (créé par le parcours) : résumé, mauvais mot de passe refusé,
+# suppression, retour à la connexion, ancien mot de passe refusé, puis compte neuf possible avec la même adresse. Voir specs/006-mobile-legal-account/spec.md.
+appId: app.ohyoushouldnt.mobile
+name: "006 US1 — Supprimer son compte"
+tags:
+  - 006-us1
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runFlow: ../subflows/register.yaml
+- runFlow:
+    file: ../subflows/create-list.yaml
+    env:
+      TITLE: À supprimer ${output.unique}
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+
+- tapOn:
+    id: open-account
+- scrollUntilVisible:
+    element:
+      id: delete-account
+- tapOn:
+    id: delete-account
+- extendedWaitUntil:
+    visible:
+      id: delete-account.summary
+    timeout: 10000
+- assertVisible: .*À supprimer ${output.unique}.*
+
+# Mauvais mot de passe : refusé, le compte reste.
+- tapOn:
+    id: delete-account.password
+- inputText: mauvais-mot-de-passe
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: delete-account.confirm
+- tapOn:
+    id: delete-account.confirm
+- extendedWaitUntil:
+    visible:
+      id: delete-account.error
+    timeout: 10000
+- assertVisible: ${output.t.errors.wrongCurrentPassword}
+
+# Bon mot de passe : compte supprimé, retour à la connexion avec le message.
+- tapOn:
+    id: delete-account.password
+- eraseText: 40
+- inputText: ${MAESTRO_DEMO_PASSWORD}
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: delete-account.confirm
+- tapOn:
+    id: delete-account.confirm
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 20000
+- assertVisible: ${output.t.auth.account.deleted}
+
+# L'ancien mot de passe ne connecte plus.
+- runFlow:
+    file: ../subflows/submit-login.yaml
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${MAESTRO_DEMO_PASSWORD}
+- extendedWaitUntil:
+    visible:
+      id: login.error
+    timeout: 10000
+- assertVisible: ${output.t.errors.invalidCredentials}
+
+# La même adresse peut créer un compte neuf, sans aucune liste.
+- runFlow:
+    file: ../subflows/submit-register.yaml
+    env:
+      NAME: E2E ${output.unique} bis
+      EMAIL: ${output.email}
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 20000
+- assertVisible:
+    id: lists.empty

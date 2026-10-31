@@ -2,6 +2,8 @@
 
 Parcours manuels sur la base de démo (principe IV), sur simulateur iOS et émulateur Android, et sur le site. Ils complètent `npm test` et `npm --prefix mobile test`.
 
+La partie « dans l'app » de ces parcours est automatisée par la suite e2e (`npm --prefix mobile run e2e`, voir [mobile/.maestro/README.md](../../mobile/.maestro/README.md)). Ce qu'elle ne vérifie pas est listé dans [mobile/.maestro/exclusions.md](../../mobile/.maestro/exclusions.md).
+
 ## Prérequis
 
 Mêmes que le [quickstart de la 005](../005-mobile-list-app/quickstart.md#prérequis). Recréer la base de démo avant chaque parcours de suppression : on ne peut pas revenir en arrière.

@@ -1,0 +1,24 @@
+# App vide au début de chaque parcours (R5) : données effacées, et trousseau iOS vidé
+# (sinon le jeton de session survit et l'app revient connectée).
+appId: app.ohyoushouldnt.mobile
+---
+# Un parcours hors ligne arrêté avant sa fin laisserait l'émulateur en mode avion.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - setAirplaneMode: disabled
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    # Build Debug, iOS : réglages du dev client passés en arguments de lancement (ils priment sur UserDefaults) :
+    # ni bouton d'outils, ni menu développeur à l'ouverture, ni écran d'accueil. Sans effet en Release.
+    arguments:
+      EXDevMenuShowFloatingActionButton: "NO"
+      EXDevMenuShowsAtLaunch: "NO"
+      EXDevMenuIsOnboardingFinished: "YES"
+- runFlow: dev-client-reconnect.yaml
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 60000

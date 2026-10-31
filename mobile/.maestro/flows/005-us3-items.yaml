@@ -1,0 +1,191 @@
+# 005 US3 : ajouter une idée, prix invalide refusé sans perdre la saisie, modifier, archiver puis désarchiver,
+# refus de retirer une catégorie utilisée, ajout d'une catégorie, supprimer avec confirmation, voir une réservation
+# avec l'offreur et son petit mot. Voir specs/005-mobile-list-app/spec.md.
+appId: app.ohyoushouldnt.mobile
+name: "005 US3 — Remplir une liste"
+tags:
+  - 005-us3
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runScript: ../scripts/unique.js
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- runFlow:
+    file: ../subflows/create-list.yaml
+    env:
+      TITLE: Idées ${output.unique}
+
+# Sans service de préremplissage configuré, le bouton ne promet pas l'IA.
+- runFlow: ../subflows/open-new-item.yaml
+- assertVisible:
+    id: enrich
+- assertNotVisible: ${output.t.list.form.fetchInfosAi}
+
+# Prix invalide (trois décimales, seuls chiffres et séparateur passent par le pavé décimal) :
+# message sous le formulaire, le nom saisi reste.
+# Le prix (plus bas) d'abord : le clavier ne cache pas le champ suivant.
+- tapOn:
+    id: item-form.price
+- inputText: "${APP_LANG == 'en' ? '1.234' : '1,234'}"
+- tapOn:
+    id: item-form.name
+- inputText: Puzzle ${output.unique}
+- runFlow: ../subflows/submit-item-form.yaml
+- extendedWaitUntil:
+    visible:
+      id: form-error
+    timeout: 10000
+- assertVisible: ${output.t.errors.priceInvalid}
+- assertVisible: Puzzle ${output.unique}
+
+# Prix valide : l'idée apparaît dans sa catégorie.
+- tapOn:
+    id: item-form.price
+- eraseText: 10
+- inputText: "${APP_LANG == 'en' ? '24.90' : '24,90'}"
+- runFlow: ../subflows/submit-item-form.yaml
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Puzzle ${output.unique}
+
+# Modifier le nom.
+- tapOn:
+    id: item-card.edit
+- extendedWaitUntil:
+    visible:
+      id: item-form.screen
+    timeout: 10000
+- tapOn:
+    id: item-form.name
+- eraseText: 40
+- inputText: Puzzle 1000 ${output.unique}
+- runFlow: ../subflows/submit-item-form.yaml
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Puzzle 1000 ${output.unique}
+
+# Archiver, la retrouver dans Archives, la désarchiver.
+- tapOn:
+    id: item-card.archive
+- extendedWaitUntil:
+    notVisible: Puzzle 1000 ${output.unique}
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: tab-archives
+    direction: UP
+- tapOn:
+    id: tab-archives
+- extendedWaitUntil:
+    visible: Puzzle 1000 ${output.unique}
+    timeout: 10000
+- tapOn:
+    id: archives.restore
+- extendedWaitUntil:
+    notVisible: Puzzle 1000 ${output.unique}
+    timeout: 10000
+- tapOn:
+    id: tab-idees
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Puzzle 1000 ${output.unique}
+
+# Réglages : une catégorie qui contient encore une idée ne se retire pas ; on en ajoute une.
+- scrollUntilVisible:
+    element:
+      id: tab-reglages
+    direction: UP
+- tapOn:
+    id: tab-reglages
+- tapOn:
+    id: settings.types-delete-.*
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: settings.types-error
+    timeout: 10000
+- assertVisible: ${output.t.errors.typeInUse}
+- assertVisible: .*Livres.*
+- tapOn:
+    id: settings.types-new
+- inputText: Jeux ${output.unique}
+- hideKeyboard:
+    optional: true
+- tapOn:
+    id: settings.types-add
+- extendedWaitUntil:
+    visible: .*Jeux ${output.unique}.*
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: tab-idees
+    direction: UP
+- tapOn:
+    id: tab-idees
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: Puzzle 1000 ${output.unique}
+
+# Supprimer, avec confirmation.
+- tapOn:
+    id: item-card.edit
+- extendedWaitUntil:
+    visible:
+      id: item-form.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: item-form.delete
+- tapOn:
+    id: item-form.delete
+- tapOn:
+    id: item-form.delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000
+- assertNotVisible: Puzzle 1000 ${output.unique}
+
+# Réservations : celle de la liste de démo montre l'offreur et son petit mot.
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: back-link.back
+    direction: UP
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+- tapOn:
+    id: lists.card-demo-list
+- tapOn:
+    id: tab-reservations
+- extendedWaitUntil:
+    visible:
+      id: reservations.item-demo-reservation
+    timeout: 10000
+- assertVisible: .*Morgan.*
+- assertVisible:
+    id: reservations.note-demo-reservation

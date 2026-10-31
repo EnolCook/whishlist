@@ -15,7 +15,7 @@ export default function NewItem() {
   const save = useItemSave(listId);
   if (!list) return <LiveGiftMark />;
   return (
-    <Screen>
+    <Screen testID="item-form.screen">
       <BackLink fallback={`/lists/${listId}`} />
       <Card>
         <CardHeader>

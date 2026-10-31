@@ -1,0 +1,51 @@
+# 005 US4 : QR code, lien public (jamais le lien d'invitation), copie confirmée, feuille de partage ouverte.
+# Scanner le QR code et ce que reçoit la feuille de partage restent manuels (exclusions.md).
+appId: app.ohyoushouldnt.mobile
+name: "005 US4 — Partager une liste publiquement"
+tags:
+  - 005-us4
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- tapOn:
+    id: lists.card-demo-list
+- tapOn:
+    id: tab-partage
+- extendedWaitUntil:
+    visible:
+      id: qr-code
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: share.read-link
+- assertVisible:
+    id: share.read-link
+    text: .*/l/demo-list-lecture.*
+- assertNotVisible: .*demo-list-invitation.*
+
+- scrollUntilVisible:
+    element:
+      id: copy-link
+- tapOn:
+    id: copy-link
+- extendedWaitUntil:
+    visible:
+      id: share.copied
+    timeout: 5000
+
+# La feuille de partage du système s'ouvre ; on la referme.
+- scrollUntilVisible:
+    element:
+      id: share.share
+    direction: UP
+- tapOn:
+    id: share.share
+- runFlow:
+    file: ../subflows/close-share-sheet.yaml
+- extendedWaitUntil:
+    visible:
+      id: share.share
+    timeout: 10000

@@ -96,6 +96,7 @@ export function LabelEditor({ listId, kind, labels, disabled }: { listId: string
                   {chip.label}
                 </Text>
                 <Pressable
+                  testID={`settings.${kind}-delete-${chip.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={t("categories.deleteChip", { label: chip.label })}
                   disabled={locked}
@@ -124,8 +125,9 @@ export function LabelEditor({ listId, kind, labels, disabled }: { listId: string
           </Field>
         ) : null}
         <Field label={t(text.newLabel)}>
-          <Input accessibilityLabel={t(text.newLabel)} placeholder={t(text.placeholder)} value={draft} onChangeText={setDraft} />
+          <Input testID={`settings.${kind}-new`} accessibilityLabel={t(text.newLabel)} placeholder={t(text.placeholder)} value={draft} onChangeText={setDraft} />
           <Button
+            testID={`settings.${kind}-add`}
             title={t("categories.add")}
             accessibilityLabel={t(text.addAria)}
             variant="neutral"
@@ -134,7 +136,7 @@ export function LabelEditor({ listId, kind, labels, disabled }: { listId: string
             onPress={() => void run(() => addLabel(listId, kind, draft.trim()), () => setDraft(""))}
           />
         </Field>
-        {error ? <Alert variant="destructive">{error}</Alert> : null}
+        {error ? <Alert variant="destructive" testID={`settings.${kind}-error`}>{error}</Alert> : null}
       </CardContent>
     </Card>
   );

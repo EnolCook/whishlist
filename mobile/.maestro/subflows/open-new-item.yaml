@@ -1,0 +1,9 @@
+# Sur l'onglet Idées : ouvre le formulaire « Ajouter une idée cadeau ».
+appId: app.ohyoushouldnt.mobile
+---
+- tapOn:
+    id: list.add-item
+- extendedWaitUntil:
+    visible:
+      id: item-form.screen
+    timeout: 10000

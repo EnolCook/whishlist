@@ -1,0 +1,12 @@
+# Depuis « Mes listes » : ouvre « Créer une liste » et remplit la première catégorie (« Livres ») et « Pour qui ? »
+# (« Alex »), de bas en haut pour que le clavier ne cache jamais le prochain champ. Le titre reste à l'appelant.
+appId: app.ohyoushouldnt.mobile
+---
+- tapOn:
+    id: lists.new
+- tapOn:
+    id: new-list.person
+- inputText: Alex
+- tapOn:
+    id: new-list.category
+- inputText: Livres

@@ -30,6 +30,7 @@ skills-lock.json
 tsconfig.tsbuildinfo
 
 tmp/
+mobile/.maestro/scripts/strings.generated.js
 public/instance/
 
 # Notes locales (ne pas versionner)

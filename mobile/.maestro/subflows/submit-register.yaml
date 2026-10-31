@@ -1,0 +1,41 @@
+# Depuis l'écran de connexion : remplit et envoie l'inscription, env NAME et EMAIL, mot de passe DEMO_PASSWORD.
+# N'attend aucun écran (compte créé, ou adresse déjà utilisée : c'est à l'appelant de vérifier).
+appId: app.ohyoushouldnt.mobile
+---
+# Une demande « Enregistrer le mot de passe ? » d'une connexion précédente peut arriver en retard.
+- tapOn:
+    text: Plus tard|Not Now
+    optional: true
+- tapOn:
+    id: login.create-account
+- tapOn:
+    id: register.name
+- inputText: ${NAME}
+- tapOn:
+    id: register.email
+- inputText: ${EMAIL}
+- tapOn:
+    id: register.password
+# iOS propose un mot de passe robuste dans une feuille du système, invisible pour Maestro :
+# on la ferme par sa croix, puis on revient au champ.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          point: 91%,58%
+      - tapOn:
+          id: register.password
+- inputText: ${MAESTRO_DEMO_PASSWORD}
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: register.submit
+- tapOn:
+    id: register.submit
+# iOS propose d'enregistrer le mot de passe après l'inscription : « Plus tard ».
+- tapOn:
+    text: Plus tard|Not Now
+    optional: true

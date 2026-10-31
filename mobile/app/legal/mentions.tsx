@@ -12,7 +12,7 @@ import { CONTACT_EMAIL } from "../../../src/site/contact";
 export default function LegalMentions() {
   const { t } = useTranslation("content");
   return (
-    <LegalScreen eyebrow={t("legal.eyebrow")} title={t("legal.title")} intro={t("legal.intro")} sitePath="/mentions-legales">
+    <LegalScreen testID="legal-mentions.screen" eyebrow={t("legal.eyebrow")} title={t("legal.title")} intro={t("legal.intro")} sitePath="/mentions-legales">
       <ContentSection title={t("legal.publisherTitle")}>
         <ContentText>{t("legal.publisherBody")}</ContentText>
         <ContentText>{t("legal.publisherLaw")}</ContentText>

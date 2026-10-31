@@ -37,7 +37,7 @@ export default function Reservations() {
           {error ? <Alert variant="destructive">{error}</Alert> : null}
           {list.reservations.length === 0 ? <Empty title={t("reservations.empty")} /> : null}
           {list.reservations.map((reservation) => (
-            <Card key={reservation.id}>
+            <Card key={reservation.id} testID={`reservations.item-${reservation.id}`}>
               <CardContent>
                 <View style={{ gap: tokens.space[1] }}>
                   <Text weight="heading">{reservation.itemName}</Text>
@@ -47,7 +47,7 @@ export default function Reservations() {
                     </Text>
                   ) : null}
                 </View>
-                {reservation.note ? <Text>{reservation.note}</Text> : null}
+                {reservation.note ? <Text testID={`reservations.note-${reservation.id}`}>{reservation.note}</Text> : null}
                 <Button title={t("reservations.cancel")} variant="neutral" disabled={!online} onPress={() => setToCancel(reservation)} />
               </CardContent>
             </Card>

@@ -1,0 +1,10 @@
+# Envoie le formulaire d'idée (ajout ou modification). N'attend aucun écran (c'est à l'appelant de vérifier).
+appId: app.ohyoushouldnt.mobile
+---
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: item-form.submit
+- tapOn:
+    id: item-form.submit

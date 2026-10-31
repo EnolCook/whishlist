@@ -1,0 +1,72 @@
+# 006 US2 : mentions légales et données personnelles, sans compte (sous la connexion) et depuis « Mon compte ».
+appId: app.ohyoushouldnt.mobile
+name: "006 US2 — Lire les mentions légales et la politique de confidentialité"
+tags:
+  - 006-us2
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+
+# Sans compte.
+- scrollUntilVisible:
+    element:
+      id: legal-links.mentions
+- tapOn:
+    id: legal-links.mentions
+- extendedWaitUntil:
+    visible:
+      id: legal-mentions.screen
+    timeout: 10000
+- assertVisible: ${output.t.content.legal.title}
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: legal-links.privacy
+- tapOn:
+    id: legal-links.privacy
+- extendedWaitUntil:
+    visible:
+      id: legal-privacy.screen
+    timeout: 10000
+- assertVisible: ${output.t.content.privacy.title}
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: login.screen
+    timeout: 10000
+
+# Connecté : en bas de « Mon compte ».
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- tapOn:
+    id: open-account
+- scrollUntilVisible:
+    element:
+      id: account.legal
+- tapOn:
+    id: account.legal
+- extendedWaitUntil:
+    visible:
+      id: legal-mentions.screen
+    timeout: 10000
+- assertVisible: ${output.t.content.legal.title}
+- tapOn:
+    id: back-link.back
+- scrollUntilVisible:
+    element:
+      id: account.privacy
+- tapOn:
+    id: account.privacy
+- extendedWaitUntil:
+    visible:
+      id: legal-privacy.screen
+    timeout: 10000
+- assertVisible: ${output.t.content.privacy.title}

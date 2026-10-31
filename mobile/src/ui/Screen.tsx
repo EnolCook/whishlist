@@ -22,6 +22,7 @@ export function Screen({
   onRefresh,
   refreshing = false,
   edges = ["top", "left", "right"],
+  testID,
 }: {
   children: ReactNode;
   /** Bloc fixe au-dessus du contenu (bandeau hors ligne). */
@@ -29,10 +30,12 @@ export function Screen({
   onRefresh?: () => void;
   refreshing?: boolean;
   edges?: Edge[];
+  /** `<écran>.screen` : les parcours e2e l'attendent pour savoir que l'écran est prêt. */
+  testID?: string;
 }) {
   const palette = useTheme();
   return (
-    <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: palette.background }}>
+    <SafeAreaView testID={testID} edges={edges} style={{ flex: 1, backgroundColor: palette.background }}>
       {header ? <View style={{ paddingHorizontal: tokens.space[4], paddingTop: tokens.space[2] }}>{header}</View> : null}
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -57,16 +60,18 @@ export function ScreenList<T>({
   data,
   renderItem,
   keyExtractor,
+  testID,
 }: {
   /** Au-dessus des lignes, et qui défile avec elles. */
   header: ReactNode;
   data: readonly T[];
   renderItem: ListRenderItem<T>;
   keyExtractor: (item: T) => string;
+  testID?: string;
 }) {
   const palette = useTheme();
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1, backgroundColor: palette.background }}>
+    <SafeAreaView testID={testID} edges={["top", "left", "right"]} style={{ flex: 1, backgroundColor: palette.background }}>
       <FlatList
         data={data}
         renderItem={renderItem}

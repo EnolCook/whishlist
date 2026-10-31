@@ -50,6 +50,7 @@ export default function ShareTab() {
                   {t("mobile:share.qrHint")}
                 </Text>
                 <Button
+                  testID="share.share"
                   title={t("mobile:share.share")}
                   fullWidth
                   // Le lien est dans le message : `url` en plus le doublerait sur iOS.
@@ -58,7 +59,7 @@ export default function ShareTab() {
                 <Field label={t("list:share.readLink")}>
                   <View style={{ flexDirection: "row", gap: tokens.space[2], alignItems: "center" }}>
                     <View style={{ flex: 1 }}>
-                      <Input accessibilityLabel={t("list:share.readLink")} value={readUrl} editable={false} muted selectTextOnFocus />
+                      <Input testID="share.read-link" accessibilityLabel={t("list:share.readLink")} value={readUrl} editable={false} muted selectTextOnFocus />
                     </View>
                     <Button
                       size="icon"
@@ -72,7 +73,7 @@ export default function ShareTab() {
                     />
                   </View>
                 </Field>
-                {copied ? <Alert>{t("list:share.copied")}</Alert> : null}
+                {copied ? <Alert testID="share.copied">{t("list:share.copied")}</Alert> : null}
               </CardContent>
             </Card>
             {admin ? <Button title={t("mobile:share.manageOnSite")} variant="link" onPress={() => void Linking.openURL(admin)} /> : null}

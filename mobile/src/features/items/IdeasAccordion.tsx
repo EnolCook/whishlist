@@ -83,6 +83,7 @@ export function IdeasAccordion({ list }: { list: ViewList }) {
                 />
               </View>
               <Pressable
+                testID={`list.category-${category.id}`}
                 accessibilityRole="button"
                 accessibilityState={{ expanded }}
                 onPress={() => setOpen((current) => ({ ...current, [category.id]: !expanded }))}
