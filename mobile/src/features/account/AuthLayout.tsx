@@ -22,7 +22,7 @@ export function AuthLayout({
   title: string;
   description?: string;
   children: ReactNode;
-  /** Sous la carte (lien « Créer un compte »). */
+  /** Sous la carte (bouton « Créer un compte »). */
   below?: ReactNode;
   testID?: string;
 }) {
