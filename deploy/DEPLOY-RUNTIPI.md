@@ -86,7 +86,7 @@ Au premier démarrage, l'app importe `wishlist.json` dans `wishlist.db` (tout ou
 
 ### Backup chiffré (cron)
 
-`deploy/backup-whishlist.sh` fait une copie cohérente à chaud **dans le conteneur** (`docker exec whishlist node scripts/db-backup.mjs`), la chiffre si `WHISHLIST_BACKUP_PASSPHRASE` est set, puis la supprime du volume. Variables du script : `WHISHLIST_DATA_DIR`, `WHISHLIST_BACKUP_DIR`, `WHISHLIST_BACKUP_KEEP` (jours, défaut 14), `WHISHLIST_CONTAINER` (défaut `whishlist`).
+`deploy/backup-whishlist.sh` fait une copie cohérente à chaud **dans le conteneur** (`docker exec whishlist node scripts/db-backup.mjs`), la chiffre si `WHISHLIST_BACKUP_PASSPHRASE` est set, puis la supprime du volume. Variables du script : `WHISHLIST_DATA_DIR`, `WHISHLIST_BACKUP_DIR`, `WHISHLIST_BACKUP_KEEP` (jours, défaut 14), `WHISHLIST_CONTAINER` (défaut `whishlist`). Un échec envoie une alerte ntfy (`deploy/notify.sh`) si `WHISHLIST_NTFY_TOPIC` est set ; serveur `WHISHLIST_NTFY_URL` (défaut `http://127.0.0.1:8166`), jeton éventuel dans `~/webserver/data/whishlist.ntfy-token` (mode `600`).
 
 ```bash
 # une fois
@@ -97,7 +97,7 @@ echo '…' > ~/webserver/data/whishlist.backup.pass
 chmod 600 ~/webserver/data/whishlist.backup.pass
 
 # cron quotidien 03:15
-# 15 3 * * * WHISHLIST_BACKUP_PASSPHRASE="$(cat $HOME/webserver/data/whishlist.backup.pass)" \
+# 15 3 * * * WHISHLIST_NTFY_TOPIC=macbuntu WHISHLIST_BACKUP_PASSPHRASE="$(cat $HOME/webserver/data/whishlist.backup.pass)" \
 #   $HOME/webserver/repos/whishlist/deploy/backup-whishlist.sh >>$HOME/webserver/backups/whishlist/cron.log 2>&1
 ```
 

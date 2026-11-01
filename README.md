@@ -129,6 +129,9 @@ Variables des scripts d'exploitation (lues sur l'hôte, pas par l'app) :
 | `WHISHLIST_BACKUP_PASSPHRASE` | — | Chiffre les sauvegardes (AES) si présente |
 | `WHISHLIST_CONTAINER` | `whishlist` | Conteneur où lancer la sauvegarde à chaud |
 | `WHISHLIST_ENV_FILE` | `~/webserver/data/whishlist.env` | Fichier env vérifié par `harden-data.sh` et `ops-check.sh` |
+| `WHISHLIST_NTFY_TOPIC` | — | Topic ntfy qui reçoit une alerte si la sauvegarde échoue ; sans elle, aucune notification |
+| `WHISHLIST_NTFY_URL` | `http://127.0.0.1:8166` | Serveur ntfy |
+| `WHISHLIST_NTFY_TOKEN_FILE` | `~/webserver/data/whishlist.ntfy-token` | Jeton d'accès ntfy (`tk_…`), lu seulement si le fichier existe ; mode `600` |
 
 Sauvegarde à chaud, sans arrêter le service :
 

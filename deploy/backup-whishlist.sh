@@ -3,6 +3,7 @@
 # - Copie cohérente à chaud, faite dans le conteneur (scripts/db-backup.mjs), sans arrêter le service
 # - Copie datée mode 600, chiffrée AES si WHISHLIST_BACKUP_PASSPHRASE est set (openssl)
 # - Conserve WHISHLIST_BACKUP_KEEP jours (défaut 14), anciens backups JSON compris
+# - Un échec envoie une notification ntfy (deploy/notify.sh, si WHISHLIST_NTFY_TOPIC est set)
 set -euo pipefail
 
 DATA_DIR="${WHISHLIST_DATA_DIR:-$HOME/webserver/data/whishlist}"
@@ -13,13 +14,29 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 TMP_NAME=".backup-$STAMP.db"
 SRC="$DATA_DIR/$TMP_NAME"
 
+NOTIFY="$(cd "$(dirname "$0")" && pwd)/notify.sh"
+step="vérification de la base"
+
+on_exit() {
+  local status=$?
+  rm -f "$SRC"
+  if [[ $status -ne 0 ]]; then
+    bash "$NOTIFY" "Sauvegarde whishlist en échec" \
+      "Étape : $step (code $status), $(hostname) à $(date '+%d/%m %H:%M'). Détail dans le cron.log des sauvegardes." high
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
+
 if [[ ! -f "$DATA_DIR/wishlist.db" ]]; then
   echo "missing $DATA_DIR/wishlist.db" >&2
   exit 1
 fi
 
-trap 'rm -f "$SRC"' EXIT
+step="copie à chaud dans le conteneur $CONTAINER"
 docker exec "$CONTAINER" node scripts/db-backup.mjs "/data/$TMP_NAME"
+
+step="chiffrement et copie vers $BACKUP_ROOT"
 
 mkdir -p "$BACKUP_ROOT"
 chmod 700 "$BACKUP_ROOT"
@@ -39,6 +56,7 @@ else
 fi
 
 # Rétention
+step="rétention"
 find "$BACKUP_ROOT" -type f \( -name 'wishlist-*.json' -o -name 'wishlist-*.json.enc' \
   -o -name 'wishlist-*.db' -o -name 'wishlist-*.db.enc' \) -mtime +"$KEEP" -delete
 
