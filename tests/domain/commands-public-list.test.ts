@@ -5,7 +5,7 @@ import { verifyReservationClaims } from "../../src/auth/reservation-claim";
 import { setReadPassword } from "../../src/domain/read-password";
 import { cancelOwn, readPublicList, reserve, unlockPublicList } from "../../src/server/commands/public-list";
 import { isRateLimitError } from "../../src/server/rate-limit";
-import { readDocument } from "../../src/store/db";
+import { readDocument, replaceDocument } from "../../src/store/db";
 import { apiDoc, ctx, ensurePasswordHash, TEST_SECRET, withStore } from "./helpers/api-fixtures";
 
 const noUnlock = () => false;
@@ -116,8 +116,7 @@ test("réserver une idée déjà réservée, archivée ou absente est refusé", 
     });
     const doc = await readDocument();
     doc.items.find((item) => item.id === "gift2")!.archived = true;
-    const { writeFile } = await import("node:fs/promises");
-    await writeFile(process.env.WISHLIST_DATA_PATH!, JSON.stringify(doc), "utf8");
+    await replaceDocument(doc);
     assert.deepEqual(await reserve(ctx(), { readToken: "rt", itemId: "gift2", isUnlocked: noUnlock }), {
       ok: false,
       error: "itemNotInList",

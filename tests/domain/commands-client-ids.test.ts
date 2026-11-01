@@ -79,7 +79,9 @@ test("createList rejoué par le même compte : même liste, sans doublon", async
 test("createList : id d'une liste dont le compte n'est pas membre → idConflict", async () => {
   const doc = apiDoc();
   doc.wishlists[0]!.id = LIST_ID;
-  doc.memberships[0]!.wishlistId = LIST_ID;
+  for (const name of ["memberships", "types", "people", "items", "reservations"] as const) {
+    for (const row of doc[name]) row.wishlistId = LIST_ID;
+  }
   await withStore(doc, async () => {
     const result = await createList(ctx(doc.users[1]!), { title: "Noël", category: "Livres", person: "Camille", id: LIST_ID });
     assert.deepEqual(result, { ok: false, error: "idConflict" });

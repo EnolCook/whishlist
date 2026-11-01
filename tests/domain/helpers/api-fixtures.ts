@@ -1,9 +1,8 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { DEFAULT_WISHLIST_THEME } from "../../../src/domain/theme";
 import { emptyDatabase, type Database, type User } from "../../../src/domain/types";
 import { resetRateLimitsForTests } from "../../../src/server/rate-limit";
+import { replaceDocument } from "../../../src/store/db";
+import { withTempDataPath } from "./temp-store";
 import type { CommandContext } from "../../../src/server/commands/context";
 
 export const TEST_SECRET = "test-secret-test-secret-test-secret-00";
@@ -88,28 +87,23 @@ export function ctx(current: User | null = null, ip = "203.0.113.1"): CommandCon
 }
 
 /**
- * Lance `run` sur un `wishlist.json` temporaire qui contient `doc`, depuis ce dossier
+ * Lance `run` sur une base temporaire qui contient `doc`, depuis ce dossier
  * (les journaux d'e-mail sans Resend s'écrivent dans `data/` du dossier courant).
  */
 export async function withStore(doc: Database, run: () => Promise<void>): Promise<void> {
-  const dir = await mkdtemp(path.join(tmpdir(), "wl-api-"));
-  const file = path.join(dir, "wishlist.json");
-  await writeFile(file, JSON.stringify(doc), "utf8");
-  const previousPath = process.env.WISHLIST_DATA_PATH;
-  const previousSecret = process.env.SESSION_SECRET;
-  process.env.WISHLIST_DATA_PATH = file;
-  process.env.SESSION_SECRET = TEST_SECRET;
-  const previousCwd = process.cwd();
-  process.chdir(dir);
-  resetRateLimitsForTests();
-  try {
-    await run();
-  } finally {
-    process.chdir(previousCwd);
-    if (previousPath === undefined) delete process.env.WISHLIST_DATA_PATH;
-    else process.env.WISHLIST_DATA_PATH = previousPath;
-    if (previousSecret === undefined) delete process.env.SESSION_SECRET;
-    else process.env.SESSION_SECRET = previousSecret;
-    await rm(dir, { recursive: true, force: true });
-  }
+  await withTempDataPath(async (_dataPath, dir) => {
+    const previousSecret = process.env.SESSION_SECRET;
+    process.env.SESSION_SECRET = TEST_SECRET;
+    await replaceDocument(doc);
+    const previousCwd = process.cwd();
+    process.chdir(dir);
+    resetRateLimitsForTests();
+    try {
+      await run();
+    } finally {
+      process.chdir(previousCwd);
+      if (previousSecret === undefined) delete process.env.SESSION_SECRET;
+      else process.env.SESSION_SECRET = previousSecret;
+    }
+  });
 }

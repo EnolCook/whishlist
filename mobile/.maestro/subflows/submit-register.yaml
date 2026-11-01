@@ -8,6 +8,10 @@ appId: app.ohyoushouldnt.mobile
     optional: true
 - tapOn:
     id: login.create-account
+# Quitter un formulaire de connexion rempli fait apparaître cette demande à ce moment-là.
+- tapOn:
+    text: Plus tard|Not Now
+    optional: true
 - tapOn:
     id: register.name
 - inputText: ${NAME}

@@ -1,5 +1,5 @@
-# 005 US2 : mes listes (Alex voit la liste de démo), nouvelle liste ouverte puis présente dans « Mes listes »,
-# titre vide refusé sans rien créer. Voir specs/005-mobile-list-app/spec.md.
+# 005 US2 : mes listes (Alex voit la liste de démo) ; avec un compte neuf, nouvelle liste ouverte puis présente
+# dans « Mes listes », titre vide refusé sans rien créer. Voir specs/005-mobile-list-app/spec.md.
 appId: app.ohyoushouldnt.mobile
 name: "005 US2 — Voir ses listes et en créer une"
 tags:
@@ -14,6 +14,12 @@ tags:
       EMAIL: alex@example.test
 - assertVisible:
     id: lists.card-demo-list
+- runFlow: ../subflows/logout.yaml
+
+# Compte neuf, pour que les listes comptées ne dépendent d'aucun autre parcours.
+- runFlow: ../subflows/register.yaml
+- assertVisible:
+    id: lists.empty
 
 # Nouvelle liste : elle s'ouvre, puis apparaît dans « Mes listes ».
 - runFlow:
@@ -47,10 +53,10 @@ tags:
     visible:
       id: lists.screen
     timeout: 10000
-# Toujours deux listes : celle de démo et « Noël ».
+# Toujours une seule liste : « Noël ».
 - assertVisible:
     id: lists\.card-.*(?<!-shadow)
-    index: 1
+    index: 0
 - assertNotVisible:
     id: lists\.card-.*(?<!-shadow)
-    index: 2
+    index: 1

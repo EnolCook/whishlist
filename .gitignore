@@ -8,6 +8,10 @@ build/
 !.env.example
 deploy/.whishlist.env.tmp
 data/wishlist.json
+data/*.db
+data/*.db-wal
+data/*.db-shm
+*.db-journal
 data/password-reset.log
 data/mail.log
 data/*.tmp

@@ -5,6 +5,9 @@ mobile
 .env
 .env.*
 data/wishlist.json
+data/*.db
+data/*.db-wal
+data/*.db-shm
 data/*.tmp
 data/password-reset.log
 *.log

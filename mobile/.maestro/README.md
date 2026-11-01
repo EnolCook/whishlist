@@ -8,8 +8,9 @@ Des parcours [Maestro](https://docs.maestro.dev), un par user story de l'app mob
 # 1. Maestro (hors dépôt)
 curl -Ls https://get.maestro.mobile.dev | bash
 
-# 2. Serveur local sur la base de la suite. La commande e2e régénère ce fichier à chaque exécution ;
-#    le serveur le relit à chaque requête, sans redémarrer. Sans GEMINI_API_KEY ni OPENAI_API_KEY.
+# 2. Serveur local sur la base de la suite (tmp/e2e/wishlist.db). La commande e2e la remplace à chaque
+#    exécution, en une transaction ; le serveur la relit à chaque requête, sans redémarrer.
+#    Sans GEMINI_API_KEY ni OPENAI_API_KEY.
 export DEMO_PASSWORD='demo-password-1'
 npm run demo:data -- tmp/e2e/wishlist.json
 WISHLIST_DATA_PATH=tmp/e2e/wishlist.json SESSION_SECRET=dev-secret-dev-secret-dev-secret-00 npm run dev -- --port 3010

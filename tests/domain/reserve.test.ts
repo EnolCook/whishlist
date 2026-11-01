@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { test } from "node:test";
 import { availableItems, MAX_FROM_NAME, MAX_NOTE, reserveItem } from "../../src/domain/reserve";
 import { emptyDatabase, type Database } from "../../src/domain/types";
 import { readDocument, updateDocument } from "../../src/store/db";
+import { withTempDataPath } from "./helpers/temp-store";
 
 function doc(): Database {
   const data = emptyDatabase();
@@ -88,9 +86,7 @@ test("réservation, blank, type, champs vides", () => {
 });
 
 test("deux confirmations simultanées sous lock", async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), "wl-res-"));
-  process.env.WISHLIST_DATA_PATH = path.join(dir, "wishlist.json");
-  try {
+  await withTempDataPath(async () => {
     await updateDocument((current) => ({ doc: doc(), result: current }));
     await Promise.all([
       updateDocument((current) => {
@@ -104,10 +100,7 @@ test("deux confirmations simultanées sous lock", async () => {
     ]);
     const saved = await readDocument();
     assert.equal(saved.reservations.length, 1);
-  } finally {
-    delete process.env.WISHLIST_DATA_PATH;
-    await rm(dir, { recursive: true, force: true });
-  }
+  });
 });
 
 test("nom et petit mot : longueur maximale", () => {

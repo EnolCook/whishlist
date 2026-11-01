@@ -37,7 +37,7 @@ npm test          # tests domaine
 npm run build     # build prod local
 ```
 
-Données locales : `data/wishlist.json` (créé au premier lancement).
+Données locales : base SQLite `data/wishlist.db` (créée au premier lancement). Un ancien `data/wishlist.json` est importé une fois au démarrage, puis n'est plus ni lu ni modifié.
 
 ### Base de démonstration
 
@@ -68,7 +68,7 @@ Les PNG sont écrits dans `public/guide/fr` et `public/guide/en`.
 | `SESSION_SECRET` | **oui** | Signature des cookies de session |
 | `APP_ORIGIN` | prod | URL publique (`https://ohyoushouldnt.app`) pour mails / liens de partage |
 | `SUPPORT_URL` | non | Payment Link Stripe (« Soutenir le projet ») |
-| `WISHLIST_DATA_PATH` | non | Chemin du JSON (défaut `data/wishlist.json`) |
+| `WISHLIST_DATA_PATH` | non | Chemin de l'ancien JSON, importé une fois (défaut `data/wishlist.json`) ; la base SQLite est à côté, en `.db` |
 | `INSTANCE_CONTENT_PATH` | non | JSON privé personnalisant la page projet |
 | `RESEND_API_KEY` | non | Envoi d’e-mails |
 | `MAIL_FROM` | non | Expéditeur Resend, ex. `Oh, You Shouldn't! <noreply@domaine.fr>` |
@@ -115,9 +115,29 @@ WHISHLIST_DATA_DIR=./data-prod docker compose \
 
 App sur **http://localhost:8740** (port hôte configurable dans `deploy/compose.prod.yml`).
 
-Persistance : volume `WHISHLIST_DATA_DIR` → `/data/wishlist.json` dans le conteneur (`user 1000:1000`). Le JSON est écrit en mode `0600` (owner only) quand le FS le permet.
+Persistance : volume `WHISHLIST_DATA_DIR` → base SQLite `/data/wishlist.db` (mode WAL, avec `wishlist.db-wal` et `wishlist.db-shm`) dans le conteneur (`user 1000:1000`), en mode `0600` (owner only) quand le FS le permet. Ne copiez pas `wishlist.db` à la main pendant que le conteneur tourne : passez par la sauvegarde à chaud ci-dessous.
 
 Ops Mac mini : `deploy/harden-data.sh`, `deploy/backup-whishlist.sh` (AES si `WHISHLIST_BACKUP_PASSPHRASE`), `deploy/ops-check.sh` — détails dans [`deploy/DEPLOY-RUNTIPI.md`](deploy/DEPLOY-RUNTIPI.md).
+
+Variables des scripts d'exploitation (lues sur l'hôte, pas par l'app) :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `WHISHLIST_DATA_DIR` | `~/webserver/data/whishlist` | Dossier hôte du volume `/data` |
+| `WHISHLIST_BACKUP_DIR` | `~/webserver/backups/whishlist` | Dossier des sauvegardes |
+| `WHISHLIST_BACKUP_KEEP` | `14` | Jours de sauvegardes gardés |
+| `WHISHLIST_BACKUP_PASSPHRASE` | — | Chiffre les sauvegardes (AES) si présente |
+| `WHISHLIST_CONTAINER` | `whishlist` | Conteneur où lancer la sauvegarde à chaud |
+| `WHISHLIST_ENV_FILE` | `~/webserver/data/whishlist.env` | Fichier env vérifié par `harden-data.sh` et `ops-check.sh` |
+
+Sauvegarde à chaud, sans arrêter le service :
+
+```bash
+docker exec whishlist node scripts/db-backup.mjs /data/.backup-manuel.db
+# puis copier ./data-prod/.backup-manuel.db ailleurs et le supprimer du volume
+```
+
+Restauration et retour à la version précédente : voir [`deploy/DEPLOY-RUNTIPI.md`](deploy/DEPLOY-RUNTIPI.md), « Restauration ».
 
 ### 4. Smoke
 
@@ -128,6 +148,8 @@ curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8740/
 Attendu : `200`.
 
 ### Mise à jour
+
+Première mise à jour vers la version SQLite (le volume contient encore `wishlist.json`) : faire une copie de `wishlist.json` hors du volume, puis vérifier cette copie avec `npm run db:check -- <copie>` (« aucun problème » attendu) avant de reconstruire. Au démarrage, le journal du conteneur affiche `[store] ancien fichier importé : …` ; si le fichier est incohérent, le conteneur s'arrête en nommant les enregistrements fautifs, sans rien modifier.
 
 ```bash
 git pull

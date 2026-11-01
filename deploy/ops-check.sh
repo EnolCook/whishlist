@@ -53,11 +53,14 @@ resend=$(docker exec whishlist printenv RESEND_API_KEY 2>/dev/null || true)
 [[ -n "$resend" ]] && ok "container RESEND_API_KEY set" || ko "container RESEND_API_KEY empty"
 
 echo "-- data"
-[[ -f "$DATA_DIR/wishlist.json" ]] || ko "missing wishlist.json"
+[[ -f "$DATA_DIR/wishlist.db" ]] || ko "missing wishlist.db"
 dperm=$(stat -c '%a' "$DATA_DIR" 2>/dev/null || stat -f '%OLp' "$DATA_DIR")
-fperm=$(stat -c '%a' "$DATA_DIR/wishlist.json" 2>/dev/null || stat -f '%OLp' "$DATA_DIR/wishlist.json")
 [[ "$dperm" == "700" ]] && ok "data dir $dperm" || ko "data dir $dperm (want 700)"
-[[ "$fperm" == "600" ]] && ok "wishlist.json $fperm" || ko "wishlist.json $fperm (want 600)"
+for f in wishlist.db wishlist.db-wal wishlist.db-shm; do
+  [[ -f "$DATA_DIR/$f" ]] || continue
+  fperm=$(stat -c '%a' "$DATA_DIR/$f" 2>/dev/null || stat -f '%OLp' "$DATA_DIR/$f")
+  [[ "$fperm" == "600" ]] && ok "$f $fperm" || ko "$f $fperm (want 600)"
+done
 
 echo "-- backups"
 BACKUP_ROOT="${WHISHLIST_BACKUP_DIR:-$HOME/webserver/backups/whishlist}"

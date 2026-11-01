@@ -1,11 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 
 const outputArg = process.argv[2];
 if (!outputArg) {
-  console.error("Usage: npm run demo:data -- <output.json>");
+  console.error("Usage: npm run demo:data -- <chemin, comme WISHLIST_DATA_PATH>");
   process.exit(1);
 }
 
@@ -89,9 +89,13 @@ doc.reservations.push({
   createdAt: "2026-10-21T09:00:00.000Z",
 });
 
-await mkdir(path.dirname(output), { recursive: true });
-await writeFile(output, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
-console.log(`Demo database written to ${output}`);
+// La base `.db` à côté du chemin donné (même règle que WISHLIST_DATA_PATH), remplacée en une transaction :
+// un serveur qui tourne sur cette base voit la nouvelle démo à la requête suivante.
+process.env.WISHLIST_DATA_PATH = output;
+const store = await import(pathToFileURL(path.resolve("src/store/db.ts")).href);
+await store.replaceDocument(doc);
+store.closeStore(output);
+console.log(`Demo database written to ${store.databaseFilePath(output)}`);
 console.log("Owner: alex@example.test");
 console.log("Member: camille@example.test");
 console.log(`Password: ${password}`);

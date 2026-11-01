@@ -1,23 +1,18 @@
-import { readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { fetchOgImage } from "../src/domain/og-image";
+import { closeStore, readDocument, updateDocument } from "../src/store/db";
 
 async function main() {
-  const file = process.env.WISHLIST_DATA_PATH ?? path.join(process.cwd(), "data", "wishlist.json");
-  const doc = JSON.parse(await readFile(file, "utf8")) as {
-    items: { name: string; url: string | null; imageUrl?: string | null }[];
-  };
-
+  const doc = await readDocument();
   const targets = doc.items.filter((item) => item.url && !item.imageUrl);
   console.log(`targets ${targets.length} / ${doc.items.length}`);
 
-  let ok = 0;
+  // Les pages produit se téléchargent hors transaction : la base reste libre pendant ce temps.
+  const found = new Map<string, string>();
   let fail = 0;
   for (const item of targets) {
     const img = await fetchOgImage(item.url!);
     if (img) {
-      item.imageUrl = img;
-      ok++;
+      found.set(item.id, img);
       console.log("OK", item.name.slice(0, 48), "→", img.slice(0, 90));
     } else {
       fail++;
@@ -25,15 +20,24 @@ async function main() {
     }
   }
 
-  for (const item of doc.items) {
-    if (item.imageUrl === undefined) item.imageUrl = null;
-  }
-
-  await writeFile(file, JSON.stringify(doc, null, 2), "utf8");
+  // Une seule écriture ; une image ajoutée entre-temps par l'app n'est pas écrasée.
+  const ok = await updateDocument((current) => {
+    let saved = 0;
+    for (const item of current.items) {
+      const img = found.get(item.id);
+      if (img && !item.imageUrl) {
+        item.imageUrl = img;
+        saved++;
+      }
+    }
+    return { doc: current, result: saved };
+  });
   console.log(`done ok=${ok} fail=${fail}`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(() => closeStore());

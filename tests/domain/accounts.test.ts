@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { test } from "node:test";
 import { emptyDatabase } from "../../src/domain/types";
 import { registerUser } from "../../src/domain/users";
 import { readDocument, updateDocument } from "../../src/store/db";
+import { withTempDataPath } from "./helpers/temp-store";
 
 test("e-mail unique, casse, nom vide, hash", async () => {
   const first = await registerUser(emptyDatabase(), {
@@ -39,9 +37,7 @@ test("e-mail unique, casse, nom vide, hash", async () => {
 });
 
 test("deux inscriptions simultanées du même e-mail", async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), "wl-acc-"));
-  process.env.WISHLIST_DATA_PATH = path.join(dir, "wishlist.json");
-  try {
+  await withTempDataPath(async () => {
     const input = { email: "same@example.com", password: "secret-ok!!", displayName: "Sam" };
     await Promise.all([
       updateDocument(async (doc) => {
@@ -55,8 +51,5 @@ test("deux inscriptions simultanées du même e-mail", async () => {
     ]);
     const doc = await readDocument();
     assert.equal(doc.users.length, 1);
-  } finally {
-    delete process.env.WISHLIST_DATA_PATH;
-    await rm(dir, { recursive: true, force: true });
-  }
+  });
 });

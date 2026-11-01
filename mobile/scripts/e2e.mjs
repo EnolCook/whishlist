@@ -2,7 +2,7 @@
 // Usage : DEMO_PASSWORD=… npm --prefix mobile run e2e -- [--platform ios|android] [--lang fr|en] [parcours.yaml…]
 // Contrat : specs/007-mobile-e2e-maestro/contracts/e2e-command.md ; guide : mobile/.maestro/README.md.
 import { spawnSync, execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,17 +46,23 @@ function parseArgs(argv) {
   return options;
 }
 
-/** Base de démo neuve, écrite à côté puis renommée : le serveur ne lit jamais un fichier à moitié écrit. */
+/**
+ * Base de démo neuve (tmp/e2e/wishlist.db), remplacée en une transaction : le serveur qui tourne dessus
+ * ne voit jamais une base à moitié écrite, et lit la nouvelle démo à la requête suivante.
+ */
 function resetDatabase() {
   mkdirSync(path.dirname(dataFile), { recursive: true });
-  const next = `${dataFile}.next`;
-  const result = spawnSync("node", ["--import", "tsx", "scripts/create-demo-data.mjs", next], {
+  const result = spawnSync("node", ["--import", "tsx", "scripts/create-demo-data.mjs", dataFile], {
     cwd: repoRoot,
     env: process.env,
     encoding: "utf8",
   });
   if (result.status !== 0) fail(`Base de démo non créée : ${result.stderr.trim() || result.stdout.trim()}`);
-  renameSync(next, dataFile);
+}
+
+function apiSessionCount(userId) {
+  const result = spawnSync("node", ["--import", "tsx", "scripts/db-sessions.ts", dataFile, userId], { cwd: repoRoot, encoding: "utf8" });
+  return result.status === 0 ? Number(result.stdout.trim()) : 0;
 }
 
 async function request(url, init) {
@@ -72,7 +78,7 @@ function serverHint(apiUrl) {
   return `WISHLIST_DATA_PATH=tmp/e2e/wishlist.json npm run dev -- --port ${port}`;
 }
 
-/** Le serveur répond, et c'est bien tmp/e2e/wishlist.json qu'il lit (R3) : une connexion doit y laisser une session. */
+/** Le serveur répond, et c'est bien la base de tmp/e2e/ qu'il lit (R3) : une connexion doit y laisser une session. */
 async function checkServer(apiUrl, password) {
   const capabilities = await request(`${apiUrl}/api/v1/capabilities`);
   if (!capabilities?.ok) fail(`Serveur injoignable sur ${apiUrl} : ${serverHint(apiUrl)}`);
@@ -81,13 +87,12 @@ async function checkServer(apiUrl, password) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ email: "alex@example.test", password }),
   });
-  const sessions = JSON.parse(readFileSync(dataFile, "utf8")).apiSessions ?? [];
-  const reads = login?.ok && sessions.some((session) => session.userId === "demo-owner");
+  const reads = login?.ok && apiSessionCount("demo-owner") > 0;
   if (login?.ok) {
     const { token } = await login.json();
     await request(`${apiUrl}/api/v1/auth/logout`, { method: "POST", headers: { authorization: `Bearer ${token}` } });
   }
-  if (!reads) fail(`Le serveur ne lit pas tmp/e2e/wishlist.json : relancez-le avec ${serverHint(apiUrl)}`);
+  if (!reads) fail(`Le serveur ne lit pas la base de tmp/e2e/ : relancez-le avec ${serverHint(apiUrl)}`);
 }
 
 /** Version affichée par « Mon compte » (`Constants.expoConfig.version`), lue dans app.config.ts. */

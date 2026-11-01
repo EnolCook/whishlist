@@ -1,96 +1,43 @@
-import { access, chmod, mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { cache } from "react";
-import { resolveTheme } from "../domain/theme";
-import { emptyDatabase, type Database } from "../domain/types";
-import { withFileLock } from "./file";
+import type { Database } from "../domain/types";
+import { openStore, readTransaction, writeTransaction } from "./connection";
+import { deleteAll, insertAll, writeDiff } from "./diff";
+import { readAll } from "./rows";
 
-export function dataFilePath(): string {
-  return process.env.WISHLIST_DATA_PATH ?? path.join(process.cwd(), "data", "wishlist.json");
-}
+export { closeStore, dataFilePath, databaseFilePath, openStore } from "./connection";
 
-async function restrictDataFileMode(file: string): Promise<void> {
-  try {
-    await chmod(file, 0o600);
-  } catch {
-    // Windows / FS sans chmod — ignore
-  }
-}
-
-async function ensureFile(file: string): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
-  try {
-    await access(file);
-  } catch {
-    await writeFile(file, JSON.stringify(emptyDatabase(), null, 2), { encoding: "utf8", mode: 0o600 });
-    await restrictDataFileMode(file);
-  }
-}
-
-function normalizeDocument(doc: Database): Database {
-  if (!doc.passwordResets) doc.passwordResets = [];
-  if (!doc.apiSessions) doc.apiSessions = [];
-  for (const user of doc.users) {
-    if (user.mustChangePassword === undefined) user.mustChangePassword = false;
-    if (typeof user.sessionVersion !== "number") user.sessionVersion = 0;
-  }
-  for (const list of doc.wishlists) {
-    if (list.subtitle === undefined) list.subtitle = null;
-    if (list.coverImageUrl === undefined) list.coverImageUrl = null;
-    if (list.readPasswordHash === undefined) list.readPasswordHash = null;
-    list.theme = resolveTheme(list.theme);
-  }
-  for (const item of doc.items) {
-    if (item.imageUrl === undefined) item.imageUrl = null;
-    if (item.archived === undefined) item.archived = false;
-  }
-  const typesByList = new Map<string, typeof doc.types>();
-  for (const type of doc.types) {
-    if (typeof type.sortOrder !== "number") type.sortOrder = 0;
-    const bucket = typesByList.get(type.wishlistId) ?? [];
-    bucket.push(type);
-    typesByList.set(type.wishlistId, bucket);
-  }
-  for (const types of typesByList.values()) {
-    const needsOrder = types.every((type) => type.sortOrder === 0);
-    if (!needsOrder) continue;
-    [...types]
-      .sort((a, b) => a.label.localeCompare(b.label, "fr") || a.id.localeCompare(b.id))
-      .forEach((type, index) => {
-        type.sortOrder = index;
-      });
-  }
-  for (const reservation of doc.reservations) {
-    if (reservation.userId === undefined) reservation.userId = null;
-  }
-  return doc;
-}
-
-/** Fresh disk read — use inside locks / tests / after writes. */
+/** Lecture complète, instantané cohérent. Ordre des tableaux = ordre d'insertion. */
 export async function readDocument(): Promise<Database> {
-  const file = dataFilePath();
-  await ensureFile(file);
-  const raw = await readFile(/*turbopackIgnore: true*/ file, "utf8");
-  return normalizeDocument(JSON.parse(raw) as Database);
+  const store = openStore();
+  return readTransaction(store, readAll);
 }
 
 /** One read per RSC request (layout + page + auth share this). */
 export const getDocument = cache(readDocument);
 
+/**
+ * Une modification à la fois par base. `mutate` peut modifier `doc` en place ou en rendre un autre ;
+ * seules les lignes ajoutées, modifiées ou retirées sont écrites. Tout ou rien : si `mutate` lève
+ * ou si une contrainte échoue, rien n'est écrit et l'erreur remonte.
+ */
 export async function updateDocument<T>(
   mutate: (doc: Database) => { doc: Database; result: T } | Promise<{ doc: Database; result: T }>,
 ): Promise<T> {
-  const file = dataFilePath();
-  await ensureFile(file);
-  return withFileLock(file, async () => {
-    const raw = await readFile(/*turbopackIgnore: true*/ file, "utf8");
-    const doc = normalizeDocument(JSON.parse(raw) as Database);
+  const store = openStore();
+  return writeTransaction(store, async (db) => {
+    const doc = readAll(db);
+    const before = structuredClone(doc);
     const { doc: next, result } = await mutate(doc);
-    const tmp = `${file}.tmp`;
-    await writeFile(tmp, JSON.stringify(next, null, 2), { encoding: "utf8", mode: 0o600 });
-    const { rename } = await import("node:fs/promises");
-    await rename(tmp, file);
-    await restrictDataFileMode(file);
+    writeDiff(db, before, next);
     return result;
+  });
+}
+
+/** Remplace tout le contenu en une transaction (démo, remise à zéro de l'e2e, tests). */
+export async function replaceDocument(doc: Database): Promise<void> {
+  const store = openStore();
+  await writeTransaction(store, async (db) => {
+    deleteAll(db);
+    insertAll(db, doc);
   });
 }

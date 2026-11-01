@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { before, test } from "node:test";
 import {
   cancelReservationAsMember,
@@ -78,7 +77,7 @@ test("un non-membre ne change rien", async () => {
   const doc = apiDoc();
   const camille = ctx(doc.users[1]!);
   await withStore(doc, async () => {
-    const before = JSON.parse(await readFile(process.env.WISHLIST_DATA_PATH!, "utf8"));
+    const before = await readDocument();
     const attempts = [
       await saveItem(camille, fields),
       await saveItem(camille, { ...fields, itemId: "gift" }),
@@ -89,7 +88,7 @@ test("un non-membre ne change rien", async () => {
       await enrichFromUrl(camille, { wishlistId: "w", url: "https://shop.example.test/p" }),
     ];
     for (const attempt of attempts) assert.deepEqual(attempt, { ok: false, error: "notMember" });
-    assert.deepEqual(JSON.parse(await readFile(process.env.WISHLIST_DATA_PATH!, "utf8")), before);
+    assert.deepEqual(await readDocument(), before);
   });
 });
 

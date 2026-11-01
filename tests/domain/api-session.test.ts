@@ -10,7 +10,8 @@ import {
 } from "../../src/auth/api-session";
 import { SESSION_TTL_SEC } from "../../src/auth/session";
 import { readDocument } from "../../src/store/db";
-import { apiDoc, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
+import { withTempDataPath } from "./helpers/temp-store";
+import { apiDoc, ensurePasswordHash } from "./helpers/api-fixtures";
 
 const NOW = Date.parse("2026-10-28T12:00:00.000Z");
 const TTL_MS = SESSION_TTL_SEC * 1000;
@@ -68,11 +69,11 @@ test("la purge retire les sessions expirées et périmées", () => {
   );
 });
 
-test("un wishlist.json sans apiSessions se lit sans migration", async () => {
+test("un wishlist.json sans apiSessions s'importe sans migration", async () => {
   const legacy: Record<string, unknown> = { ...apiDoc() };
   delete legacy.apiSessions;
-  await withStore(apiDoc(), async () => {
-    await writeFile(process.env.WISHLIST_DATA_PATH!, JSON.stringify(legacy), "utf8");
+  await withTempDataPath(async (dataPath) => {
+    await writeFile(dataPath, JSON.stringify(legacy), "utf8");
     const doc = await readDocument();
     assert.deepEqual(doc.apiSessions, []);
   });

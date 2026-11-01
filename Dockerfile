@@ -32,6 +32,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/data/seed.json ./data/seed.json
+# Migrations appliquées à l'ouverture de la base ; sauvegarde à chaud (deploy/backup-whishlist.sh).
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/db-backup.mjs ./scripts/db-backup.mjs
 
 USER nextjs
 EXPOSE 3000
