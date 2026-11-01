@@ -1,0 +1,51 @@
+# 009 US3 : la carte « Vos données et informations » s'ouvre repliée, se déplie, reste dépliée
+# au retour d'une page légale, puis se replie.
+appId: app.ohyoushouldnt.mobile
+name: "009 US3 — Déplier la carte Données et informations"
+tags:
+  - 009-us3
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- tapOn:
+    id: open-account
+- extendedWaitUntil:
+    visible:
+      id: account.data-toggle
+    timeout: 10000
+- assertNotVisible:
+    id: account.legal
+- assertVisible:
+    id: account.logout
+
+# Dépliée : les liens apparaissent, et la carte le reste au retour des mentions légales.
+- tapOn:
+    id: account.data-toggle
+- scrollUntilVisible:
+    element:
+      id: account.legal
+- tapOn:
+    id: account.legal
+- extendedWaitUntil:
+    visible:
+      id: legal-mentions.screen
+    timeout: 10000
+- tapOn:
+    id: back-link.back
+- extendedWaitUntil:
+    visible:
+      id: account.legal
+    timeout: 10000
+
+# Repliée de nouveau.
+- scrollUntilVisible:
+    element:
+      id: account.data-toggle
+    direction: UP
+- tapOn:
+    id: account.data-toggle
+- assertNotVisible:
+    id: account.legal

@@ -15,7 +15,7 @@ import { tokens } from "@/theme/tokens";
 import { Alert } from "@/ui/Alert";
 import { BackLink } from "@/ui/BackLink";
 import { Button } from "@/ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/Card";
+import { CollapsibleCard } from "@/ui/Card";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { Field } from "@/ui/Field";
 import { Input } from "@/ui/Input";
@@ -30,7 +30,7 @@ import { CONTACT_EMAIL } from "../../../src/site/contact";
 /**
  * Mon compte, d'après `11-compte.png`, ouvert par le bouton du haut de « Mes listes » :
  * nom affiché, mot de passe, puis tout en bas (FR-001 de la 006) : données et informations,
- * déconnexion, et suppression du compte en dernier.
+ * déconnexion, et suppression du compte en dernier. Profil, mot de passe et données s'ouvrent repliés (009).
  * Hors ligne, seuls le nom, les pages légales et la déconnexion restent utilisables.
  */
 export default function Account() {
@@ -67,73 +67,61 @@ export default function Account() {
     <Screen testID="account.screen">
       <BackLink />
       <PageTitle title={t("auth:account.title")} />
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("auth:account.profile")}</CardTitle>
-          <CardDescription>{t("auth:account.profileHint")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Field label={t("auth:account.displayName")}>
-            <Input
-              testID="account.name"
-              accessibilityLabel={t("auth:account.displayName")}
-              value={displayName}
-              onChangeText={setDisplayName}
-              editable={online}
-              autoComplete="name"
-            />
-          </Field>
-          <Field label={t("auth:account.email")} description={t("auth:account.emailHint")}>
-            <Input accessibilityLabel={t("auth:account.email")} value={user?.email ?? ""} editable={false} muted />
-          </Field>
-          {saveName.error ? <Alert variant="destructive">{saveName.error}</Alert> : null}
-          {nameSaved ? <Alert>{t("auth:account.nameSaved")}</Alert> : null}
-          <Button testID="account.save-name" title={t("auth:account.saveName")} fullWidth disabled={!online || saveName.busy} onPress={() => void saveName.run()} />
-          <NetworkNote />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("auth:changePassword.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PasswordForm />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("auth:account.dataTitle")}</CardTitle>
-          <CardDescription>{t("auth:account.dataHint")}</CardDescription>
-        </CardHeader>
-        <CardContent style={{ alignItems: "flex-start" }}>
-          <Button testID="account.legal" title={t("content:legal.title")} variant="link" onPress={() => router.push("/legal/mentions")} />
-          <Button testID="account.privacy" title={t("content:privacy.title")} variant="link" onPress={() => router.push("/legal/privacy")} />
-          <View style={{ gap: tokens.space[1] }}>
-            <Button
-              testID="account.export"
-              title={t("auth:account.exportAction")}
-              variant="link"
-              disabled={!online || download.busy}
-              onPress={() => void download.run()}
-            />
-            <Text size="sm" color={tokens.colors.mutedForeground}>
-              {t("auth:account.exportHint")}
-            </Text>
-            {download.error ? <Alert variant="destructive" testID="account.export-error">{download.error}</Alert> : null}
-            <NetworkNote />
-          </View>
-          <Button testID="account.licenses" title={t("mobile:account.licenses")} variant="link" onPress={() => router.push("/legal/licenses")} />
-          <Button
-            testID="account.contact"
-            title={t("mobile:account.contact")}
-            variant="link"
-            onPress={() => void Linking.openURL(`mailto:${CONTACT_EMAIL}`)}
+      <CollapsibleCard testID="account.profile" title={t("auth:account.profile")} description={t("auth:account.profileHint")}>
+        <Field label={t("auth:account.displayName")}>
+          <Input
+            testID="account.name"
+            accessibilityLabel={t("auth:account.displayName")}
+            value={displayName}
+            onChangeText={setDisplayName}
+            editable={online}
+            autoComplete="name"
           />
-          <Text testID="account.version" size="sm" color={tokens.colors.mutedForeground}>
-            {t("mobile:account.version", { version: Constants.expoConfig?.version ?? "" })}
+        </Field>
+        <Field label={t("auth:account.email")} description={t("auth:account.emailHint")}>
+          <Input accessibilityLabel={t("auth:account.email")} value={user?.email ?? ""} editable={false} muted />
+        </Field>
+        {saveName.error ? <Alert variant="destructive">{saveName.error}</Alert> : null}
+        {nameSaved ? <Alert>{t("auth:account.nameSaved")}</Alert> : null}
+        <Button testID="account.save-name" title={t("auth:account.saveName")} fullWidth disabled={!online || saveName.busy} onPress={() => void saveName.run()} />
+        <NetworkNote />
+      </CollapsibleCard>
+      <CollapsibleCard testID="account.password" title={t("auth:changePassword.title")}>
+        <PasswordForm testID="account.password" />
+      </CollapsibleCard>
+      <CollapsibleCard
+        testID="account.data"
+        title={t("auth:account.dataTitle")}
+        description={t("auth:account.dataHint")}
+        contentStyle={{ alignItems: "flex-start" }}
+      >
+        <Button testID="account.legal" title={t("content:legal.title")} variant="link" onPress={() => router.push("/legal/mentions")} />
+        <Button testID="account.privacy" title={t("content:privacy.title")} variant="link" onPress={() => router.push("/legal/privacy")} />
+        <View style={{ gap: tokens.space[1] }}>
+          <Button
+            testID="account.export"
+            title={t("auth:account.exportAction")}
+            variant="link"
+            disabled={!online || download.busy}
+            onPress={() => void download.run()}
+          />
+          <Text size="sm" color={tokens.colors.mutedForeground}>
+            {t("auth:account.exportHint")}
           </Text>
-        </CardContent>
-      </Card>
+          {download.error ? <Alert variant="destructive" testID="account.export-error">{download.error}</Alert> : null}
+          <NetworkNote />
+        </View>
+        <Button testID="account.licenses" title={t("mobile:account.licenses")} variant="link" onPress={() => router.push("/legal/licenses")} />
+        <Button
+          testID="account.contact"
+          title={t("mobile:account.contact")}
+          variant="link"
+          onPress={() => void Linking.openURL(`mailto:${CONTACT_EMAIL}`)}
+        />
+        <Text testID="account.version" size="sm" color={tokens.colors.mutedForeground}>
+          {t("mobile:account.version", { version: Constants.expoConfig?.version ?? "" })}
+        </Text>
+      </CollapsibleCard>
       <Button testID="account.logout" title={t("common:nav.logout")} variant="neutral" fullWidth onPress={logout} />
       <Separator />
       <View style={{ gap: tokens.space[2], marginBottom: tokens.space[2] }}>

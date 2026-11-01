@@ -1,0 +1,8 @@
+# Sur « Mon compte » : déplie la carte « Vos données et informations », repliée à l'ouverture (009).
+appId: app.ohyoushouldnt.mobile
+---
+- scrollUntilVisible:
+    element:
+      id: account.data-toggle
+- tapOn:
+    id: account.data-toggle

@@ -12,6 +12,7 @@ tags:
       EMAIL: alex@example.test
 - tapOn:
     id: open-account
+- runFlow: ../subflows/open-account-data.yaml
 - scrollUntilVisible:
     element:
       id: account.version

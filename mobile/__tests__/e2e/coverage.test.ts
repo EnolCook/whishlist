@@ -5,7 +5,11 @@ import { readFlowHeader } from "../../scripts/e2e/flows.cjs";
 
 const repo = join(__dirname, "../../..");
 const flowsDir = join(repo, "mobile/.maestro/flows");
-const specs = { "005": "specs/005-mobile-list-app/spec.md", "006": "specs/006-mobile-legal-account/spec.md" };
+const specs = {
+  "005": "specs/005-mobile-list-app/spec.md",
+  "006": "specs/006-mobile-legal-account/spec.md",
+  "009": "specs/009-account-cards-expand/spec.md",
+};
 
 function storiesOf(feature: string, file: string): string[] {
   const text = readFileSync(join(repo, file), "utf8");
@@ -35,7 +39,7 @@ test("every line of exclusions.md gives a reason and links to a quickstart secti
   expect(wrong.map((cells) => `${cells[1]} — ${cells[2]}`)).toEqual([]);
 });
 
-test("every story of features 005 and 006 has a flow, or is listed as a whole story in exclusions.md", () => {
+test("every story of the mobile features has a flow, or is listed as a whole story in exclusions.md", () => {
   const covered = new Set(flows.flatMap(tagsOf));
   const exclusions = readFileSync(join(repo, "mobile/.maestro/exclusions.md"), "utf8");
   const wholeStories = new Set(
@@ -46,6 +50,6 @@ test("every story of features 005 and 006 has a flow, or is listed as a whole st
       .map((cells) => cells[1]),
   );
   const stories = Object.entries(specs).flatMap(([feature, file]) => storiesOf(feature, file));
-  expect(stories.length).toBeGreaterThanOrEqual(10);
+  expect(stories.length).toBeGreaterThanOrEqual(12);
   expect(stories.filter((story) => !covered.has(story) && !wholeStories.has(story))).toEqual([]);
 });

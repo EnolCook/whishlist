@@ -9,7 +9,7 @@ import { Alert } from "@/ui/Alert";
 import { Badge } from "@/ui/Badge";
 import { BrandHeader } from "@/ui/BrandHeader";
 import { Button } from "@/ui/Button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/ui/Card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CollapsibleCard } from "@/ui/Card";
 import { ContentPage } from "@/ui/ContentPage";
 import { ContentSection, ContentText } from "@/ui/ContentSection";
 import { Empty } from "@/ui/Empty";
@@ -106,6 +106,14 @@ function Components() {
             <CardDescription>{"Elle s’enfonce à l’appui."}</CardDescription>
           </CardHeader>
         </Card>
+        <CollapsibleCard title="Carte repliable" description="Touchez l’en-tête pour la déplier.">
+          <Field label="Nom affiché">
+            <Input accessibilityLabel="Nom affiché" />
+          </Field>
+        </CollapsibleCard>
+        <CollapsibleCard title="Carte dépliée au départ" defaultExpanded>
+          <Button title="Enregistrer" fullWidth />
+        </CollapsibleCard>
       </Section>
       <Section title="Badges et étoiles">
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tokens.space[3] }}>

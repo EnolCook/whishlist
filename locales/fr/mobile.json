@@ -57,5 +57,9 @@
     "licensesEyebrow": "Informations légales",
     "licensesTitle": "Licences",
     "licensesIntro": "L’app est construite avec ces logiciels libres. Touchez un nom pour lire sa licence."
+  },
+  "collapsible": {
+    "expand": "Déplier",
+    "collapse": "Replier"
   }
 }

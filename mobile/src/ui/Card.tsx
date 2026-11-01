@@ -3,6 +3,7 @@ import { View, type StyleProp, type ViewStyle } from "react-native";
 
 import { tokens } from "@/theme/tokens";
 
+import { AccordionChevron, AccordionContent, AccordionTrigger, useAccordion } from "./Accordion";
 import { PressableShadow, Shadow } from "./Shadow";
 import { Text } from "./Text";
 
@@ -40,6 +41,47 @@ export function Card({
     >
       {children}
     </PressableShadow>
+  );
+}
+
+/**
+ * Carte repliable : l'accordéon du site (`components/ui/accordion.tsx`, voir `./Accordion`) dans
+ * la boîte de `Card`. Seul l'en-tête est un bouton.
+ */
+export function CollapsibleCard({
+  title,
+  description,
+  children,
+  defaultExpanded = false,
+  contentStyle,
+  testID,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  defaultExpanded?: boolean;
+  /** Style du `CardContent` (une liste de liens alignés à gauche, par exemple). */
+  contentStyle?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
+  const { expanded, toggle, progress } = useAccordion(defaultExpanded);
+  return (
+    <Shadow testID={testID} style={{ paddingVertical: spacing }}>
+      <AccordionTrigger expanded={expanded} onPress={toggle} label={title} testID={testID ? `${testID}-toggle` : undefined}>
+        <CardHeader action={<AccordionChevron progress={progress} testID={testID ? `${testID}-chevron` : undefined} />}>
+          <CardTitle>{title}</CardTitle>
+          {description ? <CardDescription>{description}</CardDescription> : null}
+        </CardHeader>
+      </AccordionTrigger>
+      <AccordionContent
+        expanded={expanded}
+        progress={progress}
+        testID={testID ? `${testID}-content` : undefined}
+        style={{ paddingTop: spacing }}
+      >
+        <CardContent style={contentStyle}>{children}</CardContent>
+      </AccordionContent>
+    </Shadow>
   );
 }
 

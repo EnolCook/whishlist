@@ -1,11 +1,13 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
-import { StyleSheet } from "react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { AccessibilityInfo, Animated, Keyboard, StyleSheet } from "react-native";
+
+import { i18n } from "@/i18n";
 
 import { ListThemeProvider } from "@/theme/ListTheme";
 import { tokens } from "@/theme/tokens";
 import { Badge } from "@/ui/Badge";
 import { Button, type ButtonVariant } from "@/ui/Button";
-import { Card } from "@/ui/Card";
+import { Card, CollapsibleCard } from "@/ui/Card";
 import { Input } from "@/ui/Input";
 import { PillTabs } from "@/ui/PillTabs";
 import { Text } from "@/ui/Text";
@@ -124,4 +126,156 @@ test("PillTabs: the active tab is blue with white text", async () => {
   expect(StyleSheet.flatten(screen.getByText("Idées (8)").props.style)).toMatchObject({ color: tokens.colors.white });
   expect(style("tab-archives-box")).toMatchObject({ backgroundColor: tokens.colors.white });
   expect(screen.getAllByRole("tab")[0]).toBeSelected();
+});
+
+describe("CollapsibleCard", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("fr");
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  async function renderCard(props: { defaultExpanded?: boolean; onAction?: () => void } = {}) {
+    await render(
+      <CollapsibleCard testID="card" title="Profil" description="Votre nom." defaultExpanded={props.defaultExpanded}>
+        <Input accessibilityLabel="Nom" />
+        <Button title="Enregistrer" onPress={props.onAction ?? (() => {})} />
+      </CollapsibleCard>,
+    );
+  }
+
+  function expectCollapsed(collapsed: boolean) {
+    const toggle = screen.getByTestId("card-toggle");
+    expect(toggle.props.accessibilityState).toMatchObject({ expanded: !collapsed });
+    expect(toggle.props.accessibilityHint).toBe(collapsed ? "Déplier" : "Replier");
+    const content = screen.getByTestId("card-content", { includeHiddenElements: true });
+    // Caché aux lecteurs d'écran : introuvable pour une requête qui imite un lecteur d'écran.
+    expect(screen.queryByLabelText("Nom")).toBe(collapsed ? null : screen.getByLabelText("Nom"));
+    expect(content.props.accessibilityElementsHidden).toBe(collapsed);
+    expect(content.props.importantForAccessibility).toBe(collapsed ? "no-hide-descendants" : "auto");
+    expect(content.props.pointerEvents).toBe(collapsed ? "none" : "auto");
+  }
+
+  test("collapsed by default: title and description shown, header is a button, content hidden", async () => {
+    await renderCard();
+    expect(screen.getByText("Profil")).toBeOnTheScreen();
+    expect(screen.getByText("Votre nom.")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Profil" })).toBe(screen.getByTestId("card-toggle"));
+    expectCollapsed(true);
+  });
+
+  test("defaultExpanded: open on mount", async () => {
+    await renderCard({ defaultExpanded: true });
+    expectCollapsed(false);
+  });
+
+  test("the header toggles the card; a button in the content does not", async () => {
+    const onAction = jest.fn();
+    await renderCard({ onAction });
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expectCollapsed(false);
+    await fireEvent.press(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(onAction).toHaveBeenCalled();
+    expectCollapsed(false);
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expectCollapsed(true);
+  });
+
+  test("the content stays mounted: typed text survives a collapse", async () => {
+    await renderCard({ defaultExpanded: true });
+    await fireEvent.changeText(screen.getByLabelText("Nom"), "Alexandra");
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(screen.getByDisplayValue("Alexandra")).toBeOnTheScreen();
+  });
+
+  test("collapsing dismisses the keyboard", async () => {
+    const dismiss = jest.spyOn(Keyboard, "dismiss");
+    await renderCard({ defaultExpanded: true });
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(dismiss).toHaveBeenCalled();
+  });
+
+  test("animates in 200 ms", async () => {
+    const timing = jest.spyOn(Animated, "timing");
+    await renderCard();
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 1, duration: 200 }));
+  });
+
+  test("reduce motion: no animation, the state still changes", async () => {
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
+    const timing = jest.spyOn(Animated, "timing");
+    await renderCard();
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(timing).not.toHaveBeenCalled();
+    expectCollapsed(false);
+  });
+
+  test("quick repeated taps: the animation goes to the last requested state", async () => {
+    const timing = jest.spyOn(Animated, "timing");
+    await renderCard();
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(timing).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ toValue: 0, duration: 200 }));
+    expectCollapsed(true);
+  });
+
+  test("tapping a field of the open card does not collapse it", async () => {
+    await renderCard({ defaultExpanded: true });
+    await fireEvent(screen.getByLabelText("Nom"), "focus");
+    await fireEvent.press(screen.getByLabelText("Nom"));
+    expectCollapsed(false);
+  });
+
+  test("the chevron points down when collapsed, up when expanded", async () => {
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
+    await renderCard();
+    const rotation = () => StyleSheet.flatten(screen.getByTestId("card-chevron").props.style).transform;
+    expect(rotation()).toEqual([{ rotate: "0deg" }]);
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(rotation()).toEqual([{ rotate: "180deg" }]);
+  });
+
+  test("reduce motion turned on while the screen is open: the next toggle is not animated", async () => {
+    let onChange: ((reduced: boolean) => void) | undefined;
+    jest.spyOn(AccessibilityInfo, "addEventListener").mockImplementation((_event, listener) => {
+      onChange = listener as (reduced: boolean) => void;
+      return { remove: () => {} } as ReturnType<typeof AccessibilityInfo.addEventListener>;
+    });
+    const timing = jest.spyOn(Animated, "timing");
+    await renderCard();
+    await act(() => onChange?.(true));
+    await fireEvent.press(screen.getByTestId("card-toggle"));
+    expect(timing).not.toHaveBeenCalled();
+    expectCollapsed(false);
+  });
+
+  test("the open card follows the height of its content (an alert that appears)", async () => {
+    await renderCard({ defaultExpanded: true });
+    const measure = screen.getByTestId("card-content-measure");
+    await fireEvent(measure, "layout", { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 120 } } });
+    expect(StyleSheet.flatten(screen.getByTestId("card-content").props.style).height).toBe(120);
+    await fireEvent(measure, "layout", { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 180 } } });
+    expect(StyleSheet.flatten(screen.getByTestId("card-content").props.style).height).toBe(180);
+  });
+
+  test("contentStyle goes to the content of the card", async () => {
+    await render(
+      <CollapsibleCard testID="card" title="Liens" defaultExpanded contentStyle={{ alignItems: "flex-start" }}>
+        <Text>Mentions légales</Text>
+      </CollapsibleCard>,
+    );
+    const content = screen.getByTestId("card-content-measure").children[0];
+    expect(typeof content === "object" && StyleSheet.flatten(content.props.style)).toMatchObject({ alignItems: "flex-start" });
+  });
+
+  test("keeps the box of Card", async () => {
+    await renderCard();
+    expect(style("card")).toMatchObject({ borderWidth: tokens.borderWidth, borderColor: tokens.colors.black });
+    expectShadow("card");
+  });
 });

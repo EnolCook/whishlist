@@ -57,5 +57,9 @@
     "licensesEyebrow": "Legal information",
     "licensesTitle": "Licenses",
     "licensesIntro": "The app is built with this open-source software. Tap a name to read its license."
+  },
+  "collapsible": {
+    "expand": "Expand",
+    "collapse": "Collapse"
   }
 }

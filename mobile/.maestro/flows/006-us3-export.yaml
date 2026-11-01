@@ -9,6 +9,7 @@ tags:
 - runFlow: ../subflows/register.yaml
 - tapOn:
     id: open-account
+- runFlow: ../subflows/open-account-data.yaml
 - scrollUntilVisible:
     element:
       id: account.export
@@ -16,6 +17,15 @@ tags:
     id: account.export
 - runFlow:
     file: ../subflows/close-share-sheet.yaml
+# Sur iOS, l'appui qui ferme la feuille peut toucher l'en-tête de la carte dessous et la replier :
+# on la redéplie pour vérifier l'absence d'erreur.
+- runFlow:
+    when:
+      notVisible:
+        id: account.export
+    commands:
+      - tapOn:
+          id: account.data-toggle
 - extendedWaitUntil:
     visible:
       id: account.export

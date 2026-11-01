@@ -1,0 +1,46 @@
+# 009 US1 : la carte Profil de « Mon compte » s'ouvre repliée, se déplie pour changer le nom, puis se replie.
+# Lecteurs d'écran, réduire les animations et mode avion : à la main (exclusions.md).
+appId: app.ohyoushouldnt.mobile
+name: "009 US1 — Déplier la carte Profil pour changer son nom"
+tags:
+  - 009-us1
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runScript: ../scripts/unique.js
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- tapOn:
+    id: open-account
+- extendedWaitUntil:
+    visible:
+      id: account.profile-toggle
+    timeout: 10000
+- assertNotVisible:
+    id: account.name
+
+# Dépliée : le formulaire apparaît et reste ouvert après l'enregistrement.
+- tapOn:
+    id: account.profile-toggle
+- assertVisible:
+    id: account.name
+- tapOn:
+    id: account.name
+- eraseText: 40
+- inputText: Alex ${output.unique}
+- hideKeyboard
+- tapOn:
+    id: account.save-name
+- extendedWaitUntil:
+    visible: ${output.t.auth.account.nameSaved}
+    timeout: 10000
+- assertVisible:
+    id: account.name
+
+# Repliée de nouveau.
+- tapOn:
+    id: account.profile-toggle
+- assertNotVisible:
+    id: account.name

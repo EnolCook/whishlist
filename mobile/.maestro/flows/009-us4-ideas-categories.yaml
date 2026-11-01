@@ -1,0 +1,49 @@
+# 009 US4 : les catégories de l'onglet Idées s'ouvrent repliées et se déplient avec la même animation
+# que les cartes du compte ; chacune garde son état. Animation et « réduire les animations » : à la main.
+appId: app.ohyoushouldnt.mobile
+name: "009 US4 — Déplier une catégorie d'idées"
+tags:
+  - 009-us4
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- tapOn:
+    id: lists.card-demo-list
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000
+- assertNotVisible: Lampe de lecture
+
+# Dépliée : ses idées apparaissent.
+- runFlow:
+    file: ../subflows/open-category.yaml
+    env:
+      CATEGORY: Maison
+      ITEM: Lampe de lecture
+
+# Une seconde catégorie s'ouvre sans replier la première.
+- scrollUntilVisible:
+    element:
+      id: list.category-demo-list:loisirs
+- tapOn:
+    id: list.category-demo-list:loisirs
+- scrollUntilVisible:
+    element:
+      text: Jeu de société coopératif
+- scrollUntilVisible:
+    element:
+      text: Lampe de lecture
+    direction: UP
+
+# Repliée de nouveau, par son identifiant.
+- scrollUntilVisible:
+    element:
+      id: list.category-demo-list:maison
+    direction: UP
+- tapOn:
+    id: list.category-demo-list:maison
+- assertNotVisible: Lampe de lecture

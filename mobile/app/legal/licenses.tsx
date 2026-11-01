@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BackLink } from "@/ui/BackLink";
 import { ContentPage } from "@/ui/ContentPage";
-import { ContentSection, ContentText } from "@/ui/ContentSection";
+import { CollapsibleContentSection, ContentText } from "@/ui/ContentSection";
 import { ScreenList } from "@/ui/Screen";
 
 import licenses from "@/legal/licenses.json";
@@ -11,12 +10,13 @@ import licenses from "@/legal/licenses.json";
 type License = (typeof licenses)[number];
 
 function LicenseRow({ entry }: { entry: License }) {
-  const [open, setOpen] = useState(false);
   return (
-    <ContentSection title={entry.name} onPress={() => setOpen((value) => !value)} expanded={open}>
-      <ContentText>{`${entry.version} · ${entry.license}`}</ContentText>
-      {open && entry.text ? <ContentText>{entry.text}</ContentText> : null}
-    </ContentSection>
+    <CollapsibleContentSection
+      title={entry.name}
+      summary={<ContentText>{`${entry.version} · ${entry.license}`}</ContentText>}
+    >
+      {entry.text ? <ContentText>{entry.text}</ContentText> : null}
+    </CollapsibleContentSection>
   );
 }
 

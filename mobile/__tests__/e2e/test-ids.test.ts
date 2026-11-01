@@ -49,8 +49,10 @@ test("every id: used by a flow is a testID of the app", () => {
     // Identifiants d'Android (`<paquet>:id/<nom>`), propres au système.
     id.includes(":id/") ||
     literals.has(id) ||
-    // `Button` pose `<testID>-box` sur sa boîte, `ConfirmDialog` `<testID>-keep` sur « Conserver ».
-    ["-box", "-keep"].some((suffix) => id.endsWith(suffix) && literals.has(id.slice(0, -suffix.length))) ||
+    // `Button` pose `<testID>-box` sur sa boîte, `ConfirmDialog` `<testID>-keep` sur « Conserver »,
+    // `CollapsibleCard` `<testID>-toggle` sur son en-tête, `-chevron` sur l'indicateur et `-content` sur son contenu,
+    // `PasswordForm` `<testID>-current`, `-next`, `-confirm` et `-submit` sur ses champs et son bouton.
+    ["-box", "-keep", "-toggle", "-chevron", "-content", "-current", "-next", "-confirm", "-submit"].some((suffix) => id.endsWith(suffix) && literals.has(id.slice(0, -suffix.length))) ||
     [...prefixes].some((prefix) => id.startsWith(prefix) && id.length > prefix.length);
   const used = usedIds();
   expect(used.length).toBeGreaterThan(20);
