@@ -41,7 +41,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: PACKAGE,
     supportsTablet: false,
-    infoPlist: { CFBundleAllowMixedLocalizations: true },
+    // Chiffrement : HTTPS seulement (exempté), pour que TestFlight ne demande rien à chaque build.
+    infoPlist: { CFBundleAllowMixedLocalizations: true, ITSAppUsesNonExemptEncryption: false },
   },
   android: {
     package: PACKAGE,
