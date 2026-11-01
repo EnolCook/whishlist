@@ -21,7 +21,7 @@ Chaque phase de user story se termine par une tâche **« Commit de la story »*
 - Chaque commit est vert (lint, types, tests). Un test existant à adapter va dans le commit de la story qui rend l'adaptation nécessaire.
 - Un fichier modifié par deux stories est commité en deux temps (seulement les changements de la story en cours).
 - La phase Polish a son propre commit (`chore:` ou `feat:` selon le contenu). Les corrections de la revue lancée par le hook `after_implement` forment un commit à part, `fix: corrections de la revue`, avec `review.md`.
-- Message en français, préfixé `feat:`, `fix:` ou `chore:`, terminé par `(USn)`.
+- Message en anglais, préfixé `feat:`, `fix:` ou `chore:`, terminé par `(USn)`.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -105,7 +105,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
-- [ ] T017b [US1] Commit de la story : `npm run lint`, `npm run typecheck` et `npm test` verts, puis proposer le commit `feat: <résumé> (US1)` des fichiers de cette story (et des phases précédentes encore non commitées) ; attendre l'accord avant de le créer
+- [ ] T017b [US1] Commit de la story : `npm run lint`, `npm run typecheck` et `npm test` verts, puis proposer le commit `feat: <English summary> (US1)` des fichiers de cette story (et des phases précédentes encore non commitées) ; attendre l'accord avant de le créer
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -128,7 +128,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T021 [US2] Implement [Service] in src/services/[service].py
 - [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T023 [US2] Integrate with User Story 1 components (if needed)
-- [ ] T023b [US2] Commit de la story : `npm run lint`, `npm run typecheck` et `npm test` verts, puis proposer le commit `feat: <résumé> (US2)` des fichiers de cette story (et des phases précédentes encore non commitées) ; attendre l'accord avant de le créer
+- [ ] T023b [US2] Commit de la story : `npm run lint`, `npm run typecheck` et `npm test` verts, puis proposer le commit `feat: <English summary> (US2)` des fichiers de cette story (et des phases précédentes encore non commitées) ; attendre l'accord avant de le créer
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -150,7 +150,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
 - [ ] T027 [US3] Implement [Service] in src/services/[service].py
 - [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T028b [US3] Commit de la story : `npm run lint`, `npm run typecheck` et `npm test` verts, puis proposer le commit `feat: <résumé> (US3)` des fichiers de cette story (et des phases précédentes encore non commitées) ; attendre l'accord avant de le créer
+- [ ] T028b [US3] Commit de la story : `npm run lint`, `npm run typecheck` et `npm test` verts, puis proposer le commit `feat: <English summary> (US3)` des fichiers de cette story (et des phases précédentes encore non commitées) ; attendre l'accord avant de le créer
 
 **Checkpoint**: All user stories should now be independently functional
 

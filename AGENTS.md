@@ -48,7 +48,7 @@ La revue de code les ignore :
 - **Langue du code** : identifiants en anglais. Les commentaires peuvent être en français ou en anglais.
 - **Variables d'environnement** : une nouvelle variable est ajoutée au tableau du `README.md`, à `.env.example` et à `deploy/compose.prod.yml` (préfixe `WHISHLIST_`). Un service externe reste optionnel : sans sa variable, l'app marche sans lui. Les variables de la commande e2e (`E2E_API_URL`, `E2E_LANG`, `E2E_METRO_URL`) ne configurent pas l'app : elles sont documentées dans `mobile/.maestro/README.md` seulement. De même, les variables des scripts d'exploitation de `deploy/` (`WHISHLIST_DATA_DIR`, `WHISHLIST_BACKUP_*`, `WHISHLIST_CONTAINER`…) se lisent sur l'hôte, pas dans l'app : elles vont dans le tableau « Scripts d'exploitation » du `README.md`, pas dans `.env.example` ni `deploy/compose.prod.yml`.
 - **Données** : aucune donnée personnelle ni identifiant réel dans le dépôt. `data/seed.json` et la démo n'utilisent que des comptes fictifs (`@example.test`).
-- **Commits** : en français, préfixés `feat:`, `fix:` ou `chore:`.
+- **Commits** : en anglais (depuis le 2026-11-01 ; l'historique antérieur est en français), préfixés `feat:`, `fix:` ou `chore:`.
 
 ## Tests
 
