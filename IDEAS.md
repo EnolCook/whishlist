@@ -9,58 +9,68 @@ futures mises à jour.
 
 ---
 
-## Bugs
+## Ordre de marche
 
-### B1 — Le dialogue « Modifier l'idée » est trop étroit, les listes déroulantes sont illisibles
+Classement par *rapport valeur / coût / risque*, pas par envie. Trois vagues : d'abord ce qui est
+court et sûr, ensuite ce qui touche au schéma et au contrat d'API, enfin les gros morceaux.
 
-**Observé** : en modifiant une idée, la fenêtre s'ouvre petite ; « Catégorie » affiche `Div…` et
-« Pour qui ? » n'affiche rien du tout, juste le chevron. Inutilisable sans ouvrir chaque menu.
+### Vague 1 — court, sans migration, à faire en premier
 
-**Cause** : `components/ui/dialog.tsx:54` plafonne le dialogue à `sm:max-w-lg` (512 px, moins
-`p-4` → ~480 px utiles). Or `components/site/item-form.tsx:206` passe en grille de 4 colonnes
-`sm:grid-cols-[1fr_1fr_6.5rem_auto]` — et le préfixe `sm:` de Tailwind se déclenche sur la largeur
-**de la fenêtre**, pas sur celle du conteneur. Sur un écran large la grille se met donc en
-4 colonnes alors qu'elle n'a que 480 px : le prix prend 104 px, les étoiles ~140 px, et il reste
-~100 px pour chacune des deux listes déroulantes. Le formulaire a été dessiné pour la pleine
-largeur de la page (`app/listes/[id]/page.tsx:186`), il est réutilisé tel quel dans le dialogue
-(`components/site/ideas-accordion.tsx:353`).
+| # | Quoi | Pourquoi d'abord |
+|---|---|---|
+| 1 | **MAC du déverrouillage de lecture** (`src/auth/read-unlock.ts:15`) | Vrai défaut de sécurité, correction d'une ligne, test évident. Le meilleur rapport du lot. |
+| 2 | **B5 — erreurs CSP** | 33 par page. Diagnostic d'abord : soit c'est cosmétique, soit des styles ne s'appliquent pas en production. Tant qu'on ne sait pas, on ne peut pas arbitrer. |
+| 3 | **Rejoindre une liste sur un GET** (`app/inviter/[token]/page.tsx:43`) | Effet de bord dans un rendu ; passer par un bouton. Petit et isolé. |
+| 4 | **Trous IPv6 du filtre SSRF** (`src/domain/safe-http.ts:52`) | Quelques lignes, entièrement couvrable par des tests purs. |
+| 5 | **B4 — doublons de libellés** | Décision produit à trancher, puis quelques lignes. |
 
-**Pistes** (par ordre de propreté) :
-1. Passer la grille en *container query* (`@container` + `@sm:grid-cols-…`) : le formulaire
-   s'adapte alors à la place réellement disponible, dans la page comme dans le dialogue.
-   C'est la vraie correction, et elle vaut pour tout formulaire réutilisé en dialogue.
-2. Élargir le dialogue quand il porte ce formulaire (`<DialogContent className="sm:max-w-2xl">`).
-   Une ligne, mais ça ne règle que ce cas et casse encore en dessous de ~700 px.
-3. Empiler les champs dans le dialogue uniquement. Simple mais duplique la mise en page.
+Rien là-dedans ne touche au schéma, au contrat d'API ni à l'app mobile : chacun peut partir en
+PR séparée sans coordination.
 
-**Priorité** : haute — c'est un parcours courant et le résultat est inutilisable.
+### Vague 2 — friction produit, périmètre maîtrisé
 
-### B2 — « Mes listes » : seule l'icône ou le titre ouvre la liste, pas la ligne entière
+| # | Quoi | Remarque |
+|---|---|---|
+| 6 | **A1 — alléger la création de liste** | Le plus gros gain ressenti du fichier. Attention : rend `category` et `person` facultatifs dans le contrat et dans l'app mobile, pas seulement sur le site. |
+| 7 | **F3 — « l'occasion me va »** | Petite fonctionnalité, mais c'est le **premier aller-retour complet** colonne → migration → contrat → web → mobile → export. À faire avant A2 : elle sert de patron. |
+| 8 | **A2 — description sur une idée** | Même mécanique que F3, plus une clé dans le prompt d'enrichissement. Bien moins chère une fois F3 passée. |
+| 9 | **Déplacer une idée d'une liste à l'autre** | N'existe pas (vérifié). Manque à l'interface, et bloque tout agent un peu utile (voir F6). Règle de domaine à écrire et à tester. |
 
-**Observé** : il faut viser l'icône ou le texte ; cliquer à côté dans la même carte ne fait rien.
+### Vague 3 — gros morceaux, une à la fois
 
-**Attendu** : toute la carte est cliquable.
+| # | Quoi | Remarque |
+|---|---|---|
+| 10 | **F2 — partage vers l'app mobile** | Indépendant de tout le reste (config Expo + une route). Peut se faire en parallèle. |
+| 11 | **F6 — clé d'API, puis MCP** | Livrer **la clé seule d'abord** : déjà utile pour des scripts, et ça ne préjuge pas du MCP. |
+| 12 | **F1 — prix et suivi de prix** | L'extraction existe déjà ; c'est le *suivi* (table d'historique, rafraîchissement en tâche de fond) qui est lourd. |
+| 13 | **F4 — cadeaux participatifs** | Forme arrêtée (mise en relation, aucun flux d'argent). Reste à trancher la cohabitation avec la réservation. |
+| 14 | **F5 — Secret Santa** | De loin le plus gros. Passer par `/speckit-specify`, et **trancher d'abord qui voit quoi** : c'est ça qui dicte le modèle de données. |
 
-**Note** : à faire en gardant l'accessibilité — ne pas emballer la carte dans un `<a>` si elle
-contient déjà des boutons. Le motif habituel est un lien sur le titre + un pseudo-élément
-`::after` en `position: absolute; inset: 0` qui étend la zone cliquable à la carte.
+### Ce que je ferais ensuite, concrètement
 
-**Priorité** : moyenne.
+Le **1** (MAC du déverrouillage) : c'est une faille réelle, la correction tient en une ligne et le
+test est trivial. Puis le **2** (CSP), parce qu'on ignore encore s'il cache un vrai problème — et
+tant qu'on l'ignore, il peut invalider des arbitrages d'interface pris plus tard.
 
-### B3 — Les virgules dans « Pour qui ? » ne créent pas plusieurs entrées
+---
 
-**Observé** : saisir `Wilh, Nathan, Nous deux` crée une seule entrée nommée
-`Wilh, Nathan, Nous deux` au lieu de trois.
+## Déjà corrigé (branches poussées sur le fork, aucune PR ouverte)
 
-**État du code** : `addPerson` (`src/domain/items.ts`) prend un libellé et un seul ; rien ne
-découpe la chaîne. Ce n'est donc pas une régression, c'est une attente non couverte.
+| Sujet | Branche |
+|---|---|
+| Crénelage du cadeau du hero sur Firefox (rotation conservée ailleurs) | `fix/hero-gift-aliasing` |
+| B1 — dialogue « Modifier l'idée » illisible (requêtes de conteneur) | `fix/item-form-container-queries` |
+| Colonne « niveau d'envie » qui écrasait la grille en pleine page | `improve/item-form-priority-column` |
+| B2 — toute la carte de « Mes listes » ouvre la liste | `fix/list-card-click-target` |
+| B3 — les virgules créent plusieurs catégories / « qui » | `feat/split-labels-on-comma` |
 
-**À décider** : découper sur `,` à la saisie ? Le risque est faible (une virgule dans un prénom
-est rare) mais réel pour un libellé du genre `Papa, maman`. Une alternative sans ambiguïté :
-valider chaque entrée par `Entrée` et afficher des puces (le composant `label-chips.tsx` existe
-déjà et fait exactement ça ailleurs dans l'app).
+Les deux branches du formulaire touchent la même ligne : chacune s'applique seule sur `main`,
+mais les fusionner toutes les deux demande une résolution d'une ligne (réunir les deux jeux de
+classes).
 
-**Priorité** : moyenne — surprend à la première utilisation.
+---
+
+## Bugs ouverts
 
 ### B4 — Rien n'empêche deux « qui » (ou deux catégories) de même nom
 
@@ -73,6 +83,28 @@ ajouté), le refuser avec une erreur, ou le laisser passer comme aujourd'hui. Le
 existe déjà *à l'intérieur* d'une saisie (`splitLabels`), pas contre l'existant.
 
 **Priorité** : basse.
+
+---
+
+### B5 — 33 erreurs CSP à chaque chargement de page
+
+**Observé** : la console du navigateur affiche ~33 fois
+`Applying inline style violates the following Content Security Policy directive 'style-src ...'`
+sur l'accueil, connecté comme déconnecté.
+
+**Pré-existant** : compté sur `main` et sur nos branches, **33 des deux côtés** — ce n'est pas une
+régression de nos changements.
+
+**Pas encore diagnostiqué** : la politique pose pourtant `style-src-attr 'unsafe-inline'`
+(`src/server/content-security.ts`), donc l'attribut `style` est censé être autorisé ; le message
+pointe `style-src`, ce qui ferait plutôt penser à une feuille ou un élément `<style>` injecté sans
+nonce par un composant d'interface (Base UI ?).
+
+**Pourquoi ça compte** : en développement c'est du bruit, mais si un style est réellement refusé,
+il ne s'applique pas non plus en production. À qualifier avant de décider quoi que ce soit :
+trouver *quel* composant déclenche l'erreur, et si quelque chose casse visuellement.
+
+**Priorité** : à diagnostiquer tôt (vague 1), à corriger selon ce qu'on trouve.
 
 ---
 
