@@ -238,6 +238,27 @@
 .guest-hero__gift {
   animation: guest-bob 3.2s ease-in-out infinite;
 }
+/*
+ * Sur Firefox, les traits noirs du cadeau grouillent quand il pivote pendant le balancement ;
+ * Chrome reste net (Safari n'a pas été testé). La cause exacte n'est pas établie, probablement le
+ * ré-échantillonnage d'une couche composée. Poser la rotation sur un groupe interne ou passer par
+ * SMIL n'y change rien, donc Firefox monte et descend sans tourner. Placé avant le bloc
+ * `prefers-reduced-motion`, qui doit continuer à primer.
+ */
+@supports (-moz-appearance: none) {
+  .guest-hero__gift {
+    animation-name: guest-bob-upright;
+  }
+}
+@keyframes guest-bob-upright {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
 .guest-hero__brand {
   animation: guest-rise 0.7s ease-out both;
 }
