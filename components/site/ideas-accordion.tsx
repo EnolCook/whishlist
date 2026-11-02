@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon } from "lucide-react";
+import { ArchiveIcon, ChevronDownIcon, ChevronUpIcon, GripVerticalIcon } from "lucide-react";
 import { parsePriority } from "@/src/domain/priority";
 import {
   deleteItemAction,
@@ -313,15 +313,6 @@ export function IdeasAccordion({
                             >
                               {t("accordion.edit")}
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              aria-label={t("accordion.archiveAria", { name: item.name })}
-                              onClick={() => onArchive(item.id)}
-                            >
-                              {t("accordion.archive")}
-                            </Button>
                             {typeOrder.length > 1 ? (
                               <NativeSelect
                                 size="sm"
@@ -337,6 +328,17 @@ export function IdeasAccordion({
                                 ))}
                               </NativeSelect>
                             ) : null}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="ms-auto"
+                              aria-label={t("accordion.archiveAria", { name: item.name })}
+                              onClick={() => onArchive(item.id)}
+                            >
+                              <ArchiveIcon aria-hidden />
+                              {t("accordion.archive")}
+                            </Button>
                           </div>
                         </div>
                       </div>
