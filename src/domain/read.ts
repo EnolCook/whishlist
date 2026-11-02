@@ -9,6 +9,7 @@ export interface PublicItem {
   imageUrl: string | null;
   priceLabel: string | null;
   priority: string | null;
+  secondHandOk: boolean;
   personLabel: string;
   reserved: boolean;
   /** Réservation faite par le visiteur courant (compte ou cookie). */
@@ -53,6 +54,7 @@ export function toPublicItem(
     imageUrl: item.imageUrl ?? null,
     priceLabel: formatPrice(item.priceCents, locale),
     priority: item.priority,
+    secondHandOk: item.secondHandOk,
     personLabel: person?.label ?? item.personId,
     reserved: Boolean(reservation),
     mine,

@@ -34,6 +34,7 @@ function doc(): Database {
     imageUrl: null,
     priceCents: 1000,
     priority: null,
+    secondHandOk: false,
     personId: "p",
     sortOrder: 1,
     archived: true,

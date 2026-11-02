@@ -162,7 +162,9 @@
     "aiBody": "Ces champs ont été préremplis à l’aide d’un modèle de langage. Relisez-les avant d’enregistrer.",
     "aiTokens": "{{count}} tokens utilisés pour cette récupération",
     "aiCo2": "Environ {{grams}} g de CO₂e — soit l’équivalent d’environ {{beef}} g de viande rouge",
-    "aiDisclaimer": "Ordres de grandeur indicatifs, pas un bilan carbone certifié."
+    "aiDisclaimer": "Ordres de grandeur indicatifs, pas un bilan carbone certifié.",
+    "secondHandOk": "L’occasion me va",
+    "secondHandOkHint": "La personne qui offre le verra sur la liste partagée."
   },
   "accordion": {
     "hint": "Ouvrez une catégorie pour voir ses idées. Les flèches changent l’ordre des catégories. Le menu déplace une idée.",
@@ -176,5 +178,6 @@
     "archiveAria": "Archiver « {{name}} »",
     "editTitle": "Modifier l’idée cadeau",
     "emptyCategory": "Aucune idée dans cette catégorie."
-  }
+  },
+  "secondHandBadge": "Occasion OK"
 }

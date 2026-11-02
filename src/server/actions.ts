@@ -341,6 +341,7 @@ export type ItemFormDraft = {
   imageUrl: string;
   price: string;
   priority: string;
+  secondHandOk: boolean;
 };
 
 export type SaveItemState = {
@@ -357,6 +358,7 @@ function itemDraftFromForm(formData: FormData): ItemFormDraft {
     imageUrl: String(formData.get("imageUrl") ?? ""),
     price: String(formData.get("price") ?? ""),
     priority: String(formData.get("priority") ?? ""),
+    secondHandOk: formData.get("secondHandOk") === "on",
   };
 }
 

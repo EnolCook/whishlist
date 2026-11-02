@@ -37,6 +37,7 @@ function itemFields(input: ChangePayloads["updateItem"], intlLocale: string) {
     url: input.url?.trim() || null,
     imageUrl: input.imageUrl?.trim() || null,
     priority: input.priority?.trim() || null,
+    secondHandOk: input.secondHandOk ?? false,
     ...priceFields(input, intlLocale),
   };
 }
