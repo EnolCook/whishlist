@@ -88,9 +88,11 @@ export default async function HomePage() {
       ) : (
         <div className="flex flex-col gap-3">
           {mine.map((list) => (
-            <Card key={list.id} size="sm">
+            // `relative` + `after:inset-0` sur le lien du titre : toute la carte est cliquable,
+            // alors qu'il n'y a toujours qu'un seul lien à parcourir au clavier.
+            <Card key={list.id} size="sm" className="relative">
               <CardHeader className="flex flex-row items-center gap-3">
-                <Link href={withLocale(locale, `/listes/${list.id}`)} className="shrink-0" tabIndex={-1} aria-hidden>
+                <div className="shrink-0">
                   <WishlistCover
                     coverImageUrl={list.coverImageUrl}
                     theme={resolveTheme(list.theme)}
@@ -98,10 +100,13 @@ export default async function HomePage() {
                     framed={false}
                     alt={list.title}
                   />
-                </Link>
+                </div>
                 <div className="flex min-w-0 flex-col gap-1">
                   <CardTitle>
-                    <Link href={withLocale(locale, `/listes/${list.id}`)} className="hover:underline">
+                    <Link
+                      href={withLocale(locale, `/listes/${list.id}`)}
+                      className="hover:underline after:absolute after:inset-0 after:rounded-base"
+                    >
                       {list.title}
                     </Link>
                   </CardTitle>
