@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { originFromEnv } from "@/src/auth/origin";
 import { getLocale } from "@/src/i18n/server";
-import { withLocale } from "@/src/i18n/locale-path";
+import { internalPath, withLocale } from "@/src/i18n/locale-path";
 
 /** Ancien nom d'hôte, encore servi. Les liens publics doivent viser le domaine actuel. */
 const LEGACY_ORIGIN = "https://wishlist.mesdamesduc.fr";
@@ -25,7 +25,7 @@ export function siteOrigin(): string {
 export function legacyHostRedirect(hostHeader: string | null, pathname: string, search: string): URL | null {
   const host = hostHeader?.split(",")[0]?.trim().toLowerCase().replace(/:\d+$/, "") ?? "";
   if (host !== LEGACY_HOST) return null;
-  if (!pathname.startsWith("/") || pathname.startsWith("//") || pathname.includes("\\")) return null;
+  if (!internalPath(pathname)) return null;
   const url = new URL(PUBLIC_ORIGIN);
   url.pathname = pathname;
   url.search = search;

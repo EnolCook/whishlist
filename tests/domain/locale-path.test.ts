@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decideLocaleRoute, stripLocalePrefix, withLocale } from "../../src/i18n/locale-path";
+import { decideLocaleRoute, internalPath, stripLocalePrefix, withLocale } from "../../src/i18n/locale-path";
 
 test("withLocale ne double pas le préfixe", () => {
   assert.equal(withLocale("fr", "/faq"), "/faq");
@@ -61,4 +61,12 @@ test("une navigation depuis /en garde le préfixe, une adresse française reste 
     locale: "fr",
   });
   assert.equal(decideLocaleRoute({ pathname: "/faq", search: "", nextUrl: "https://evil.example/en" }).type, "continue");
+});
+
+test("internalPath : un chemin du site seulement, jamais une autre origine", () => {
+  assert.equal(internalPath("/inviter/abc?x=1"), "/inviter/abc?x=1");
+  assert.equal(internalPath("/"), "/");
+  for (const value of ["//ailleurs.example", "/\\ailleurs.example", "https://ailleurs.example", "inviter", "", null, 3]) {
+    assert.equal(internalPath(value), null, String(value));
+  }
 });

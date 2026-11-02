@@ -14,7 +14,7 @@ export class LegacyImportError extends Error {
 }
 
 const REQUIRED = ["users", "wishlists", "memberships", "types", "people", "views", "items", "reservations"] as const;
-const OPTIONAL = ["passwordResets", "apiSessions"] as const;
+const OPTIONAL = ["passwordResets", "apiSessions", "emailConfirmations"] as const;
 
 /**
  * Forme attendue de chaque champ dans l'ancien fichier, avant normalisation.
@@ -31,6 +31,7 @@ const FIELDS: { [K in keyof Database]: Record<string, FieldCheck> } = {
     createdAt: "string",
     mustChangePassword: "boolean?",
     sessionVersion: "number?",
+    emailVerifiedAt: "string?",
   },
   wishlists: {
     id: "string",
@@ -86,6 +87,15 @@ const FIELDS: { [K in keyof Database]: Record<string, FieldCheck> } = {
     createdAt: "string",
     expiresAt: "string",
   },
+  emailConfirmations: {
+    id: "string",
+    userId: "string",
+    purpose: ["verify", "change"],
+    email: "string",
+    tokenHash: "string",
+    expiresAt: "string",
+    createdAt: "string",
+  },
 };
 
 function fieldOk(value: unknown, check: FieldCheck): boolean {
@@ -137,7 +147,10 @@ function checkFields(raw: Record<string, unknown>): string[] {
 export function normalizeDocument(doc: Database): Database {
   if (!doc.passwordResets) doc.passwordResets = [];
   if (!doc.apiSessions) doc.apiSessions = [];
+  if (!doc.emailConfirmations) doc.emailConfirmations = [];
   for (const user of doc.users) {
+    // Comptes d'avant la validation des adresses : vérifiés d'office (010, FR-005b).
+    if (user.emailVerifiedAt === undefined) user.emailVerifiedAt = user.createdAt;
     if (user.mustChangePassword === undefined) user.mustChangePassword = false;
     if (typeof user.sessionVersion !== "number") user.sessionVersion = 0;
   }
@@ -208,6 +221,7 @@ export function checkDocument(doc: Database): string[] {
   idDoubled("reservations", doc.reservations);
   idDoubled("passwordResets", doc.passwordResets);
   idDoubled("apiSessions", doc.apiSessions);
+  idDoubled("emailConfirmations", doc.emailConfirmations);
   const membership = (m: Database["memberships"][number]) => `${m.wishlistId}/${m.userId}`;
   doubled("memberships", "adhésion en double", sameId(duplicates(doc.memberships, membership, membership)));
 
@@ -216,6 +230,16 @@ export function checkDocument(doc: Database): string[] {
   doubled("wishlists", "inviteToken en double", duplicates(doc.wishlists, (w) => w.inviteToken, byId));
   doubled("passwordResets", "tokenHash en double", duplicates(doc.passwordResets, (r) => r.tokenHash, byId));
   doubled("apiSessions", "tokenHash en double", duplicates(doc.apiSessions, (s) => s.tokenHash, byId));
+  doubled(
+    "emailConfirmations",
+    "tokenHash en double",
+    duplicates(doc.emailConfirmations, (c) => c.tokenHash, byId),
+  );
+  doubled(
+    "emailConfirmations",
+    "plusieurs demandes du même motif pour un compte",
+    duplicates(doc.emailConfirmations, (c) => `${c.userId}/${c.purpose}`, byId),
+  );
   doubled(
     "reservations",
     "plusieurs réservations pour la même idée",
@@ -262,6 +286,7 @@ export function checkDocument(doc: Database): string[] {
   };
   ofUser("passwordResets", doc.passwordResets);
   ofUser("apiSessions", doc.apiSessions);
+  ofUser("emailConfirmations", doc.emailConfirmations);
   return problems;
 }
 

@@ -1,9 +1,11 @@
 import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
+import { AppState } from "react-native";
 
 import { api, configureClient, done, NetworkError, ok, type Schemas } from "@/api/client";
 import { resetStore } from "@/data/store";
 import { removeExportFiles } from "@/features/account/exportData";
+import { clearGuestAccess } from "@/features/guest/storage";
 import { currentLocale } from "@/i18n";
 import { clearAll, ensureUser, getSnapshot, putSnapshot } from "@/offline/snapshot";
 
@@ -96,6 +98,11 @@ export async function refreshMe(): Promise<void> {
   }
 }
 
+// Au retour au premier plan : le compte a pu changer ailleurs (adresse confirmée dans le navigateur, 010).
+AppState.addEventListener("change", (status) => {
+  if (status === "active") refreshMe().catch(() => undefined);
+});
+
 /** Enregistre la connexion rendue par login, register ou /me/password. */
 export async function signIn(session: Schemas["Session"]): Promise<void> {
   await ensureUser(session.user.id);
@@ -131,6 +138,9 @@ export async function signOut(): Promise<void> {
   } catch {
     // Hors ligne : le jeton expirera de lui-même ; on l'oublie quand même.
   }
+  // Seulement à la déconnexion et à la suppression, pas à l'expiration : les claims servent à annuler
+  // une réservation faite en invité (011).
+  await clearGuestAccess();
   await forgetEverything({ status: "signedOut", expired: false });
 }
 
@@ -141,5 +151,6 @@ export async function signOut(): Promise<void> {
  */
 export async function deleteAccount(password: string): Promise<void> {
   await done(api.POST("/me/deletion", { body: { password } }));
+  await clearGuestAccess();
   await forgetEverything({ status: "signedOut", expired: false, deleted: true });
 }

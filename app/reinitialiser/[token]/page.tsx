@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { MIN_PASSWORD_LENGTH } from "@/src/domain/passwords";
-import { getTranslations } from "@/src/i18n/server";
+import { getTranslations, translateError } from "@/src/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,11 @@ export default async function ReinitialiserPage({
               {query.e ? (
                 <Alert variant="destructive">
                   <AlertDescription>
-                    {query.e === "password" ? t("reset.errorPassword") : t("reset.errorGeneric")}
+                    {query.e === "password"
+                      ? t("reset.errorPassword")
+                      : query.e === "rate"
+                        ? await translateError("rateLimited")
+                        : t("reset.errorGeneric")}
                   </AlertDescription>
                 </Alert>
               ) : null}

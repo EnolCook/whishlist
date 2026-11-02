@@ -44,6 +44,7 @@ export const COLLECTIONS: { [K in CollectionName]: Collection<K> } = {
   reservations: byId(schema.reservations),
   passwordResets: byId(schema.passwordResets),
   apiSessions: byId(schema.apiSessions),
+  emailConfirmations: byId(schema.emailConfirmations),
 };
 
 /** Les collections dans l'ordre de `Database`. */
@@ -58,6 +59,7 @@ export const COLLECTION_NAMES: CollectionName[] = [
   "reservations",
   "passwordResets",
   "apiSessions",
+  "emailConfirmations",
 ];
 
 /** Même contenu colonne par colonne (`undefined` vaut `null`, JSON comparé sérialisé). */
@@ -84,5 +86,6 @@ export function readAll(db: StoreDb): Database {
     reservations: db.select().from(schema.reservations).orderBy(byRowid).all(),
     passwordResets: db.select().from(schema.passwordResets).orderBy(byRowid).all(),
     apiSessions: db.select().from(schema.apiSessions).orderBy(byRowid).all(),
+    emailConfirmations: db.select().from(schema.emailConfirmations).orderBy(byRowid).all(),
   };
 }

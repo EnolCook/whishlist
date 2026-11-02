@@ -61,5 +61,10 @@
   "collapsible": {
     "expand": "Déplier",
     "collapse": "Replier"
+  },
+  "links": {
+    "confirming": "Confirmation de votre adresse…",
+    "passwordSaved": "Votre mot de passe est enregistré. Connectez-vous avec votre nouveau mot de passe.",
+    "inviteChecking": "Ouverture de l'invitation…"
   }
 }

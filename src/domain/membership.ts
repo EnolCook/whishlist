@@ -74,11 +74,16 @@ export function wipeWishlist(doc: Database, wishlistId: string): void {
   doc.reservations = doc.reservations.filter((r) => r.wishlistId !== wishlistId);
 }
 
+/** Liste du lien d'invitation, ou `undefined` (jeton vide, inconnu ou régénéré). */
+export function findWishlistByInvite(doc: Database, token: string): Wishlist | undefined {
+  return token ? doc.wishlists.find((w) => w.inviteToken === token) : undefined;
+}
+
 export function acceptInvite(
   doc: Database,
   input: { token: string; userId: string; now?: Date },
 ): { ok: true; doc: Database; wishlistId: string } | { ok: false; error: string } {
-  const wishlist = doc.wishlists.find((w) => w.inviteToken === input.token);
+  const wishlist = findWishlistByInvite(doc, input.token);
   if (!wishlist) return { ok: false, error: "inviteLinkBroken" };
   if (!doc.users.some((u) => u.id === input.userId)) {
     return { ok: false, error: "loginToJoin" };

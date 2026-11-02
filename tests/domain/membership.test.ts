@@ -21,6 +21,7 @@ function base(): Database {
       displayName: "A",
       createdAt: "2026-01-01T00:00:00.000Z",
       mustChangePassword: false,
+      emailVerifiedAt: "2026-01-01T00:00:00.000Z",
     },
     {
       id: "b",
@@ -29,6 +30,7 @@ function base(): Database {
       displayName: "B",
       createdAt: "2026-01-01T00:00:00.000Z",
       mustChangePassword: false,
+      emailVerifiedAt: "2026-01-01T00:00:00.000Z",
     },
   );
   const created = createWishlist(doc, { ownerId: "a", title: "Commune", importTemplate: false, id: "w" });

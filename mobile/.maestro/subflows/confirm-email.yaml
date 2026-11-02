@@ -1,0 +1,22 @@
+# Ouvre le dernier lien de confirmation reçu par TO (lu dans MailDev), appuie sur « Confirmer » dans le
+# navigateur, attend DONE (texte de réussite de la page), puis revient à l'app sans la relancer :
+# au retour au premier plan, l'app relit le compte (010).
+appId: app.ohyoushouldnt.mobile
+---
+- retry:
+    maxRetries: 3
+    commands:
+      - runScript:
+          file: ../scripts/maildev-link.js
+          env:
+            TO: ${TO}
+- openLink: ${output.confirmUrl}
+- extendedWaitUntil:
+    visible: ${output.t.auth.confirmEmail.submit}
+    timeout: 20000
+- tapOn: ${output.t.auth.confirmEmail.submit}
+- extendedWaitUntil:
+    visible: ${DONE}
+    timeout: 20000
+- launchApp:
+    stopApp: false

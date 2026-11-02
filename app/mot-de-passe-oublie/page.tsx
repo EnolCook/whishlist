@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { origin } from "../../src/auth/current";
 import { requestPasswordResetAction } from "../../src/server/actions";
+import { DevLinkAlert } from "@/components/site/dev-link-alert";
 import { LinkButton } from "@/components/site/link-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,7 @@ export default async function MotDePasseOubliePage({
   searchParams: Promise<{ ok?: string; lien?: string; sansmail?: string; e?: string }>;
 }) {
   const query = await searchParams;
-  const t = await getTranslations("auth");
+  const [t, siteOrigin] = await Promise.all([getTranslations("auth"), origin()]);
   const done = query.ok === "1";
   const lien = query.lien && query.lien.startsWith("http") ? query.lien : null;
 
@@ -51,16 +53,7 @@ export default async function MotDePasseOubliePage({
               {query.sansmail === "1" && !lien ? (
                 <p className="text-sm text-muted-foreground">{t("forgot.noMail")}</p>
               ) : null}
-              {lien ? (
-                <Alert>
-                  <AlertDescription className="flex flex-col gap-2">
-                    <span>{t("forgot.devLink")}</span>
-                    <a href={lien} className="break-all underline underline-offset-2">
-                      {lien}
-                    </a>
-                  </AlertDescription>
-                </Alert>
-              ) : null}
+              <DevLinkAlert label={t("forgot.devLink")} url={lien} origin={siteOrigin} page="/reinitialiser/" />
               <LinkButton href="/connexion" variant="outline">
                 {t("forgot.back")}
               </LinkButton>

@@ -21,11 +21,17 @@ export type LocaleDecision =
   | { type: "rewrite"; pathname: string; search: string; locale: Locale }
   | { type: "continue"; locale: Locale };
 
+/** Chemin interne du site (`/inviter/…`), jamais une autre origine (`//hote`, `/\\hote`, `https://…`). */
+export function internalPath(value: unknown): string | null {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return null;
+  }
+  return value;
+}
+
 function pathOnly(value: string | null): string | null {
   if (!value) return null;
-  const cut = value.split("?")[0]?.split("#")[0] ?? "";
-  if (!cut.startsWith("/") || cut.startsWith("//")) return null;
-  return cut;
+  return internalPath(value.split("?")[0]?.split("#")[0] ?? "");
 }
 
 /**

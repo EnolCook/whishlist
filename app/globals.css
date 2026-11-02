@@ -278,13 +278,35 @@
   }
 }
 
+/* Icône « l'app sur votre téléphone » (011, US3) : 5 sonneries d'une seconde, puis immobile (SC-004). */
+.phone-ring {
+  animation: phone-ring 1s ease-in-out 5;
+  transform-origin: 50% 60%;
+}
+@keyframes phone-ring {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10%,
+  30% {
+    transform: rotate(-12deg);
+  }
+  20%,
+  40% {
+    transform: rotate(12deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .guest-hero__gift,
   .guest-hero__glow,
   .guest-hero__brand,
   .guest-hero__headline,
   .guest-hero__body,
-  .guest-hero__cta {
+  .guest-hero__cta,
+  .phone-ring {
     animation: none;
   }
 }

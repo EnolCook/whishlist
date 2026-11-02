@@ -153,6 +153,14 @@ async function decide(req: NextRequest): Promise<{ decision: OriginDecision; cor
 type HandlerContext<P> = { params: Promise<P> };
 
 /** Enveloppe commune : origine, langue, IP, limites de débit et erreurs inattendues. */
+/**
+ * Chemin d'API pour le journal, sans les jetons qu'il porte (invitation, lien public d'une liste) :
+ * ils donnent accès à une liste et ne s'écrivent jamais en clair dans les journaux (011, FR-009).
+ */
+export function redactedApiPath(pathname: string): string {
+  return pathname.replace(/\/(invitations|public\/lists)\/[^/]+/g, "/$1/…");
+}
+
 export function withApi<P = Record<string, never>>(
   handler: (api: ApiRequestContext, params: P) => Promise<Response>,
 ): (req: NextRequest, ctx: HandlerContext<P>) => Promise<Response> {
@@ -165,7 +173,7 @@ export function withApi<P = Record<string, never>>(
       return await handler({ req, locale, ip: await clientIp(), cors }, params);
     } catch (error) {
       if (isRateLimitError(error)) return apiError("rateLimited", locale, cors);
-      console.error("API error", req.method, req.nextUrl.pathname, error);
+      console.error("API error", req.method, redactedApiPath(req.nextUrl.pathname), error);
       return apiError("serverError", locale, cors);
     }
   };

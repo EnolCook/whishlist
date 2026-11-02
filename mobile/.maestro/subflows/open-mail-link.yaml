@@ -1,0 +1,17 @@
+# Ouvre dans l'app (schéma ohyoushouldnt://) le dernier lien KIND reçu par TO dans MailDev :
+# confirmer-email, reinitialiser ou inviter (011). En local, le lien web ouvrirait le navigateur.
+appId: app.ohyoushouldnt.mobile
+---
+- retry:
+    maxRetries: 3
+    commands:
+      - runScript:
+          file: ../scripts/maildev-link.js
+          env:
+            TO: ${TO}
+            KIND: ${KIND}
+- runScript:
+    file: ../scripts/app-link.js
+    env:
+      URL: ${output.link}
+- openLink: ${output.appLink}

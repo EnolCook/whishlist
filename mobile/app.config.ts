@@ -2,6 +2,7 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 
 import commonEn from "../locales/en/common.json";
 import commonFr from "../locales/fr/common.json";
+import appLinkRoutes from "../src/site/app-link-routes.json";
 
 // L'adresse du serveur est fixée au build (FR-042) : démo locale, production…
 const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -16,6 +17,16 @@ const APP_VARIANT = process.env.APP_VARIANT ?? "production";
 const IS_DEV = APP_VARIANT === "development";
 
 const PACKAGE = IS_DEV ? "app.ohyoushouldnt.mobile.dev" : "app.ohyoushouldnt.mobile";
+
+/**
+ * Liens du site ouverts par l'app (feature 011) : seulement pour un serveur en HTTPS, celui des builds de store.
+ * Le domaine publie les fichiers d'association (`/.well-known/…`) ; la variante de développement n'y figure pas.
+ */
+const APP_LINK_DOMAIN = IS_DEV ? null : (/^https:\/\/([^/:]+)/.exec(apiUrl)?.[1] ?? null);
+/** Préfixes des chemins ouverts par l'app, avec et sans `/en` (même calcul que `androidPathPrefixes`, vérifié par un test). */
+const APP_LINK_PREFIXES = [
+  ...new Set(appLinkRoutes.flatMap((route) => [route.site.split(":")[0], `/en${route.site.split(":")[0]}`])),
+];
 
 function appName(brand: string) {
   return IS_DEV ? `${brand} (Dev)` : brand;
@@ -32,7 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: appName(commonFr.brand),
   slug: "ohyoushouldnt",
   scheme: "ohyoushouldnt",
-  version: "1.0.0",
+  version: "1.1.0",
   orientation: "portrait",
   userInterfaceStyle: "light",
   icon: "./assets/images/icon.png",
@@ -43,11 +54,24 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: false,
     // Chiffrement : HTTPS seulement (exempté), pour que TestFlight ne demande rien à chaque build.
     infoPlist: { CFBundleAllowMixedLocalizations: true, ITSAppUsesNonExemptEncryption: false },
+    ...(APP_LINK_DOMAIN ? { associatedDomains: [`applinks:${APP_LINK_DOMAIN}`] } : {}),
   },
   android: {
     package: PACKAGE,
     // Aucune permission demandée (publication future sur les stores).
     permissions: [],
+    ...(APP_LINK_DOMAIN
+      ? {
+          intentFilters: [
+            {
+              action: "VIEW",
+              autoVerify: true,
+              category: ["BROWSABLE", "DEFAULT"],
+              data: APP_LINK_PREFIXES.map((pathPrefix) => ({ scheme: "https", host: APP_LINK_DOMAIN, pathPrefix })),
+            },
+          ],
+        }
+      : {}),
     adaptiveIcon: {
       backgroundColor: "#e8f0ff",
       foregroundImage: "./assets/images/android-icon-foreground.png",

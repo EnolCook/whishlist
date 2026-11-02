@@ -10,7 +10,6 @@ import {
 } from "../auth/reservation-claim";
 import { grantReadUnlock, hasReadUnlock } from "../auth/read-unlock";
 import { SESSION_COOKIE, SESSION_TTL_SEC, sessionSecret, signSession } from "../auth/session";
-import { resetPasswordWithToken } from "../domain/password-reset";
 import { mailConfigured } from "./mail";
 import { isRateLimitError } from "./rate-limit";
 import { actionContext } from "./action-context";
@@ -20,8 +19,15 @@ import {
   checkCredentials,
   register,
   requestPasswordReset,
+  resetPasswordWithLink,
   updateOwnDisplayName,
 } from "./commands/auth";
+import {
+  cancelOwnEmailChange,
+  confirmEmailWithToken,
+  requestOwnEmailChange,
+  resendEmailVerification,
+} from "./commands/email";
 import { manageLabel, reorderTypes, type LabelInput } from "./commands/labels";
 import { createList, updateSettings } from "./commands/lists";
 import {
@@ -45,9 +51,8 @@ import {
 import { cancelOwn, reserve, unlockPublicList } from "./commands/public-list";
 import type { LlmImpact } from "../domain/llm-impact";
 import { isLocale, localeCookie, type Locale } from "../i18n/config";
-import { withLocale } from "../i18n/locale-path";
+import { internalPath, withLocale } from "../i18n/locale-path";
 import { getLocale } from "../i18n/server";
-import { updateDocument } from "../store/db";
 
 
 const ADMIN_ONGLETS = new Set(["idees", "archives", "reservations", "partage", "reglages"]);
@@ -75,8 +80,7 @@ async function redirectToList(
 }
 
 function nextPath(value: FormDataEntryValue | null): string {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
+  return internalPath(value) ?? "/";
 }
 
 async function openSession(userId: string, sessionVersion = 0) {
@@ -99,7 +103,7 @@ export async function registerAction(formData: FormData) {
   const dest = nextPath(formData.get("next"));
   let result: Awaited<ReturnType<typeof register>>;
   try {
-    result = await register(await actionContext(), { email, password, displayName });
+    result = await register(await actionContext(), { email, password, displayName, next: dest });
   } catch (error) {
     if (isRateLimitError(error)) {
       return localeRedirect(`/inscription?e=rate&next=${encodeURIComponent(dest)}`);
@@ -112,7 +116,10 @@ export async function registerAction(formData: FormData) {
   }
   // E-mail déjà inscrit : même écran, sans connexion (un e-mail est parti).
   if (result.user) await openSession(result.user.id, result.user.sessionVersion ?? 0);
-  return localeRedirect(`/inscription?ok=1&next=${encodeURIComponent(dest)}`);
+  // Jamais de lien en clair en production (la commande ne le rend pas).
+  const link = result.verificationUrl ? `&lien=${encodeURIComponent(result.verificationUrl)}` : "";
+  const failed = result.mailFailed ? "&envoi=echec" : "";
+  return localeRedirect(`/inscription?ok=1&next=${encodeURIComponent(dest)}${link}${failed}`);
 }
 
 export async function loginAction(formData: FormData) {
@@ -217,16 +224,93 @@ export async function requestPasswordResetAction(formData: FormData) {
 export async function resetPasswordAction(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   const password = String(formData.get("password") ?? "");
-  const result = await updateDocument(async (doc) => {
-    const saved = await resetPasswordWithToken(doc, { token, password });
-    return { doc: saved.ok ? saved.doc : doc, result: saved };
-  });
+  let result: Awaited<ReturnType<typeof resetPasswordWithLink>>;
+  try {
+    result = await resetPasswordWithLink(await actionContext(), { token, password, signIn: false });
+  } catch (error) {
+    if (isRateLimitError(error)) return localeRedirect(`/reinitialiser/${encodeURIComponent(token)}?e=rate`);
+    throw error;
+  }
   if (!result.ok) {
     const code = result.error === "passwordTooShort" ? "password" : "1";
     return localeRedirect(`/reinitialiser/${encodeURIComponent(token)}?e=${code}`);
   }
   await openSession(result.userId, result.sessionVersion);
   return localeRedirect("/");
+}
+
+/** « Renvoyer le lien » du bandeau ou de la page du lien : retour sur la page d'origine avec le résultat. */
+export async function resendEmailVerificationAction(formData: FormData) {
+  const back = nextPath(formData.get("back"));
+  const join = back.includes("?") ? "&" : "?";
+  let result: Awaited<ReturnType<typeof resendEmailVerification>>;
+  try {
+    result = await resendEmailVerification(await actionContext());
+  } catch (error) {
+    if (isRateLimitError(error)) return localeRedirect(`${back}${join}verify=rate`);
+    throw error;
+  }
+  if (!result.ok) {
+    if (result.error === "unauthorized") return localeRedirect("/connexion");
+    if (result.error === "mustChangePassword") return localeRedirect("/compte");
+    return localeRedirect(`${back}${join}verify=already`);
+  }
+  // Jamais de lien en clair en production (la commande ne le rend pas).
+  if (result.verificationUrl) {
+    return localeRedirect(`${back}${join}verify=sent&lien=${encodeURIComponent(result.verificationUrl)}`);
+  }
+  return localeRedirect(`${back}${join}verify=${result.sent ? "sent" : "failed"}`);
+}
+
+/** Carte « Adresse de connexion » de « Mon compte » (010, US3). */
+export async function requestEmailChangeAction(formData: FormData) {
+  const user = await currentUser();
+  if (!user) return localeRedirect("/connexion");
+  if (user.mustChangePassword) return localeRedirect("/compte");
+  let result: Awaited<ReturnType<typeof requestOwnEmailChange>>;
+  try {
+    result = await requestOwnEmailChange(await actionContext(), {
+      email: String(formData.get("email") ?? ""),
+      currentPassword: String(formData.get("currentPassword") ?? ""),
+    });
+  } catch (error) {
+    if (isRateLimitError(error)) return localeRedirect("/compte?ee=rateLimited#email");
+    throw error;
+  }
+  if (!result.ok) return localeRedirect(`/compte?ee=${encodeURIComponent(result.error)}#email`);
+  if (!result.me.pendingEmail) return localeRedirect("/compte?email=changed#email");
+  // Jamais de lien en clair en production (la commande ne le rend pas).
+  const link = result.confirmUrl ? `&lien=${encodeURIComponent(result.confirmUrl)}` : "";
+  return localeRedirect(`/compte?email=${result.sent || result.confirmUrl ? "pending" : "failed"}${link}#email`);
+}
+
+export async function cancelEmailChangeAction() {
+  const result = await cancelOwnEmailChange(await actionContext());
+  if (!result.ok) {
+    if (result.error === "unauthorized") return localeRedirect("/connexion");
+    return localeRedirect(`/compte?ee=${encodeURIComponent(result.error)}#email`);
+  }
+  return localeRedirect("/compte?email=cancelled#email");
+}
+
+/** Bouton « Confirmer » de la page du lien reçu par e-mail. */
+export async function confirmEmailAction(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  const suite = nextPath(formData.get("suite"));
+  const page = `/confirmer-email/${encodeURIComponent(token)}`;
+  let result: Awaited<ReturnType<typeof confirmEmailWithToken>>;
+  try {
+    result = await confirmEmailWithToken(await actionContext(), { token, suite });
+  } catch (error) {
+    if (isRateLimitError(error)) return localeRedirect(`${page}?e=rate`);
+    throw error;
+  }
+  if (!result.ok) return localeRedirect(`${page}?e=${encodeURIComponent(result.error)}`);
+  const query = new URLSearchParams({ ok: result.purpose });
+  if (result.suite && result.suite !== "/") query.set("suite", result.suite);
+  // Le compte confirmé est celui de la session : la page peut afficher sa nouvelle adresse.
+  if (result.ownAccount) query.set("compte", "1");
+  return localeRedirect(`${page}?${query.toString()}`);
 }
 
 export async function createListAction(formData: FormData) {

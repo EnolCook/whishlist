@@ -1,5 +1,7 @@
+import { mustConfirmEmail } from "../../domain/email-confirmation";
 import type { User } from "../../domain/types";
 import type { Locale } from "../../i18n/config";
+import { emailVerificationRequired } from "../mail";
 
 /**
  * Ce qu'une commande sait de la requête, sans dépendre de Next :
@@ -20,6 +22,25 @@ export function activeUser(ctx: CommandContext): { ok: true; user: User } | { ok
   if (!ctx.user) return { ok: false, error: "unauthorized" };
   if (ctx.user.mustChangePassword) return { ok: false, error: "mustChangePassword" };
   return { ok: true, user: ctx.user };
+}
+
+/**
+ * Compte actif dont l'adresse est confirmée, quand la validation est exigée (envoi d'e-mail actif) :
+ * seul ce compte crée une liste, en rejoint une ou invite (010, FR-005).
+ */
+export function verifiedUser(ctx: CommandContext): { ok: true; user: User } | { ok: false; error: string } {
+  const active = activeUser(ctx);
+  if (!active.ok) return active;
+  if (emailConfirmationPending(active.user)) return { ok: false, error: "emailNotVerified" };
+  return active;
+}
+
+/**
+ * Compte actif qui doit encore confirmer son adresse, avec la configuration de ce serveur :
+ * bandeau du site, renvoi du lien. Un compte qui doit changer son mot de passe le fait d'abord.
+ */
+export function emailConfirmationPending(user: User): boolean {
+  return !user.mustChangePassword && mustConfirmEmail(user, emailVerificationRequired());
 }
 
 /**

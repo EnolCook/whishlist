@@ -75,13 +75,27 @@ async function request(url, init) {
 
 function serverHint(apiUrl) {
   const port = new URL(apiUrl).port || "80";
-  return `WISHLIST_DATA_PATH=tmp/e2e/wishlist.json npm run dev -- --port ${port}`;
+  return `MAIL_SMTP_URL=smtp://localhost:1025 WISHLIST_DATA_PATH=tmp/e2e/wishlist.json npm run dev -- --port ${port}`;
+}
+
+const MAILDEV_HINT = "npx maildev@3.0.0 --smtp 1025 --web 1080";
+
+/**
+ * Les e-mails du serveur arrivent dans MailDev (010) : les parcours y lisent les liens de confirmation.
+ * La boîte est vidée avant la suite, pour qu'un parcours ne lise jamais le lien d'une exécution précédente.
+ */
+async function checkMailDev(maildevUrl, capabilities) {
+  const health = await request(`${maildevUrl}/api/healthz`);
+  if (!health?.ok) fail(`MailDev injoignable sur ${maildevUrl} : ${MAILDEV_HINT}`);
+  if (!capabilities.mail) fail(`Le serveur n'envoie pas d'e-mails : relancez-le avec MAIL_SMTP_URL=smtp://localhost:1025`);
+  await request(`${maildevUrl}/api/email/all`, { method: "DELETE" });
 }
 
 /** Le serveur répond, et c'est bien la base de tmp/e2e/ qu'il lit (R3) : une connexion doit y laisser une session. */
 async function checkServer(apiUrl, password) {
   const capabilities = await request(`${apiUrl}/api/v1/capabilities`);
   if (!capabilities?.ok) fail(`Serveur injoignable sur ${apiUrl} : ${serverHint(apiUrl)}`);
+  const configured = await capabilities.json();
   const login = await request(`${apiUrl}/api/v1/auth/login`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -93,6 +107,7 @@ async function checkServer(apiUrl, password) {
     await request(`${apiUrl}/api/v1/auth/logout`, { method: "POST", headers: { authorization: `Bearer ${token}` } });
   }
   if (!reads) fail(`Le serveur ne lit pas la base de tmp/e2e/ : relancez-le avec ${serverHint(apiUrl)}`);
+  return configured;
 }
 
 /** Version affichée par « Mon compte » (`Constants.expoConfig.version`), lue dans app.config.ts. */
@@ -113,6 +128,8 @@ async function main() {
   if (!maestro.ok) fail(maestro.message);
   const apiUrl = (process.env.E2E_API_URL ?? "http://localhost:3010").replace(/\/+$/, "");
   if (!checks.isLocalApiUrl(apiUrl)) fail("E2E_API_URL doit viser un serveur local (localhost ou 127.0.0.1).");
+  const maildevUrl = (process.env.E2E_MAILDEV_URL ?? "http://localhost:1080").replace(/\/+$/, "");
+  if (!checks.isLocalApiUrl(maildevUrl)) fail("E2E_MAILDEV_URL doit viser un MailDev local (localhost ou 127.0.0.1).");
   const picked = checks.pickDevice(checks.listDevices(), options.platform);
   if (!picked.ok) fail(picked.message);
   const { device } = picked;
@@ -131,7 +148,8 @@ async function main() {
   }
 
   resetDatabase();
-  await checkServer(apiUrl, password);
+  const capabilities = await checkServer(apiUrl, password);
+  await checkMailDev(maildevUrl, capabilities);
 
   // L'app compilée vise localhost : sur Android, le port du Mac passe par adb (R10).
   if (device.platform === "android") {
@@ -169,6 +187,9 @@ async function main() {
       // Build Debug : Metro que le lanceur du dev client doit ouvrir après l'effacement de l'app.
       "-e",
       `METRO_URL=${encodeURIComponent(process.env.E2E_METRO_URL ?? "http://localhost:8081")}`,
+      // Boîte de réception de la suite : les parcours y lisent les liens de confirmation (010).
+      "-e",
+      `MAILDEV_URL=${maildevUrl}`,
       ...(device.platform === "ios" ? ["--exclude-tags", "android-only"] : []),
       ...targets,
     ];

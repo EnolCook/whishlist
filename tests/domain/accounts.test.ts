@@ -14,6 +14,8 @@ test("e-mail unique, casse, nom vide, hash", async () => {
   assert.equal(first.ok, true);
   if (!first.ok) return;
   assert.equal(first.value.email, "ada@example.com");
+  // Nouveau compte : adresse à confirmer (010).
+  assert.equal(first.value.emailVerifiedAt, null);
   assert.notEqual(first.value.passwordHash, "secret-ok!!");
   const second = await registerUser(first.doc, {
     email: "ada@example.com",

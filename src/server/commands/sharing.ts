@@ -2,6 +2,7 @@ import { findMembership } from "../../domain/access";
 import {
   acceptInvite,
   deleteWishlist,
+  findWishlistByInvite,
   leaveWishlist,
   regenerateInvite as regenerateInviteRule,
   removeMember as removeMemberRule,
@@ -17,7 +18,7 @@ import { readDocument, updateDocument } from "../../store/db";
 import type { MemberListView } from "../api/views";
 import { mailConfigured, sendInviteMail } from "../mail";
 import { rateLimitForIp } from "../rate-limit";
-import { activeUser, type CommandContext, type CommandResult } from "./context";
+import { activeUser, verifiedUser, type CommandContext, type CommandResult } from "./context";
 import { memberListView } from "./lists";
 
 type DomainResult = { ok: true; doc: Database } | { ok: false; error: string };
@@ -65,7 +66,7 @@ export async function regenerateInvite(
 }
 
 export async function sendInvite(ctx: CommandContext, input: { wishlistId: string; email: string }): Promise<CommandResult> {
-  const active = activeUser(ctx);
+  const active = verifiedUser(ctx);
   if (!active.ok) return active;
   rateLimitForIp(`invite:${active.user.id}`, ctx.ip, 8, 60 * 60 * 1000);
   const email = normalizeEmail(input.email);
@@ -107,11 +108,29 @@ export function deleteList(ctx: CommandContext, input: { wishlistId: string }) {
   return memberWrite(ctx, input.wishlistId, (doc, actorId) => done(deleteWishlist(doc, { ...input, actorId })));
 }
 
+/**
+ * Aperçu d'une invitation avant de la rejoindre, dans l'app (011, R8) : le titre de la liste, et son
+ * identifiant si le compte en est déjà membre. N'écrit rien. N'exige pas une adresse vérifiée : seul
+ * `joinInvite` l'exige, et l'app montre alors le rappel de confirmation.
+ */
+export async function previewInvite(
+  ctx: CommandContext,
+  input: { token: string },
+): Promise<CommandResult<{ title: string; listId: string | null }>> {
+  const active = activeUser(ctx);
+  if (!active.ok) return active;
+  const doc = await readDocument();
+  const wishlist = findWishlistByInvite(doc, input.token);
+  if (!wishlist) return { ok: false, error: "inviteLinkBroken" };
+  const member = findMembership(doc, wishlist.id, active.user.id);
+  return { ok: true, title: wishlist.title, listId: member ? wishlist.id : null };
+}
+
 export async function joinInvite(
   ctx: CommandContext,
   input: { token: string },
 ): Promise<CommandResult<{ list: MemberListView }>> {
-  const active = activeUser(ctx);
+  const active = verifiedUser(ctx);
   if (!active.ok) return active;
   const joined = await updateDocument<CommandResult<{ wishlistId: string }>>((doc) => {
     const saved = acceptInvite(doc, { token: input.token, userId: active.user.id });

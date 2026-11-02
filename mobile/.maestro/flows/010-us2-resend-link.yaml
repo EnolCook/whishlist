@@ -1,0 +1,33 @@
+# 010 US2 : depuis le rappel, demander un nouveau lien ; il arrive (MailDev) et confirme l'adresse.
+appId: app.ohyoushouldnt.mobile
+name: "010 US2 — Renvoyer le lien de confirmation"
+tags:
+  - 010-us2
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runFlow: ../subflows/register-unconfirmed.yaml
+- assertVisible:
+    id: verify.banner
+- tapOn:
+    id: verify.resend
+- extendedWaitUntil:
+    visible:
+      id: verify.sent
+    timeout: 10000
+
+# Deux liens reçus : celui de l'inscription et le nouveau ; seul le dernier confirme.
+- runScript:
+    file: ../scripts/maildev-link.js
+    env:
+      TO: ${output.email}
+- assertTrue: ${output.confirmLinks == 2}
+- runFlow:
+    file: ../subflows/confirm-email.yaml
+    env:
+      TO: ${output.email}
+      DONE: ${output.t.auth.confirmEmail.verified}
+- extendedWaitUntil:
+    notVisible:
+      id: verify.banner
+    timeout: 15000

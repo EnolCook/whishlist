@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "../../../src/auth/current";
+import { findWishlistByInvite } from "../../../src/domain/membership";
 import { joinInviteAction } from "../../../src/server/actions";
 import { getDocument } from "../../../src/store/db";
 import { LinkButton } from "@/components/site/link-button";
@@ -25,7 +26,7 @@ export default async function InvitePage({
     getLocale(),
   ]);
   if (user?.mustChangePassword) redirect(withLocale(locale, "/compte"));
-  const list = doc.wishlists.find((entry) => entry.inviteToken === token);
+  const list = findWishlistByInvite(doc, token);
   const back = `/inviter/${token}`;
   if (!user) {
     return (

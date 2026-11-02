@@ -8,7 +8,9 @@ import { api, ok } from "@/api/client";
 import { signOut, updateMe, useSession } from "@/auth/session";
 import { usePendingCount } from "@/data/store";
 import { exportData } from "@/features/account/exportData";
+import { EmailCard } from "@/features/account/EmailCard";
 import { PasswordForm } from "@/features/account/PasswordForm";
+import { VerificationBanner } from "@/features/account/VerificationBanner";
 import { useServerAction } from "@/features/errors";
 import { useOnline } from "@/network";
 import { tokens } from "@/theme/tokens";
@@ -67,6 +69,7 @@ export default function Account() {
     <Screen testID="account.screen">
       <BackLink />
       <PageTitle title={t("auth:account.title")} />
+      <VerificationBanner />
       <CollapsibleCard testID="account.profile" title={t("auth:account.profile")} description={t("auth:account.profileHint")}>
         <Field label={t("auth:account.displayName")}>
           <Input
@@ -86,6 +89,7 @@ export default function Account() {
         <Button testID="account.save-name" title={t("auth:account.saveName")} fullWidth disabled={!online || saveName.busy} onPress={() => void saveName.run()} />
         <NetworkNote />
       </CollapsibleCard>
+      <EmailCard />
       <CollapsibleCard testID="account.password" title={t("auth:changePassword.title")}>
         <PasswordForm testID="account.password" />
       </CollapsibleCard>

@@ -1,0 +1,59 @@
+# 011 US4 : le lien public de la liste de démo (jeton fixe de la base de la suite) ouvre la vue invité de
+# l'app, sans compte : réserver une idée avec un nom, la voir marquée « Réservé par vous », puis annuler.
+# Le lien s'ouvre par le schéma ohyoushouldnt:// (research R10).
+appId: app.ohyoushouldnt.mobile
+name: "011 US4 — Le lien public d'une liste ouvre l'app, même sans compte"
+tags:
+  - 011-us4
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+# Preuve du serveur local avant d'écrire, puis sans compte.
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+- runFlow: ../subflows/logout.yaml
+
+- openLink: ohyoushouldnt://l/demo-list-lecture
+- extendedWaitUntil:
+    visible:
+      id: guest.title
+    timeout: 20000
+- assertNotVisible:
+    id: list.add-item
+
+# Réserver la première idée, avec un nom.
+- tapOn:
+    id: guest.offer-0
+- extendedWaitUntil:
+    visible:
+      id: guest-reserve.from-name
+    timeout: 10000
+- tapOn:
+    id: guest-reserve.from-name
+- inputText: E2E invité
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: guest-reserve.submit
+- tapOn:
+    id: guest-reserve.submit
+- extendedWaitUntil:
+    visible: ${output.t.public.reservation.mine}
+    timeout: 20000
+
+# Annuler sa réservation : l'idée redevient réservable.
+- scrollUntilVisible:
+    element:
+      id: guest.cancel-0
+- tapOn:
+    id: guest.cancel-0
+- tapOn:
+    id: guest.cancel-confirm-0
+- extendedWaitUntil:
+    notVisible: ${output.t.public.reservation.mine}
+    timeout: 20000
+- assertVisible:
+    id: guest.offer-0

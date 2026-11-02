@@ -13,6 +13,7 @@ function edgeDoc(): Database {
   const doc = apiDoc();
   doc.users[0].mustChangePassword = true;
   doc.users[0].sessionVersion = 3;
+  doc.users[1].emailVerifiedAt = null;
   doc.wishlists[0].subtitle = "Noël 🎄 — « déjà » ça";
   doc.wishlists[0].coverImageUrl = "https://example.test/cover.png";
   doc.wishlists[0].readPasswordHash = "scrypt$abc";
@@ -50,6 +51,26 @@ function edgeDoc(): Database {
     createdAt: "2026-01-03T00:00:00.000Z",
     expiresAt: "2026-02-03T00:00:00.000Z",
   });
+  doc.emailConfirmations.push(
+    {
+      id: "ec-v",
+      userId: "camille",
+      purpose: "verify",
+      email: "camille@example.test",
+      tokenHash: "h3",
+      expiresAt: "2026-01-04T00:00:00.000Z",
+      createdAt: "2026-01-03T00:00:00.000Z",
+    },
+    {
+      id: "ec-c",
+      userId: "camille",
+      purpose: "change",
+      email: "camille.b@example.test",
+      tokenHash: "h4",
+      expiresAt: "2026-01-04T00:00:00.000Z",
+      createdAt: "2026-01-03T00:00:00.000Z",
+    },
+  );
   return doc;
 }
 

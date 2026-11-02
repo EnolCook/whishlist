@@ -1,9 +1,11 @@
+import { mustConfirmEmail } from "../../domain/email-confirmation";
 import { listItems, listPublicVisibleItems, sortItems } from "../../domain/read";
 import { formatPrice } from "../../domain/price";
 import { hasReadPassword } from "../../domain/read-password";
 import type { Database, Item, Role, User, WishlistTheme, Wishlist } from "../../domain/types";
 import { intlLocale, type Locale } from "../../i18n/config";
 import { withLocale } from "../../i18n/locale-path";
+import { emailVerificationRequired } from "../mail";
 
 /** Formes JSON du contrat (`specs/004-mobile-api/contracts/openapi.yaml`). */
 
@@ -87,7 +89,16 @@ export function toPublicListView(
   };
 }
 
-export type MeView = { id: string; email: string; displayName: string; mustChangePassword: boolean };
+export type MeView = {
+  id: string;
+  email: string;
+  displayName: string;
+  mustChangePassword: boolean;
+  /** Faux seulement si la validation est exigée et l'adresse pas encore confirmée (010). */
+  emailVerified: boolean;
+  /** Nouvelle adresse en attente de confirmation (010, US3). */
+  pendingEmail: string | null;
+};
 
 export type SessionView = { token: string; expiresAt: string; user: MeView };
 
@@ -129,12 +140,15 @@ export type MemberListView = {
   members: { userId: string; displayName: string; role: Role }[];
 };
 
-export function toMe(user: User): MeView {
+/** `pendingEmail` : `pendingEmailChange(doc, user.id)` de la base que l'appelant a lue. */
+export function toMe(user: User, pendingEmail: string | null): MeView {
   return {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
     mustChangePassword: user.mustChangePassword,
+    emailVerified: !mustConfirmEmail(user, emailVerificationRequired()),
+    pendingEmail,
   };
 }
 

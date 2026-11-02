@@ -31,8 +31,9 @@ tags:
       id: copy-link
 - tapOn:
     id: copy-link
-- extendedWaitUntil:
-    visible:
+# Le message s'affiche sous le champ, parfois sous le bas de l'écran : on fait défiler jusqu'à lui.
+- scrollUntilVisible:
+    element:
       id: share.copied
     timeout: 5000
 

@@ -20,6 +20,7 @@ npm --prefix mobile run e2e -- [--platform ios|android] [--lang fr|en] [<parcour
 | `E2E_API_URL` | non | Serveur local. Défaut `http://localhost:3010`. Doit être `localhost` ou `127.0.0.1` (R4) : `10.0.2.2` n'est l'alias du Mac que vu de l'émulateur |
 | `E2E_LANG` | non | `fr` ou `en`, comme `--lang` |
 | `E2E_METRO_URL` | non | Build Debug : Metro que le lanceur du dev client rouvre après l'effacement de l'app, passé aux parcours (`METRO_URL`). Défaut `http://localhost:8081` |
+| `E2E_MAILDEV_URL` | non | MailDev de la suite (010), passé aux parcours (`MAILDEV_URL`). Défaut `http://localhost:1080`, local seulement |
 
 ## Prérequis vérifiés avant le premier parcours (FR-012)
 
@@ -30,25 +31,29 @@ Dans cet ordre. Au premier qui manque, le runner affiche le message et sort avec
 | `DEMO_PASSWORD` posé, ≥ 10 caractères | « DEMO_PASSWORD est obligatoire (10 caractères minimum). » |
 | `maestro` dans le `PATH` | « Maestro est introuvable : curl -Ls https://get.maestro.mobile.dev \| bash » |
 | `E2E_API_URL` locale | « E2E_API_URL doit viser un serveur local (localhost ou 127.0.0.1). » |
+| `E2E_MAILDEV_URL` locale | « E2E_MAILDEV_URL doit viser un MailDev local (localhost ou 127.0.0.1). » |
 | exactement un appareil pour la plateforme demandée | « Aucun simulateur iOS démarré » / « Aucun émulateur Android démarré » / « Plusieurs appareils : précisez --platform » |
 | app `app.ohyoushouldnt.mobile` installée | « L'app n'est pas installée sur <appareil> : EXPO_PUBLIC_API_URL=… npx expo run:ios --configuration Release » |
 | serveur joignable (`GET /api/v1/capabilities`) | « Serveur injoignable sur <url> : WISHLIST_DATA_PATH=tmp/e2e/wishlist.json npm run dev -- --port 3010 » |
 | le serveur lit `tmp/e2e/wishlist.json` (R3) | « Le serveur ne lit pas tmp/e2e/wishlist.json : relancez-le avec WISHLIST_DATA_PATH=tmp/e2e/wishlist.json » |
+| MailDev joignable (`GET /api/healthz`), ajouté par la 010 | « MailDev injoignable sur <url> : npx maildev@3.0.0 --smtp 1025 --web 1080 » |
+| le serveur envoie ses e-mails (`mail` de `/capabilities`) | « Le serveur n'envoie pas d'e-mails : relancez-le avec MAIL_SMTP_URL=smtp://localhost:1025 » |
 
 ## Étapes
 
 1. Vérifier les prérequis jusqu'à l'appareil et l'app (tableau ci-dessus).
 2. Régénérer `tmp/e2e/wishlist.json` : script de démo vers un fichier temporaire, puis renommage.
 3. Vérifier le serveur, puis vérifier qu'il lit le fichier : connexion d'Alex par l'API, recherche de la nouvelle session dans le fichier, déconnexion.
-4. Android : `adb reverse tcp:<port> tcp:<port>` (R10).
-5. Écrire `mobile/.maestro/scripts/strings.generated.js` pour la langue choisie.
-6. Lancer :
+4. Vider la boîte de MailDev (`DELETE /api/email/all`) : un parcours ne lit jamais le lien d'une exécution précédente.
+5. Android : `adb reverse tcp:<port> tcp:<port>` (R10).
+6. Écrire `mobile/.maestro/scripts/strings.generated.js` pour la langue choisie.
+7. Lancer :
    ```text
    maestro test --device <id> --format junit --output <dir>/report.xml --test-output-dir <dir>
                 [--exclude-tags android-only] <config ou parcours>
                     # DEMO_PASSWORD passé par l'environnement : MAESTRO_DEMO_PASSWORD
    ```
-7. Lire `report.xml`, puis afficher et écrire `summary.txt`.
+8. Lire `report.xml`, puis afficher et écrire `summary.txt`.
 
 ## Sortie
 

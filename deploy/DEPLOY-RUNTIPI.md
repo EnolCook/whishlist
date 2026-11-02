@@ -131,6 +131,18 @@ docker compose -f deploy/compose.prod.yml --env-file ~/webserver/data/whishlist.
 
 **Tout ce qui a été fait depuis la mise à jour (comptes, listes, idées, réservations) est perdu** : l'ancienne version repart du JSON tel qu'il était avant l'import.
 
+### Liens de l’app (feature 011)
+
+Après avoir réglé `WHISHLIST_APPLE_TEAM_ID`, `WHISHLIST_ANDROID_CERT_SHA256` (empreintes de Play Console → Intégrité de l’app → Signature de l’app) et redéployé :
+
+```bash
+curl -sSI https://ohyoushouldnt.app/.well-known/apple-app-site-association   # 200, application/json, pas de 30x
+curl -sSI https://ohyoushouldnt.app/.well-known/assetlinks.json              # idem
+curl -sS https://app-site-association.cdn-apple.com/a/v1/ohyoushouldnt.app   # le CDN d’Apple a relu le fichier
+```
+
+Cloudflare ne doit ni rediriger ni mettre en cache une page d’erreur sur `/.well-known/` (Apple refuse un fichier servi après une redirection). Détails : `README.md`, « Liens de l’app ».
+
 ### Env requis (prod)
 
 | Clé | Rôle |
@@ -139,3 +151,5 @@ docker compose -f deploy/compose.prod.yml --env-file ~/webserver/data/whishlist.
 | `WHISHLIST_APP_ORIGIN` | `https://ohyoushouldnt.app` |
 | `WHISHLIST_RESEND_API_KEY` + `WHISHLIST_MAIL_FROM` | reset / invite |
 | `WHISHLIST_GEMINI_API_KEY` | enrich (optionnel) |
+| `WHISHLIST_APPLE_TEAM_ID` + `WHISHLIST_ANDROID_CERT_SHA256` | liens ouverts par l’app (optionnel) |
+| `WHISHLIST_APP_STORE_URL` / `WHISHLIST_PLAY_STORE_URL` | icône « l’app sur votre téléphone » du site (optionnel) |

@@ -25,6 +25,7 @@ function ready() {
     displayName: "A",
     createdAt: "2026-01-01T00:00:00.000Z",
     mustChangePassword: false,
+    emailVerifiedAt: "2026-01-01T00:00:00.000Z",
   });
   const created = createWishlist(doc, { ownerId: "u", title: "L", importTemplate: false, id: "w" });
   if (!created.ok) throw new Error(created.error);

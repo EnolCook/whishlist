@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { origin } from "../../src/auth/current";
 import { registerAction } from "../../src/server/actions";
+import { DevLinkAlert } from "@/components/site/dev-link-alert";
 import { LinkButton } from "@/components/site/link-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { MIN_PASSWORD_LENGTH } from "@/src/domain/passwords";
 import { getTranslations } from "@/src/i18n/server";
+import { emailVerificationRequired } from "@/src/server/mail";
 import { publicPageMetadata } from "@/src/site/seo";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +27,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function InscriptionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ e?: string; next?: string; ok?: string }>;
+  searchParams: Promise<{ e?: string; next?: string; ok?: string; lien?: string; envoi?: string }>;
 }) {
   const query = await searchParams;
-  const t = await getTranslations("auth");
+  const [t, siteOrigin] = await Promise.all([getTranslations("auth"), origin()]);
   const next = query.next && query.next.startsWith("/") ? query.next : "/";
   const sent = query.ok === "1";
   const error = sent
@@ -50,8 +53,15 @@ export default async function InscriptionPage({
           {sent ? (
             <div className="flex flex-col gap-4">
               <Alert>
-                <AlertDescription>{t("register.sent")}</AlertDescription>
+                <AlertDescription>
+                  {query.envoi === "echec"
+                    ? t("register.sendFailed")
+                    : emailVerificationRequired()
+                      ? t("register.sentVerify")
+                      : t("register.sent")}
+                </AlertDescription>
               </Alert>
+              <DevLinkAlert label={t("register.devLink")} url={query.lien} origin={siteOrigin} page="/confirmer-email/" />
               <LinkButton href={next}>{t("register.sentContinue")}</LinkButton>
             </div>
           ) : (

@@ -1,0 +1,84 @@
+# 010 US3 : changer son adresse depuis « Mon compte » : le changement reste en attente jusqu'au lien reçu
+# par la nouvelle adresse (MailDev), l'ancienne reçoit un avis, puis on se reconnecte avec la nouvelle.
+appId: app.ohyoushouldnt.mobile
+name: "010 US3 — Changer son adresse e-mail"
+tags:
+  - 010-us3
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runFlow: ../subflows/register.yaml
+- evalScript: ${output.oldEmail = output.email}
+- evalScript: ${output.newEmail = 'e2e-' + output.unique + '-b@example.test'}
+
+- tapOn:
+    id: open-account
+- extendedWaitUntil:
+    visible:
+      id: account.email-toggle
+    timeout: 10000
+- tapOn:
+    id: account.email-toggle
+- tapOn:
+    id: account.email-new
+- inputText: ${output.newEmail}
+- tapOn:
+    id: account.email-password
+- inputText: ${MAESTRO_DEMO_PASSWORD}
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: account.email-submit
+- tapOn:
+    id: account.email-submit
+
+# En attente : l'adresse de connexion ne change qu'à l'ouverture du lien.
+- extendedWaitUntil:
+    visible:
+      id: account.email-pending
+    timeout: 10000
+- assertVisible: .*${output.newEmail}.*
+
+- runFlow:
+    file: ../subflows/confirm-email.yaml
+    env:
+      TO: ${output.newEmail}
+      DONE: ${output.t.auth.confirmEmail.changed}
+- extendedWaitUntil:
+    notVisible:
+      id: account.email-pending
+    timeout: 15000
+
+# L'ancienne adresse a reçu l'avis (en plus du lien de l'inscription).
+- runScript:
+    file: ../scripts/maildev-count.js
+    env:
+      TO: ${output.oldEmail}
+- assertTrue: ${output.inboxCount == 2}
+
+# L'adresse affichée est la nouvelle (compte relu au retour au premier plan).
+- assertVisible: .*${output.newEmail}.*
+
+# Reconnexion avec la nouvelle adresse.
+- hideKeyboard:
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: back-link.back
+    direction: UP
+- tapOn:
+    id: back-link.back
+- runFlow: ../subflows/logout.yaml
+- runFlow:
+    file: ../subflows/submit-login.yaml
+    env:
+      EMAIL: ${output.newEmail}
+      PASSWORD: ${MAESTRO_DEMO_PASSWORD}
+- tapOn:
+    text: Plus tard|Not Now
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 20000

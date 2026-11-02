@@ -28,7 +28,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example 1.2.0 */
+                            /** @example 1.3.0 */
                             apiVersion: string;
                             /** @description Préremplissage depuis un lien avec IA (sinon seulement les métadonnées de la page). */
                             enrich: boolean;
@@ -427,7 +427,7 @@ export interface paths {
         put?: never;
         /**
          * Demander un lien de réinitialisation
-         * @description Même réponse que l'e-mail existe ou non. Le lien envoyé ouvre le site.
+         * @description Même réponse que l'e-mail existe ou non. Le lien envoyé ouvre l'app si elle est installée, le site sinon.
          */
         post: {
             parameters: {
@@ -453,6 +453,142 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                429: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Choisir le nouveau mot de passe depuis le lien reçu
+         * @description Comme la page `/reinitialiser/{token}` du site : le mot de passe change, l'adresse est marquée
+         *     vérifiée et les autres connexions du compte tombent. Avec `signIn`, la réponse ouvre une session
+         *     pour ce compte ; l'app l'envoie seulement si personne n'y est connecté. 20 essais par IP en 15 min.
+         *     Depuis 1.4.0.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Dernier segment du lien reçu. */
+                        token: string;
+                        password: string;
+                        /** @default false */
+                        signIn?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Mot de passe changé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Rempli si `signIn` est vrai. */
+                            session: components["schemas"]["Session"] | null;
+                        };
+                    };
+                };
+                /** @description `passwordTooShort`, `resetLinkInvalid` (inconnu ou déjà utilisé) ou `resetLinkExpired`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmer une adresse depuis le lien reçu
+         * @description Comme le bouton de la page `/confirmer-email/{token}` du site : validation de l'adresse ou
+         *     changement d'adresse, selon le lien. Le jeton porte toute l'autorisation ; un bearer, facultatif,
+         *     sert seulement à `ownAccount`. Après un changement, l'ancienne adresse est prévenue.
+         *     20 essais par IP en 15 min. Depuis 1.4.0.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Dernier segment du lien reçu. */
+                        token: string;
+                        /** @description Paramètre `suite` du lien */
+                        suite?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Adresse confirmée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {unknown} */
+                            purpose: "verify" | "change";
+                            /** @description Le lien est celui du compte du bearer. */
+                            ownAccount: boolean;
+                            /** @description Chemin interne du site où reprendre (`/inviter/…`), sinon null. */
+                            suite: string | null;
+                        };
+                    };
+                };
+                /**
+                 * @description `confirmationLinkInvalid` (inconnu, déjà utilisé, remplacé), `confirmationLinkExpired`, ou
+                 *     `emailTaken` (changement vers une adresse prise entre-temps).
+                 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
                 };
                 429: components["responses"]["Error"];
             };
@@ -527,6 +663,151 @@ export interface paths {
                 403: components["responses"]["Error"];
             };
         };
+        trace?: never;
+    };
+    "/me/email-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Renvoyer le lien de confirmation de l'adresse
+         * @description Un nouveau lien part vers l'adresse du compte ; le précédent ne vaut plus rien. Le lien ouvre l'app si elle est installée, le site sinon.
+         *     Depuis 1.3.0.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Demande prise en compte. `sent` est faux si l'envoi a échoué (réessayer plus tard). */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sent: boolean;
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                /** @description Adresse déjà confirmée, ou validation non exigée sur ce serveur (`emailAlreadyVerified`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Demander un changement d'adresse e-mail
+         * @description Mot de passe actuel exigé. Avec l'envoi d'e-mail actif, un lien part vers la nouvelle adresse :
+         *     `email` ne change pas encore et `pendingEmail` vaut la nouvelle adresse. Sans envoi d'e-mail,
+         *     la nouvelle adresse s'applique tout de suite. Une nouvelle demande remplace la précédente. Le lien envoyé
+         *     ouvre l'app si elle est installée, le site sinon. Depuis 1.3.0.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                        currentPassword: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Demande enregistrée (ou adresse changée sans envoi d'e-mail) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /**
+                 * @description `emailInvalid`, `emailUnchanged` ou `wrongCurrentPassword` ; `emailTaken` seulement sans envoi
+                 *     d'e-mail. Avec l'envoi actif, l'adresse d'un autre compte reçoit la même réponse `200` qu'une
+                 *     adresse libre, pour ne pas révéler les comptes.
+                 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                429: components["responses"]["Error"];
+            };
+        };
+        /**
+         * Annuler le changement d'adresse en attente
+         * @description Le lien envoyé ne vaut plus rien. Sans demande en attente, ne fait rien. Depuis 1.3.0.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Annulé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/me/password": {
@@ -1476,6 +1757,15 @@ export interface paths {
                     content?: never;
                 };
                 400: components["responses"]["Error"];
+                /** @description Adresse du compte pas encore confirmée (`emailNotVerified`). Depuis 1.3.0. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 404: components["responses"]["Error"];
                 429: components["responses"]["Error"];
                 /** @description L'envoi a échoué (`inviteSendFailed`). */
@@ -1654,6 +1944,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/invitations/{inviteToken}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Aperçu d'une invitation avant de la rejoindre
+         * @description N'écrit rien. N'exige pas une adresse confirmée : seul `accept` l'exige (`emailNotVerified`).
+         *     Depuis 1.4.0.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    inviteToken: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invitation valide */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            title: string;
+                            /** @description Rempli seulement si le compte est déjà membre de la liste. */
+                            listId: string | null;
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                /** @description Invitation inconnue ou régénérée (`inviteLinkBroken`). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invitations/{inviteToken}/accept": {
         parameters: {
             query?: never;
@@ -1685,6 +2032,15 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Error"];
+                /** @description Adresse du compte pas encore confirmée (`emailNotVerified`). Depuis 1.3.0. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 404: components["responses"]["Error"];
             };
         };
@@ -1722,6 +2078,13 @@ export interface components {
             email: string;
             displayName: string;
             mustChangePassword: boolean;
+            /**
+             * @description Faux seulement si la validation est exigée (envoi d'e-mail actif) et l'adresse pas encore
+             *     confirmée : créer une liste, rejoindre ou inviter est alors refusé. Depuis 1.3.0.
+             */
+            emailVerified: boolean;
+            /** @description Nouvelle adresse en attente de confirmation (lien envoyé, encore valable). Depuis 1.3.0. */
+            pendingEmail: string | null;
         };
         Theme: {
             /** @example #b4235a */
@@ -1864,6 +2227,13 @@ export interface components {
                 displayName: string;
                 /** Format: date-time */
                 createdAt: string;
+                /**
+                 * Format: date-time
+                 * @description Date de confirmation de l'adresse, null si elle n'est pas confirmée. Depuis 1.3.0.
+                 */
+                emailVerifiedAt: string | null;
+                /** @description Nouvelle adresse en attente de confirmation. Depuis 1.3.0. */
+                pendingEmail: string | null;
             };
             lists: components["schemas"]["ExportedList"][];
             /** @description Réservations faites connecté sur des listes dont le compte n'est pas membre. */

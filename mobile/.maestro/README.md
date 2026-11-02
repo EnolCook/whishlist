@@ -8,14 +8,18 @@ Des parcours [Maestro](https://docs.maestro.dev), un par user story de l'app mob
 # 1. Maestro (hors dépôt)
 curl -Ls https://get.maestro.mobile.dev | bash
 
-# 2. Serveur local sur la base de la suite (tmp/e2e/wishlist.db). La commande e2e la remplace à chaque
-#    exécution, en une transaction ; le serveur la relit à chaque requête, sans redémarrer.
-#    Sans GEMINI_API_KEY ni OPENAI_API_KEY.
+# 2. MailDev, la boîte de réception de la suite : les parcours y lisent les liens de confirmation d'adresse
+#    (010). La commande e2e la vide avant chaque exécution.
+npx maildev@3.0.0 --smtp 1025 --web 1080
+
+# 3. Serveur local sur la base de la suite (tmp/e2e/wishlist.db), qui envoie ses e-mails à MailDev
+#    (MAIL_SMTP_URL, ignorée en production). La commande e2e remplace la base à chaque exécution, en une
+#    transaction ; le serveur la relit à chaque requête, sans redémarrer. Sans GEMINI_API_KEY ni OPENAI_API_KEY.
 export DEMO_PASSWORD='demo-password-1'
 npm run demo:data -- tmp/e2e/wishlist.json
-WISHLIST_DATA_PATH=tmp/e2e/wishlist.json SESSION_SECRET=dev-secret-dev-secret-dev-secret-00 npm run dev -- --port 3010
+MAIL_SMTP_URL=smtp://localhost:1025 WISHLIST_DATA_PATH=tmp/e2e/wishlist.json SESSION_SECRET=dev-secret-dev-secret-dev-secret-00 npm run dev -- --port 3010
 
-# 3. App pointée sur ce serveur, au choix :
+# 4. App pointée sur ce serveur, au choix :
 #    - build Debug avec son Metro (pratique pour retoucher les écrans sans rebuild) ;
 #      la suite rouvre Metro après chaque effacement de l'app : E2E_METRO_URL=http://localhost:8082
 (cd mobile && EXPO_PUBLIC_API_URL=http://localhost:3010 npx expo run:ios --port 8082)
@@ -24,9 +28,11 @@ WISHLIST_DATA_PATH=tmp/e2e/wishlist.json SESSION_SECRET=dev-secret-dev-secret-de
 # Android : … npx expo run:android (--variant release)
 ```
 
+La validation des adresses est donc active pendant la suite : `subflows/register.yaml` confirme l'adresse du compte qu'il crée (lien lu dans MailDev par `scripts/maildev-link.js`, ouvert dans le navigateur du simulateur, bouton « Confirmer », retour à l'app), et `subflows/register-unconfirmed.yaml` s'arrête avant, pour les parcours de la 010.
+
 En build Debug, l'app contient le lanceur du dev client. Après l'effacement de l'app, `subflows/launch-clean.yaml` rouvre Metro par le lien du dev client, confirme « Ouvrir » et ferme le menu développeur.
 
-Sur iOS, `register.yaml` ferme la feuille « Utiliser un mot de passe robuste ? » en appuyant sur la position de sa croix : cette feuille du système est invisible pour Maestro. Les sous-parcours refusent aussi « Enregistrer le mot de passe ? » (« Plus tard »).
+Sur iOS, `submit-register.yaml` ferme la feuille « Utiliser un mot de passe robuste ? » en appuyant sur la position de sa croix : cette feuille du système est invisible pour Maestro. Les sous-parcours refusent aussi « Enregistrer le mot de passe ? » (« Plus tard »).
 
 Laissez le Mac branché et capot ouvert pendant la suite : une mise en veille coupe Maestro (« Device became unreachable »).
 
@@ -51,7 +57,10 @@ DEMO_PASSWORD=… npm --prefix mobile run e2e -- --platform android --lang en
 | `DEMO_PASSWORD` | oui | Mot de passe des comptes de démo et des comptes `e2e-*` créés par les parcours |
 | `E2E_API_URL` | non | Serveur local, `http://localhost:3010` par défaut. Seuls `localhost` et `127.0.0.1` sont acceptés : la commande tourne sur le Mac, et l'émulateur Android joint ce port par `adb reverse` |
 | `E2E_LANG` | non | `fr` ou `en`, comme `--lang` |
+| `E2E_MAILDEV_URL` | non | MailDev de la suite, `http://localhost:1080` par défaut (local seulement). La commande vérifie qu'il répond et que le serveur envoie ses e-mails (`mail` de `/capabilities`), puis vide sa boîte |
 | `E2E_METRO_URL` | non | Build Debug seulement : Metro que le lanceur du dev client rouvre après chaque effacement de l'app. Défaut `http://localhost:8081` |
+
+`MAIL_SMTP_URL` configure le serveur, pas la commande : elle est dans le tableau du `README.md` du serveur.
 
 Ces variables ne servent qu'à la commande e2e : elles ne vont ni dans le `README.md` du serveur, ni dans `.env.example`, ni dans `deploy/compose.prod.yml`.
 
@@ -102,7 +111,10 @@ Sous-parcours disponibles dans `subflows/` :
 | `launch-clean` | lance l'app vide |
 | `login` | connexion d'un compte de démo (`EMAIL`), avec la preuve du serveur local |
 | `submit-login` | remplit et envoie la connexion (`EMAIL`, `PASSWORD`), sans attendre d'écran |
-| `register` | crée un compte `e2e-…`, dont l'adresse est dans `output.email` |
+| `register` | crée un compte `e2e-…`, dont l'adresse est dans `output.email`, et confirme cette adresse |
+| `register-unconfirmed` | comme `register`, sans confirmer l'adresse (rappel affiché, création de liste bloquée) |
+| `confirm-email` | ouvre le dernier lien de confirmation reçu par `TO` dans MailDev, appuie sur « Confirmer », attend `DONE`, revient à l'app |
+| `open-mail-link` | ouvre **dans l'app** le dernier lien `KIND` (`confirmer-email`, `reinitialiser`, `inviter`) reçu par `TO` dans MailDev, par le schéma `ohyoushouldnt://` (011) |
 | `submit-register` | remplit et envoie l'inscription (`NAME`, `EMAIL`), sans attendre d'écran |
 | `logout` | déconnexion |
 | `create-list` | crée une liste (`TITLE`) |
@@ -111,6 +123,13 @@ Sous-parcours disponibles dans `subflows/` :
 | `open-new-item` / `submit-item-form` | ouvre le formulaire d'idée, puis l'envoie |
 | `open-category` | déplie une catégorie (`CATEGORY`, `ITEM`) |
 | `close-share-sheet` | referme la feuille de partage du système |
+
+Scripts de `scripts/` utiles aux parcours :
+
+| Script | Rôle |
+|--------|------|
+| `maildev-link.js` | dernier lien `KIND` (par défaut `confirmer-email`) reçu par `TO` dans MailDev → `output.link` |
+| `app-link.js` | adresse du site `URL` → même chemin au schéma de l'app, `output.appLink` (011) : en local, le domaine n'est pas associé à l'app, et un lien `http` ouvrirait le navigateur |
 
 `npm --prefix mobile test` vérifie deux choses sans simulateur :
 

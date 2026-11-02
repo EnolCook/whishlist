@@ -2,6 +2,7 @@ import { DEFAULT_WISHLIST_THEME } from "../../../src/domain/theme";
 import { emptyDatabase, type Database, type User } from "../../../src/domain/types";
 import { resetRateLimitsForTests } from "../../../src/server/rate-limit";
 import { replaceDocument } from "../../../src/store/db";
+import { withEnv } from "./env";
 import { withTempDataPath } from "./temp-store";
 import type { CommandContext } from "../../../src/server/commands/context";
 
@@ -25,6 +26,7 @@ export function user(id: string, email: string, displayName: string): User {
     displayName,
     createdAt: "2026-01-01T00:00:00.000Z",
     mustChangePassword: false,
+    emailVerifiedAt: "2026-01-01T00:00:00.000Z",
     sessionVersion: 0,
   };
 }
@@ -106,4 +108,23 @@ export async function withStore(doc: Database, run: () => Promise<void>): Promis
       else process.env.SESSION_SECRET = previousSecret;
     }
   });
+}
+
+/** Lance `run` avec l'envoi simulé (`MAIL_DRY_RUN=1`) : la validation des adresses est exigée. */
+export function withMailDryRun(run: () => Promise<void>): Promise<void> {
+  return withEnv({ MAIL_DRY_RUN: "1" }, run);
+}
+
+/** Journal des e-mails non envoyés du dossier courant (`withStore`), vide s'il n'existe pas. */
+export async function mailLog(): Promise<string> {
+  const { readFile } = await import("node:fs/promises");
+  return readFile("data/mail.log", "utf8").catch(() => "");
+}
+
+/** Dernier jeton de confirmation d'adresse écrit dans le journal des e-mails. */
+export async function lastConfirmationToken(): Promise<string> {
+  const tokens = [...(await mailLog()).matchAll(/\/confirmer-email\/([\w-]+)/g)].map((match) => match[1]!);
+  const token = tokens.at(-1);
+  if (!token) throw new Error("aucun lien de confirmation dans mail.log");
+  return token;
 }

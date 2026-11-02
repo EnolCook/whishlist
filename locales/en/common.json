@@ -42,5 +42,13 @@
     "title": "Something went wrong",
     "body": "Reload the page. If it keeps happening, try again in a moment.",
     "retry": "Try again"
+  },
+  "getApp": {
+    "button": "The app on your phone",
+    "title": "The app on your phone",
+    "description": "Find your lists and your loved ones' lists in the app: links you receive by email open there directly.",
+    "appStore": "Download on the App Store",
+    "googlePlay": "Get it on Google Play",
+    "trademarks": "Apple and the Apple logo are trademarks of Apple Inc. App Store is a service mark of Apple Inc. Google Play and the Google Play logo are trademarks of Google LLC."
   }
 }

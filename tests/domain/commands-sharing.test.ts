@@ -7,6 +7,7 @@ import {
   deleteList,
   joinInvite,
   leave,
+  previewInvite,
   regenerateInvite,
   removeMember,
   sendInvite,
@@ -15,6 +16,7 @@ import {
 import { isRateLimitError } from "../../src/server/rate-limit";
 import { readDocument } from "../../src/store/db";
 import { apiDoc, ctx, ensurePasswordHash, TEST_SECRET, withStore } from "./helpers/api-fixtures";
+import { withEnv } from "./helpers/env";
 
 before(ensurePasswordHash);
 
@@ -85,10 +87,8 @@ test("le propriétaire retire un membre", async () => {
 test("inviter par e-mail : adresse requise, e-mail non configuré, 8 envois par heure", async () => {
   const doc = apiDoc();
   const alex = ctx(doc.users[0]!);
-  const previous = process.env.RESEND_API_KEY;
-  delete process.env.RESEND_API_KEY;
-  try {
-    await withStore(doc, async () => {
+  await withEnv({ RESEND_API_KEY: undefined }, () =>
+    withStore(doc, async () => {
       assert.deepEqual(await sendInvite(alex, { wishlistId: "w", email: "" }), { ok: false, error: "emailRequired" });
       assert.deepEqual(await sendInvite(alex, { wishlistId: "w", email: "sam@example.test" }), {
         ok: false,
@@ -96,10 +96,8 @@ test("inviter par e-mail : adresse requise, e-mail non configuré, 8 envois par 
       });
       for (let i = 0; i < 6; i += 1) await sendInvite(alex, { wishlistId: "w", email: "sam@example.test" });
       await assert.rejects(sendInvite(alex, { wishlistId: "w", email: "sam@example.test" }), isRateLimitError);
-    });
-  } finally {
-    if (previous !== undefined) process.env.RESEND_API_KEY = previous;
-  }
+    }),
+  );
 });
 
 test("un non-membre ne partage rien", async () => {
@@ -117,5 +115,38 @@ test("un non-membre ne partage rien", async () => {
     ]) {
       assert.deepEqual(attempt, { ok: false, error: "notMember" });
     }
+  });
+});
+
+test("aperçu d'une invitation (011) : le titre, et la liste si le compte en est déjà membre", async () => {
+  await withStore(docWithCamille(), async () => {
+    const doc = await readDocument();
+    const alex = doc.users.find((entry) => entry.id === "alex")!;
+    const camille = doc.users.find((entry) => entry.id === "camille")!;
+    assert.deepEqual(await previewInvite(ctx(alex), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: "w" });
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: "w" });
+  });
+  await withStore(apiDoc(), async () => {
+    const camille = (await readDocument()).users.find((entry) => entry.id === "camille")!;
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: null });
+    // Rien n'est écrit : Camille n'est toujours pas membre.
+    assert.equal((await readDocument()).memberships.some((entry) => entry.userId === "camille"), false);
+  });
+});
+
+test("aperçu d'une invitation : lien inconnu ou régénéré, sans compte, mot de passe à changer", async () => {
+  await withStore(apiDoc(), async () => {
+    const doc = await readDocument();
+    const alex = doc.users.find((entry) => entry.id === "alex")!;
+    const camille = doc.users.find((entry) => entry.id === "camille")!;
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "inconnu" }), { ok: false, error: "inviteLinkBroken" });
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "" }), { ok: false, error: "inviteLinkBroken" });
+    assert.deepEqual(await previewInvite(ctx(), { token: "it" }), { ok: false, error: "unauthorized" });
+    assert.deepEqual(await previewInvite(ctx({ ...camille, mustChangePassword: true }), { token: "it" }), {
+      ok: false,
+      error: "mustChangePassword",
+    });
+    assert.equal((await regenerateInvite(ctx(alex), { wishlistId: "w" })).ok, true);
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: false, error: "inviteLinkBroken" });
   });
 });

@@ -12,6 +12,7 @@ const PRIVATE_PREFIXES = [
   "/compte",
   "/inviter",
   "/reinitialiser",
+  "/confirmer-email",
   "/changer-mot-de-passe",
   "/mot-de-passe-oublie",
   "/u",
