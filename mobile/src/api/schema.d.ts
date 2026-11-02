@@ -1021,7 +1021,9 @@ export interface paths {
                 content: {
                     "application/json": {
                         title: string;
+                        /** @description Comme le libellé d'une catégorie, une saisie séparée par des virgules en crée plusieurs. `categoryId` ne vaut que pour la première. */
                         category: string;
+                        /** @description Comme le libellé d'un « qui », une saisie séparée par des virgules en crée plusieurs. `personId` ne vaut que pour le premier. */
                         person: string;
                         id?: components["schemas"]["ClientId"];
                         categoryId?: components["schemas"]["ClientId"];
@@ -2328,6 +2330,7 @@ export interface components {
         Label: {
             content: {
                 "application/json": {
+                    /** @description À l'ajout, une saisie séparée par des virgules (ou des points-virgules, ou des retours à la ligne) crée plusieurs entrées : « Wilh, Nathan » en fait deux. Les blancs et les doublons de la saisie sont ignorés, et la réponse rend la première entrée créée. Tout est enregistré en une seule écriture : si l'une est refusée, aucune n'est créée. Au renommage, le libellé est pris tel quel — « Papa, maman » reste un seul nom. */
                     label: string;
                 };
             };
