@@ -31,7 +31,7 @@ export default function Login() {
       testID="login.screen"
       title={t("auth:login.title")}
       description={t("auth:login.description")}
-      below={<Button title={t("auth:login.createAccount")} variant="link" onPress={() => router.push("/register")} testID="login.create-account" />}
+      below={<Button title={t("auth:login.createAccount")} variant="neutral" onPress={() => router.push("/register")} testID="login.create-account" />}
     >
       {session.status === "signedOut" && session.expired ? <Alert>{t("mobile:session.expired")}</Alert> : null}
       {session.status === "signedOut" && session.deleted ? <Alert testID="login.deleted">{t("auth:account.deleted")}</Alert> : null}
