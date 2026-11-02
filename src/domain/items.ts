@@ -41,6 +41,7 @@ export function createItem(
     imageUrl?: string | null;
     priceCents?: number | null;
     priority?: string | null;
+    secondHandOk?: boolean;
     id?: string;
   },
 ): { ok: true; doc: Database; item: Item } | { ok: false; error: string } {
@@ -77,6 +78,7 @@ export function createItem(
     imageUrl,
     priceCents: input.priceCents ?? null,
     priority: priority.value,
+    secondHandOk: input.secondHandOk ?? false,
     sortOrder,
     archived: false,
   };
@@ -98,6 +100,8 @@ export function updateItem(
     imageUrl?: string | null;
     priceCents?: number | null;
     priority?: string | null;
+    /** Absent : la valeur enregistrée est gardée (client qui ne connaît pas encore ce champ). */
+    secondHandOk?: boolean;
   },
 ): { ok: true; doc: Database } | { ok: false; error: string } {
   if (!findMembership(doc, input.wishlistId, input.actorId)) {
@@ -130,6 +134,7 @@ export function updateItem(
   item.imageUrl = imageUrl;
   item.priceCents = input.priceCents ?? null;
   item.priority = priority.value;
+  if (input.secondHandOk !== undefined) item.secondHandOk = input.secondHandOk;
   return { ok: true, doc: next };
 }
 

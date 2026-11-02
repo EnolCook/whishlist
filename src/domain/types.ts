@@ -76,6 +76,8 @@ export interface Item {
   imageUrl: string | null;
   priceCents: number | null;
   priority: string | null;
+  /** L'idée convient aussi d'occasion (livres, jeux…), signalé à qui offre. */
+  secondHandOk: boolean;
   personId: string;
   sortOrder: number;
   archived: boolean;
@@ -159,6 +161,7 @@ export interface SeedFile {
     imageUrl?: string | null;
     priceCents: number | null;
     priority: string | null;
+    secondHandOk?: boolean;
     personId: string;
     sortOrder: number;
     archived?: boolean;

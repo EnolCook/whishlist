@@ -42,6 +42,7 @@ export type AccordionIdea = {
   priceLabel: string | null;
   price: string;
   priority: string | null;
+  secondHandOk: boolean;
   sortOrder: number;
 };
 
@@ -302,6 +303,7 @@ export function IdeasAccordion({
                           <div className="flex flex-wrap gap-1">
                             <Badge variant="outline">{item.personLabel}</Badge>
                             {item.priceLabel ? <Badge variant="outline">{item.priceLabel}</Badge> : null}
+                            {item.secondHandOk ? <Badge variant="outline">{t("secondHandBadge")}</Badge> : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <Button

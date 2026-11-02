@@ -11,6 +11,7 @@ import type { ViewList } from "@/offline/optimistic";
 import { tokens } from "@/theme/tokens";
 import { Alert } from "@/ui/Alert";
 import { Button } from "@/ui/Button";
+import { Checkbox } from "@/ui/Checkbox";
 import { Field } from "@/ui/Field";
 import { Input } from "@/ui/Input";
 import { NetworkNote } from "@/ui/NetworkNote";
@@ -31,6 +32,7 @@ export function emptyDraft(list: ViewList): Draft {
     imageUrl: "",
     price: "",
     priority: "",
+    secondHandOk: false,
   };
 }
 
@@ -155,6 +157,13 @@ export function ItemForm({
       <Field label={t("form.priority")} description={t("form.priorityHint")}>
         <StarPicker value={draft.priority} onChange={(value) => set("priority", value)} />
       </Field>
+      <Checkbox
+        testID="item-form.second-hand"
+        checked={draft.secondHandOk}
+        onChange={(value) => set("secondHandOk", value)}
+        label={t("form.secondHandOk")}
+        description={t("form.secondHandOkHint")}
+      />
       <Field label={t("form.image")}>
         <View style={{ flexDirection: "row", gap: tokens.space[2], alignItems: "center" }}>
           <Shadow style={{ width: 48, height: 48, overflow: "hidden" }}>

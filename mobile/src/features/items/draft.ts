@@ -20,6 +20,7 @@ export function draftOf(item: ViewItem): Draft {
     imageUrl: item.imageUrl ?? "",
     price: priceInput(item.priceCents),
     priority: item.priority ?? "",
+    secondHandOk: item.secondHandOk ?? false,
   };
 }
 

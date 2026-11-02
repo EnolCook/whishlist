@@ -245,6 +245,7 @@ export default async function ReadPage({
                   offerLabel={t("iOffer")}
                   offerAria={t("iOfferAria", { name: item.name })}
                   mineLabel={t("reservation.mine")}
+                  secondHandLabel={t("secondHandBadge")}
                   cancelLabel={t("reservation.cancel")}
                   cancelTitle={t("reservation.cancelTitle")}
                   cancelDescription={t("reservation.cancelBody")}

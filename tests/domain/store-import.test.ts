@@ -245,7 +245,9 @@ test("tout ou rien : un échec au milieu de l'import ne garde rien, la fois suiv
     writer.exec(`insert into wishlists values ('w9', 'L', null, null, '{}', 'rt9', 'it9', null, 0, '2026-01-01')`);
     writer.exec("insert into types values ('t9', 'w9', 'T', 0)");
     writer.exec("insert into people values ('p9', 'w9', 'P')");
-    writer.exec("insert into items values ('gift2', 'w9', 'Déjà là', 't9', null, null, null, null, 'p9', 0, 0)");
+    writer.exec(
+      "insert into items (id, wishlist_id, name, type_id, person_id, sort_order) values ('gift2', 'w9', 'Déjà là', 't9', 'p9', 0)",
+    );
     closeStore();
     await writeFile(dataPath, JSON.stringify(apiDoc()), "utf8");
 

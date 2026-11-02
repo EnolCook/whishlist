@@ -1,0 +1,1 @@
+ALTER TABLE `items` ADD `second_hand_ok` integer DEFAULT false NOT NULL;

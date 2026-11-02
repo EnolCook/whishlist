@@ -93,6 +93,8 @@ export type ItemFields = {
   /** Prix tel que saisi (« 18,50 »). */
   price: string;
   priority: string;
+  /** Absent : faux à la création, inchangé en modification. */
+  secondHandOk?: boolean;
 };
 
 export async function saveItem(
@@ -130,6 +132,7 @@ export async function saveItem(
     imageUrl,
     priceCents: price,
     priority: input.priority,
+    secondHandOk: input.secondHandOk,
   };
   const itemId = input.itemId;
   let replayed = false;

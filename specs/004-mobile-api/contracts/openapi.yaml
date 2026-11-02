@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.4.0"
+  version: "1.5.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -26,6 +26,7 @@ info:
       L'app finit elle-même l'action du lien : confirmation de l'adresse (`POST /auth/email-confirmation`),
       nouveau mot de passe (`POST /auth/password-reset/confirm`), aperçu d'une invitation
       (`GET /invitations/{inviteToken}`).
+    - 1.5.0 : `secondHandOk` sur les idées (`PublicItem`, `MemberItem`, et facultatif dans `ItemInput`).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
@@ -1169,7 +1170,7 @@ components:
 
     PublicItem:
       type: object
-      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, mine, reservationId]
+      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, secondHandOk, mine, reservationId]
       properties:
         id: { type: string }
         name: { type: string }
@@ -1180,6 +1181,7 @@ components:
         priceCents: { type: [integer, "null"] }
         priceLabel: { type: [string, "null"], description: Formaté selon Accept-Language. }
         priority: { type: [string, "null"] }
+        secondHandOk: { type: boolean, description: "Depuis 1.5.0. L'idée convient aussi d'occasion." }
         mine: { type: boolean, description: Réservée par ce client. }
         reservationId: { type: [string, "null"], description: Seulement si `mine`. }
 
@@ -1223,10 +1225,13 @@ components:
         imageUrl: { type: string }
         price: { type: string, description: Comme saisi sur le site (« 12,50 »). Invalide → priceInvalid. }
         priority: { type: string }
+        secondHandOk:
+          type: boolean
+          description: "Depuis 1.5.0. Absent à la création : false. Absent en modification : la valeur enregistrée est gardée."
 
     MemberItem:
       type: object
-      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, archived, sortOrder]
+      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, secondHandOk, archived, sortOrder]
       properties:
         id: { type: string }
         name: { type: string }
@@ -1237,6 +1242,7 @@ components:
         priceCents: { type: [integer, "null"] }
         priceLabel: { type: [string, "null"] }
         priority: { type: [string, "null"] }
+        secondHandOk: { type: boolean, description: Depuis 1.5.0. }
         archived: { type: boolean }
         sortOrder: { type: integer }
 

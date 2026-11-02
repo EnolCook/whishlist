@@ -2113,6 +2113,8 @@ export interface components {
             /** @description Formaté selon Accept-Language. */
             priceLabel: string | null;
             priority: string | null;
+            /** @description Depuis 1.5.0. L'idée convient aussi d'occasion. */
+            secondHandOk: boolean;
             /** @description Réservée par ce client. */
             mine: boolean;
             /** @description Seulement si `mine`. */
@@ -2152,6 +2154,8 @@ export interface components {
             /** @description Comme saisi sur le site (« 12 */
             price?: string;
             priority?: string;
+            /** @description Depuis 1.5.0. Absent à la création : false. Absent en modification : la valeur enregistrée est gardée. */
+            secondHandOk?: boolean;
         };
         MemberItem: {
             id: string;
@@ -2163,6 +2167,8 @@ export interface components {
             priceCents: number | null;
             priceLabel: string | null;
             priority: string | null;
+            /** @description Depuis 1.5.0. */
+            secondHandOk: boolean;
             archived: boolean;
             sortOrder: number;
         };

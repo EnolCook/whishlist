@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { PriorityStarPicker } from "@/components/site/priority-star-picker";
@@ -25,6 +26,7 @@ function initialDraft(input: {
     url: string | null;
     imageUrl: string | null;
     priority: string | null;
+    secondHandOk?: boolean;
   };
   price?: string;
   types: { id: string }[];
@@ -38,6 +40,7 @@ function initialDraft(input: {
     imageUrl: "",
     price: input.price ?? "",
     priority: input.item?.priority && /^[1-5]$/.test(input.item.priority) ? input.item.priority : "",
+    secondHandOk: input.item?.secondHandOk ?? false,
   };
 }
 
@@ -68,6 +71,7 @@ export function ItemForm({
     url: string | null;
     imageUrl: string | null;
     priority: string | null;
+    secondHandOk?: boolean;
   };
   price?: string;
   onglet?: string;
@@ -268,6 +272,18 @@ export function ItemForm({
             <FieldDescription className="contain-inline-size">{t("form.priorityHint")}</FieldDescription>
           </Field>
         </div>
+        <Field orientation="horizontal">
+          <Checkbox
+            id={`${id}-second-hand`}
+            name="secondHandOk"
+            checked={draft.secondHandOk}
+            onCheckedChange={(checked) => setField("secondHandOk", checked)}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor={`${id}-second-hand`}>{t("form.secondHandOk")}</FieldLabel>
+            <FieldDescription>{t("form.secondHandOkHint")}</FieldDescription>
+          </FieldContent>
+        </Field>
         <Field>
           <FieldLabel htmlFor={`${id}-image`}>{t("form.image")}</FieldLabel>
           <div className="flex items-center gap-2">

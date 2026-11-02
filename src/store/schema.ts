@@ -108,6 +108,7 @@ export const items = sqliteTable(
     imageUrl: text("image_url"),
     priceCents: integer("price_cents"),
     priority: text("priority"),
+    secondHandOk: integer("second_hand_ok", { mode: "boolean" }).notNull().default(false),
     personId: text("person_id")
       .notNull()
       .references(() => people.id),

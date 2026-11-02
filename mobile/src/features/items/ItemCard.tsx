@@ -37,6 +37,7 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tokens.space[1] }}>
           {person ? <Badge>{person}</Badge> : null}
           {item.priceLabel ? <Badge>{item.priceLabel}</Badge> : null}
+          {item.secondHandOk ? <Badge testID="item-card.second-hand">{t("secondHandBadge")}</Badge> : null}
           {item.pending ? <PendingBadge /> : null}
         </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: tokens.space[2] }}>

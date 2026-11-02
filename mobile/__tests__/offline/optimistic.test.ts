@@ -11,7 +11,7 @@ const item: Schemas["MemberItem"] = {
   imageUrl: null,
   priceCents: 1990,
   priceLabel: "19,90 €",
-  priority: null,
+  priority: null, secondHandOk: false,
   archived: false,
   sortOrder: 0,
 };
