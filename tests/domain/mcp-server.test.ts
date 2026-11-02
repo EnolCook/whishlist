@@ -128,6 +128,27 @@ test("update_idea : seuls les champs donnés changent ; priority 0 retire les é
   });
 });
 
+test("description et « occasion acceptée » : lues par get_list, posées par add_idea, gardées ou changées par update_idea", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    resetRateLimitsForTests();
+    const alex = client(doc.users[0]!);
+    const added = json(await alex.call("add_idea", { listId: "w", name: "Vélo", description: "  Taille M.  ", secondHandOk: true })).added;
+    const shown = () => alex.call("get_list", { listId: "w" }).then((result) => json(result).ideas.find((idea: { id: string }) => idea.id === added.id));
+    assert.deepEqual(await shown().then(({ description, secondHandOk }) => ({ description, secondHandOk })), { description: "Taille M.", secondHandOk: true });
+    await alex.call("update_idea", { listId: "w", ideaId: added.id, name: "Vélo de ville" });
+    assert.deepEqual(await shown().then(({ description, secondHandOk }) => ({ description, secondHandOk })), { description: "Taille M.", secondHandOk: true });
+    await alex.call("update_idea", { listId: "w", ideaId: added.id, description: "", secondHandOk: false });
+    assert.deepEqual(await shown().then(({ description, secondHandOk }) => ({ description, secondHandOk })), { description: null, secondHandOk: false });
+    const plain = json(await alex.call("add_idea", { listId: "w", name: "Livre" })).added;
+    const item = (await readDocument()).items.find((entry) => entry.id === plain.id)!;
+    assert.deepEqual({ description: item.description, secondHandOk: item.secondHandOk }, { description: null, secondHandOk: false });
+    const tooLong = await alex.call("add_idea", { listId: "w", name: "Long", description: "x".repeat(2001) });
+    assert.equal(tooLong.isError, true);
+    assert.match(tooLong.content[0]!.text, /descriptionTooLong/);
+  });
+});
+
 test("archive_idea, add_category, add_person : mêmes règles que le site (un doublon de nom est refusé par la règle)", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {

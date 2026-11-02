@@ -112,6 +112,8 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
               url: item.url,
               price: item.priceLabel,
               priority: item.priority ? Number(item.priority) : null,
+              description: item.description,
+              secondHandOk: item.secondHandOk,
               archived: item.archived,
               reserved: reserved.has(item.id),
             })),
@@ -126,6 +128,11 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     // Un assistant envoie souvent un nombre (32.5) : les deux sont acceptés.
     price: z.union([z.string(), z.number().nonnegative()]).optional().describe("Price in euros, e.g. \"18.50\" or 18.5."),
     priority: z.number().int().min(1).max(5).optional().describe("How much the person wants it, 1 to 5 stars."),
+    description: z
+      .string()
+      .optional()
+      .describe("Context for the gift givers (size, colour, edition…), up to 2000 characters. An empty string removes it."),
+    secondHandOk: z.boolean().optional().describe("True if a second-hand one is fine."),
   };
 
   server.registerTool(
@@ -152,6 +159,8 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
           imageUrl: "",
           price: input.price === undefined ? "" : String(input.price),
           priority: input.priority ? String(input.priority) : "",
+          description: input.description,
+          secondHandOk: input.secondHandOk,
         });
         if (!saved.ok) return refused(saved.error);
         return ok({ added: { id: saved.item.id, name: saved.item.name, category: type.label, for: person.label } });
@@ -191,6 +200,9 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
           imageUrl: current.imageUrl ?? "",
           price: input.price === undefined ? priceInput(current.priceCents) : String(input.price),
           priority: input.priority === undefined ? (current.priority ?? "") : input.priority === 0 ? "" : String(input.priority),
+          // Absents : la règle garde la description et « occasion acceptée » enregistrées.
+          description: input.description,
+          secondHandOk: input.secondHandOk,
         });
         if (!saved.ok) return refused(saved.error);
         return ok({ updated: { id: saved.item.id, name: saved.item.name } });
@@ -348,7 +360,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     "fill_from_url",
     {
       description:
-        "Read a product page and propose a name, a price and an image for a new idea, like the site's \"Fill from the link\". Creates nothing.",
+        "Read a product page and propose a name, a price, an image and a description for a new idea, like the site's \"Fill from the link\". Creates nothing.",
       inputSchema: z.object({ listId: z.string(), url: z.string() }),
       // Lit une page web, ne change rien.
       annotations: { readOnlyHint: true, openWorldHint: true },
@@ -359,7 +371,13 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
         if (!result.ok) return refused(result.error);
         const list = await listOf(listId);
         const category = typeof list === "string" ? null : (list.categories.find((entry) => entry.id === result.typeId)?.label ?? null);
-        return ok({ name: result.name || null, price: result.price || null, imageUrl: result.imageUrl || null, category });
+        return ok({
+          name: result.name || null,
+          price: result.price || null,
+          imageUrl: result.imageUrl || null,
+          description: result.description || null,
+          category,
+        });
       }),
   );
 
