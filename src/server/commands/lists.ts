@@ -46,7 +46,7 @@ export async function memberListView(
 }
 
 /**
- * Une liste naît avec sa première catégorie et son premier « qui ».
+ * Une liste naît avec sa première catégorie et son premier « qui » ; un champ vide prend sa valeur par défaut.
  * Le client peut choisir leurs identifiants : un renvoi du même `id` par un membre
  * rend la liste existante (`replayed`) au lieu d'en créer une seconde.
  */
@@ -59,7 +59,8 @@ export async function createList(
   const ids = [input.id, input.categoryId, input.personId].filter((id) => id !== undefined);
   if (!ids.every(isClientId)) return { ok: false, error: "idInvalid" };
   const actorId = active.user.id;
-  // Champs non bloquants : laissés vides, ils prennent des valeurs par défaut (langue du compte).
+  // Champs non bloquants : laissés vides, ils prennent des valeurs par défaut, dans la langue de la
+  // requête (langue de l'URL sur le site, `Accept-Language` pour l'API).
   // Une saisie à virgules en crée plusieurs ; le nom du compte, valeur par défaut, n'est jamais découpé.
   const defaults = listDefaults(active.user.displayName, await getTranslationsFor(ctx.locale, "home"));
   const typed = { categories: splitLabels(input.category), persons: splitLabels(input.person) };

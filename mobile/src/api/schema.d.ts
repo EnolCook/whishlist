@@ -1020,10 +1020,11 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        title: string;
-                        /** @description Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut que pour la première. Vide ou absente, la valeur par défaut de la langue du compte est utilisée (« Cadeaux » / "Gifts"). */
+                        /** @description Nom de la liste. Vide ou absent : « Liste de <nom affiché> » / "<nom affiché>’s list" (« Ma liste » / "My list" si le nom affiché est vide), suivi d'un numéro (« 2 », « 3 »…) si une liste du compte porte déjà ce nom. */
+                        title?: string;
+                        /** @description Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut que pour la première. Vide ou absente (ou faite seulement de virgules) : « Cadeaux » / "Gifts". */
                         category?: string;
-                        /** @description Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut que pour le premier. Vide ou absent, le nom affiché du compte est utilisé, tel quel (jamais découpé). */
+                        /** @description Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut que pour le premier. Vide ou absent (ou fait seulement de virgules) : le nom affiché du compte, tel quel (jamais découpé), ou « Moi » / "Me" s'il est vide. */
                         person?: string;
                         id?: components["schemas"]["ClientId"];
                         categoryId?: components["schemas"]["ClientId"];
