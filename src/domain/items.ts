@@ -1,4 +1,5 @@
 import { clone, findMembership } from "./access";
+import { MAX_DESCRIPTION, normalizeDescription } from "./description";
 import { normalizePriority } from "./priority";
 import { newId } from "./tokens";
 import type { Database, Item } from "./types";
@@ -42,6 +43,7 @@ export function createItem(
     priceCents?: number | null;
     priority?: string | null;
     secondHandOk?: boolean;
+    description?: string | null;
     id?: string;
   },
 ): { ok: true; doc: Database; item: Item } | { ok: false; error: string } {
@@ -65,6 +67,8 @@ export function createItem(
   }
   const priority = normalizePriority(input.priority);
   if (!priority.ok) return priority;
+  const description = normalizeDescription(input.description);
+  if (description && description.length > MAX_DESCRIPTION) return { ok: false, error: "descriptionTooLong" };
   const sortOrder =
     doc.items.filter((i) => i.wishlistId === input.wishlistId).reduce((max, i) => Math.max(max, i.sortOrder), 0) +
     1;
@@ -79,6 +83,7 @@ export function createItem(
     priceCents: input.priceCents ?? null,
     priority: priority.value,
     secondHandOk: input.secondHandOk ?? false,
+    description,
     sortOrder,
     archived: false,
   };
@@ -102,6 +107,8 @@ export function updateItem(
     priority?: string | null;
     /** Absent : la valeur enregistrée est gardée (client qui ne connaît pas encore ce champ). */
     secondHandOk?: boolean;
+    /** Absent : la description enregistrée est gardée (client qui ne connaît pas encore ce champ). */
+    description?: string | null;
   },
 ): { ok: true; doc: Database } | { ok: false; error: string } {
   if (!findMembership(doc, input.wishlistId, input.actorId)) {
@@ -124,6 +131,8 @@ export function updateItem(
   }
   const priority = normalizePriority(input.priority);
   if (!priority.ok) return priority;
+  const description = input.description === undefined ? undefined : normalizeDescription(input.description);
+  if (description && description.length > MAX_DESCRIPTION) return { ok: false, error: "descriptionTooLong" };
   const next = clone(doc);
   const item = next.items.find((i) => i.id === input.itemId && i.wishlistId === input.wishlistId);
   if (!item) return { ok: false, error: "itemMissing" };
@@ -135,6 +144,7 @@ export function updateItem(
   item.priceCents = input.priceCents ?? null;
   item.priority = priority.value;
   if (input.secondHandOk !== undefined) item.secondHandOk = input.secondHandOk;
+  if (description !== undefined) item.description = description;
   return { ok: true, doc: next };
 }
 

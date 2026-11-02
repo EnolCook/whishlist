@@ -57,6 +57,7 @@ test("chaque liste dont elle est membre, avec son rôle et ses contenus par libe
       imageUrl: null,
       priority: null,
       secondHandOk: false,
+      description: null,
       archived: false,
     },
   ]);

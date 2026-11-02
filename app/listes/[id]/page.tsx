@@ -121,6 +121,7 @@ export default async function EditListPage({
     price: euros(item.priceCents, priceLocale),
     priority: item.priority,
     secondHandOk: item.secondHandOk,
+    description: item.description,
     sortOrder: item.sortOrder,
   }));
   const error = query.e ? await translateError(query.e) : null;

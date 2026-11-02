@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { MAX_DESCRIPTION } from "../../../../src/domain/description";
+
 import { useCapabilities } from "@/data/capabilities";
 import { enrich, type ItemInput } from "@/data/items";
 import { errorText } from "@/features/errors";
@@ -19,6 +21,7 @@ import { Select } from "@/ui/Select";
 import { Shadow } from "@/ui/Shadow";
 import { StarPicker } from "@/ui/Stars";
 import { Text } from "@/ui/Text";
+import { Textarea } from "@/ui/Textarea";
 
 export type Draft = Required<ItemInput>;
 
@@ -33,6 +36,7 @@ export function emptyDraft(list: ViewList): Draft {
     price: "",
     priority: "",
     secondHandOk: false,
+    description: "",
   };
 }
 
@@ -84,6 +88,8 @@ export function ItemForm({
         price: found.price || current.price,
         imageUrl: found.imageUrl || current.imageUrl,
         typeId: found.typeId || current.typeId,
+        // Ce que la personne a écrit (pourquoi elle le veut…) n'est jamais remplacé.
+        description: current.description?.trim() ? current.description : found.description || current.description,
       }));
       setUsedLlm(found.usedLlm);
     } catch (caught) {
@@ -137,6 +143,16 @@ export function ItemForm({
       ) : null}
       <Field label={t("form.name")}>
         <Input testID="item-form.name" accessibilityLabel={t("form.name")} value={draft.name} onChangeText={(value) => set("name", value)} />
+      </Field>
+      <Field label={t("form.description")} description={t("form.descriptionHint")}>
+        <Textarea
+          testID="item-form.description"
+          accessibilityLabel={t("form.description")}
+          value={draft.description ?? ""}
+          onChangeText={(value) => set("description", value)}
+          placeholder={t("form.descriptionPlaceholder")}
+          maxLength={MAX_DESCRIPTION}
+        />
       </Field>
       <Field label={t("form.type")}>
         <Select label={t("form.type")} value={draft.typeId} options={categories} onChange={(value) => set("typeId", value)} />

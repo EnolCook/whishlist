@@ -23,6 +23,7 @@ export type PublicItemView = {
   priceLabel: string | null;
   priority: string | null;
   secondHandOk: boolean;
+  description: string | null;
   mine: boolean;
   reservationId: string | null;
 };
@@ -62,6 +63,7 @@ function itemBase(item: Item, locale: Locale) {
     priceLabel: formatPrice(item.priceCents, intlLocale(locale)),
     priority: item.priority,
     secondHandOk: item.secondHandOk,
+    description: item.description,
   };
 }
 

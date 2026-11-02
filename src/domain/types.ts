@@ -78,6 +78,8 @@ export interface Item {
   priority: string | null;
   /** L'idée convient aussi d'occasion (livres, jeux…), signalé à qui offre. */
   secondHandOk: boolean;
+  /** Contexte pour qui offre : ce qu'est le produit, pourquoi on le veut, à quoi il servira. */
+  description: string | null;
   personId: string;
   sortOrder: number;
   archived: boolean;
@@ -162,6 +164,7 @@ export interface SeedFile {
     priceCents: number | null;
     priority: string | null;
     secondHandOk?: boolean;
+    description?: string | null;
     personId: string;
     sortOrder: number;
     archived?: boolean;

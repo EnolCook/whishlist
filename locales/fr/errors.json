@@ -6,6 +6,7 @@
   "urlMustBeHttp": "Saisissez un lien commençant par http:// ou https://.",
   "imageMustBeHttp": "Saisissez un lien d'image commençant par http:// ou https://.",
   "priceNegative": "Le prix ne peut pas être négatif.",
+  "descriptionTooLong": "La description ne peut pas dépasser 2 000 caractères.",
   "itemMissing": "Cette idée n'existe pas.",
   "itemHasReservation": "Cette idée a une réservation. Annulez-la d'abord.",
   "typeNeedsName": "Indiquez un nom de catégorie.",

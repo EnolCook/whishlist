@@ -43,6 +43,7 @@ export type AccordionIdea = {
   price: string;
   priority: string | null;
   secondHandOk: boolean;
+  description: string | null;
   sortOrder: number;
 };
 
@@ -299,6 +300,11 @@ export function IdeasAccordion({
                         </span>
                         <div className="flex min-w-0 flex-1 flex-col gap-2">
                           <p className="text-balance font-medium">{item.name}</p>
+                          {item.description ? (
+                            <p className="line-clamp-3 break-words whitespace-pre-line text-muted-foreground">
+                              {item.description}
+                            </p>
+                          ) : null}
                           <PriorityStars value={item.priority} />
                           <div className="flex flex-wrap gap-1">
                             <Badge variant="outline">{item.personLabel}</Badge>

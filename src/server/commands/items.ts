@@ -95,6 +95,8 @@ export type ItemFields = {
   priority: string;
   /** Absent : faux à la création, inchangé en modification. */
   secondHandOk?: boolean;
+  /** Absent : aucune à la création, inchangée en modification. */
+  description?: string | null;
 };
 
 export async function saveItem(
@@ -133,6 +135,7 @@ export async function saveItem(
     priceCents: price,
     priority: input.priority,
     secondHandOk: input.secondHandOk,
+    description: input.description,
   };
   const itemId = input.itemId;
   let replayed = false;
@@ -225,6 +228,7 @@ export async function enrichFromUrl(
     price: string;
     imageUrl: string;
     typeId: string;
+    description: string;
     usedLlm: boolean;
     impact: LlmImpact | null;
   }>
@@ -248,7 +252,7 @@ export async function enrichFromUrl(
   const usedLlm = llmConfigured();
   let impact: LlmImpact | null = null;
   if (usedLlm) {
-    const refined = await refineProductWithLlm(page.finalUrl, page.html, hints, types);
+    const refined = await refineProductWithLlm(page.finalUrl, page.html, hints, types, ctx.locale);
     hints = refined.hints;
     if (refined.usage.totalTokens > 0) {
       impact = estimateLlmImpact(refined.usage.totalTokens);
@@ -263,6 +267,7 @@ export async function enrichFromUrl(
     price: hints.price ?? "",
     imageUrl: hints.imageUrl ?? "",
     typeId: hints.typeId ?? "",
+    description: hints.description ?? "",
     usedLlm,
     impact,
   };

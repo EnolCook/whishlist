@@ -8,8 +8,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { PriorityStarPicker } from "@/components/site/priority-star-picker";
+import { MAX_DESCRIPTION } from "@/src/domain/description";
 import type { LlmImpact } from "@/src/domain/llm-impact";
 import {
   enrichFromUrlAction,
@@ -27,6 +29,7 @@ function initialDraft(input: {
     imageUrl: string | null;
     priority: string | null;
     secondHandOk?: boolean;
+    description?: string | null;
   };
   price?: string;
   types: { id: string }[];
@@ -41,6 +44,7 @@ function initialDraft(input: {
     price: input.price ?? "",
     priority: input.item?.priority && /^[1-5]$/.test(input.item.priority) ? input.item.priority : "",
     secondHandOk: input.item?.secondHandOk ?? false,
+    description: input.item?.description ?? "",
   };
 }
 
@@ -72,6 +76,7 @@ export function ItemForm({
     imageUrl: string | null;
     priority: string | null;
     secondHandOk?: boolean;
+    description?: string | null;
   };
   price?: string;
   onglet?: string;
@@ -116,6 +121,8 @@ export function ItemForm({
         price: result.price || prev.price,
         imageUrl: result.imageUrl || prev.imageUrl,
         typeId: result.typeId || prev.typeId,
+        // Ce que la personne a écrit (pourquoi elle le veut…) n'est jamais remplacé.
+        description: prev.description.trim() ? prev.description : result.description || prev.description,
       }));
       if (result.imageUrl) setPreviewImage(result.imageUrl);
       setUsedLlm(result.usedLlm);
@@ -211,6 +218,20 @@ export function ItemForm({
             value={draft.name}
             onChange={(e) => setField("name", e.target.value)}
           />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${id}-description`}>{t("form.description")}</FieldLabel>
+          <Textarea
+            id={`${id}-description`}
+            name="description"
+            rows={2}
+            maxLength={MAX_DESCRIPTION}
+            value={draft.description}
+            onChange={(e) => setField("description", e.target.value)}
+            placeholder={t("form.descriptionPlaceholder")}
+            aria-describedby={`${id}-description-hint`}
+          />
+          <FieldDescription id={`${id}-description-hint`}>{t("form.descriptionHint")}</FieldDescription>
         </Field>
         <div className="grid gap-3 @sm/field-group:grid-cols-2 @xl/field-group:grid-cols-[1fr_1fr_6.5rem_auto] @xl/field-group:items-start">
           <Field>

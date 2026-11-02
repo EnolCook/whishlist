@@ -21,6 +21,7 @@ export function draftOf(item: ViewItem): Draft {
     price: priceInput(item.priceCents),
     priority: item.priority ?? "",
     secondHandOk: item.secondHandOk ?? false,
+    description: item.description ?? "",
   };
 }
 

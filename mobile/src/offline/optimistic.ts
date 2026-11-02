@@ -1,5 +1,6 @@
 import type { Schemas } from "@/api/client";
 
+import { normalizeDescription } from "../../../src/domain/description";
 import { formatPrice, parsePrice } from "../../../src/domain/price";
 import type { Change, ChangePayloads } from "./outbox";
 
@@ -29,7 +30,8 @@ function priceFields(input: ChangePayloads["updateItem"], intlLocale: string) {
   return { priceCents, priceLabel: formatPrice(priceCents, intlLocale) };
 }
 
-function itemFields(input: ChangePayloads["updateItem"], intlLocale: string) {
+/** `keep` : la description affichée quand le changement n'en porte pas (file écrite avant ce champ). */
+function itemFields(input: ChangePayloads["updateItem"], intlLocale: string, keep: string | null = null) {
   return {
     name: input.name.trim(),
     typeId: input.typeId,
@@ -38,6 +40,7 @@ function itemFields(input: ChangePayloads["updateItem"], intlLocale: string) {
     imageUrl: input.imageUrl?.trim() || null,
     priority: input.priority?.trim() || null,
     secondHandOk: input.secondHandOk ?? false,
+    description: input.description === undefined ? keep : normalizeDescription(input.description),
     ...priceFields(input, intlLocale),
   };
 }
@@ -108,7 +111,7 @@ export function viewList(
         break;
       }
       case "updateItem":
-        if (current) next = replaceAt(items, index, { ...current, ...itemFields(change.payload, intlLocale), ...syncOf(change) });
+        if (current) next = replaceAt(items, index, { ...current, ...itemFields(change.payload, intlLocale, current.description), ...syncOf(change) });
         break;
       case "patchItem":
         if (current) next = replaceAt(items, index, { ...current, ...change.payload, ...syncOf(change) });

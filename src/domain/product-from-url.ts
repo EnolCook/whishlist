@@ -5,6 +5,8 @@ export type ProductHints = {
   price: string | null;
   imageUrl: string | null;
   typeId: string | null;
+  /** Quelques phrases sur le produit, pour pré-remplir la description de l'idée. */
+  description: string | null;
 };
 
 function metaContent(html: string, attr: "property" | "name" | "itemprop", key: string): string | null {
@@ -70,6 +72,22 @@ function cleanProductName(name: string | null): string | null {
     .replace(/\s+/g, " ")
     .trim();
   return cleaned || null;
+}
+
+/** Longueur d'une description proposée : de quoi situer le produit, pas la fiche entière. */
+export const SUGGESTED_DESCRIPTION_MAX = 300;
+
+/** Texte brut sur une ligne (les descriptions JSON-LD contiennent souvent du HTML), coupé à un mot. */
+export function cleanDescription(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const text = decodeHtml(raw.replace(/<[^>]*>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  if (text.length <= SUGGESTED_DESCRIPTION_MAX) return text;
+  const cut = text.slice(0, SUGGESTED_DESCRIPTION_MAX - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > SUGGESTED_DESCRIPTION_MAX / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.\-–—]+$/, "")}…`;
 }
 
 function isLikelyLogoOrChrome(url: string): boolean {
@@ -143,7 +161,7 @@ function normalizePrice(raw: string | number | null | undefined): string | null 
 }
 
 function pickFromJsonLd(value: unknown, pageUrl: string): ProductHints {
-  const empty: ProductHints = { name: null, price: null, imageUrl: null, typeId: null };
+  const empty: ProductHints = { name: null, price: null, imageUrl: null, typeId: null, description: null };
   if (!value || typeof value !== "object") return empty;
   if (Array.isArray(value)) {
     for (const entry of value) {
@@ -214,7 +232,8 @@ function pickFromJsonLd(value: unknown, pageUrl: string): ProductHints {
     }
   }
 
-  return { name, price, imageUrl, typeId: null };
+  const description = typeof record.description === "string" ? cleanDescription(record.description) : null;
+  return { name, price, imageUrl, typeId: null, description };
 }
 
 function jsonLdHints(html: string, pageUrl: string): ProductHints {
@@ -229,7 +248,7 @@ function jsonLdHints(html: string, pageUrl: string): ProductHints {
       // ignore
     }
   }
-  return { name: null, price: null, imageUrl: null, typeId: null };
+  return { name: null, price: null, imageUrl: null, typeId: null, description: null };
 }
 
 export function extractProductHints(html: string, pageUrl: string): ProductHints {
@@ -260,6 +279,8 @@ export function extractProductHints(html: string, pageUrl: string): ProductHints
     price,
     imageUrl,
     typeId: null,
+    // Pas la balise <meta name="description"> : c'est souvent le texte SEO du site, pas celui du produit.
+    description: ld.description ?? cleanDescription(metaContent(html, "property", "og:description")),
   };
 }
 
@@ -269,6 +290,7 @@ export function mergeHints(base: ProductHints, extra: Partial<ProductHints>): Pr
     price: normalizePrice(extra.price) ?? base.price,
     imageUrl: (extra.imageUrl?.trim() || base.imageUrl)?.trim() || null,
     typeId: extra.typeId?.trim() || base.typeId,
+    description: cleanDescription(extra.description) ?? base.description,
   };
 }
 

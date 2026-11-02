@@ -46,6 +46,7 @@ export function importTemplate(doc: Database, wishlistId: string, seed: SeedFile
       priceCents: item.priceCents,
       priority: item.priority,
       secondHandOk: item.secondHandOk ?? false,
+      description: item.description ?? null,
       personId: prefix(wishlistId, item.personId),
       sortOrder: item.sortOrder,
       archived: item.archived ?? false,
