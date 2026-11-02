@@ -124,11 +124,11 @@ export function ItemForm({
 
   // Ce formulaire sert en pleine page (~700 px) et dans le dialogue « Modifier l'idée », que
   // DialogContent plafonne à `sm:max-w-lg` (~455 px de grille utile). Les points de rupture sont
-  // donc ceux du conteneur (`@container`) et non ceux de la fenêtre : un `sm:` classique se
-  // déclenche sur la largeur de l'écran et passait la grille en 4 colonnes dans le dialogue aussi,
-  // où les listes déroulantes tombaient à 61 px et 44 px.
+  // donc ceux du conteneur `FieldGroup` (`@…/field-group:`) et non ceux de la fenêtre : un `sm:`
+  // classique se déclenche sur la largeur de l'écran et passait la grille en 4 colonnes dans le
+  // dialogue aussi, où les listes déroulantes tombaient à 61 px et 44 px.
   return (
-    <form action={formAction} className="@container flex flex-col gap-3">
+    <form action={formAction} className="flex flex-col gap-3">
       <FieldGroup className="gap-3">
         <input type="hidden" name="wishlistId" value={wishlistId} />
         <input type="hidden" name="onglet" value={onglet} />
@@ -140,7 +140,7 @@ export function ItemForm({
         ) : null}
         <Field>
           <FieldLabel htmlFor={`${id}-url`}>{t("form.url")}</FieldLabel>
-          <div className="flex flex-col gap-2 @lg:flex-row @lg:items-start">
+          <div className="flex flex-col gap-2 @lg/field-group:flex-row @lg/field-group:items-start">
             <Input
               id={`${id}-url`}
               name="url"
@@ -148,7 +148,7 @@ export function ItemForm({
               value={draft.url}
               onChange={(e) => setField("url", e.target.value)}
               placeholder="https://"
-              className="min-w-0 @lg:flex-1"
+              className="min-w-0 @lg/field-group:flex-1"
             />
             {llmEnabled ? (
               <Button
@@ -208,7 +208,7 @@ export function ItemForm({
             onChange={(e) => setField("name", e.target.value)}
           />
         </Field>
-        <div className="grid gap-3 @sm:grid-cols-2 @xl:grid-cols-[1fr_1fr_6.5rem_auto] @xl:items-start">
+        <div className="grid gap-3 @sm/field-group:grid-cols-2 @xl/field-group:grid-cols-[1fr_1fr_6.5rem_auto] @xl/field-group:items-start">
           <Field>
             <FieldLabel htmlFor={`${id}-type`}>{t("form.type")}</FieldLabel>
             <NativeSelect
@@ -297,7 +297,7 @@ export function ItemForm({
             />
           </div>
         </Field>
-        <Button type="submit" disabled={pending} className="w-full @lg:w-auto">
+        <Button type="submit" disabled={pending} className="w-full @lg/field-group:w-auto">
           {pending ? t("common:actions.loading") : item ? t("form.save") : t("form.add")}
         </Button>
       </FieldGroup>
