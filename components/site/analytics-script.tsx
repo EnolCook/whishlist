@@ -12,6 +12,9 @@ export async function AnalyticsScript() {
   const domain = new URL(siteOrigin()).hostname;
   return (
     <>
+      {/* Rendu par app/layout.tsx, la place exigée pour `beforeInteractive` en App Router : la règle
+          ne voit que ce fichier. */}
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
       <Script id="analytics-before" strategy="beforeInteractive" nonce={nonce}>
         {analyticsBeforeSendSource()}
       </Script>
