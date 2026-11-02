@@ -46,7 +46,7 @@
   "getApp": {
     "button": "L’app sur votre téléphone",
     "title": "L’app sur votre téléphone",
-    "description": "Retrouvez vos listes et celles de vos proches dans l’app : les liens reçus par e-mail s’y ouvrent directement.",
+    "description": "Retrouvez vos listes et celles de vos proches dans l’app : les liens reçus par e-mail s’y ouvrent directement.",
     "appStore": "Télécharger dans l’App Store",
     "googlePlay": "Disponible sur Google Play",
     "trademarks": "Apple et le logo Apple sont des marques d’Apple Inc. App Store est une marque de service d’Apple Inc. Google Play et le logo Google Play sont des marques de Google LLC."

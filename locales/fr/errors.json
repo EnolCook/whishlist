@@ -51,7 +51,7 @@
   "emailInvalid": "Saisissez une adresse e-mail valide.",
   "resetLinkInvalid": "Ce lien de réinitialisation est invalide ou a expiré. Demandez un nouveau lien.",
   "resetLinkExpired": "Ce lien a expiré. Demandez un nouveau lien.",
-  "emailNotVerified": "Confirmez d'abord votre adresse e-mail : ouvrez le lien que nous vous avons envoyé.",
+  "emailNotVerified": "Confirmez d'abord votre adresse e-mail : ouvrez le lien que nous vous avons envoyé.",
   "emailAlreadyVerified": "Votre adresse e-mail est déjà confirmée.",
   "emailUnchanged": "C'est déjà votre adresse de connexion.",
   "confirmationLinkInvalid": "Ce lien de confirmation n'est plus valide. Demandez-en un nouveau.",
