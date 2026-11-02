@@ -13,7 +13,11 @@ import { setTransport, stopSync } from "@/offline/sync";
 import { fakeFetch, json } from "../helpers/fetch";
 import { freshDb } from "../helpers/memory-db";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
+let mockParams: Record<string, string> = {};
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
+  useLocalSearchParams: () => mockParams,
+}));
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
 
 const list: Schemas["MemberList"] = {
@@ -51,6 +55,7 @@ async function renderForm() {
 }
 
 beforeEach(async () => {
+  mockParams = {};
   await freshDb();
   resetStore();
   setTransport(apiTransport);
@@ -80,6 +85,29 @@ test("the pre-fill button follows the site: AI label only when the server has on
   routes({ "GET /capabilities": () => json(200, { apiVersion: "1.1.0", enrich: true, mail: false }) });
   await renderForm();
   await waitFor(() => expect(screen.getByTestId("enrich")).toHaveTextContent(i18n.t("list:form.fetchInfosAi")));
+});
+
+test("opened from a share: pre-filled with the link and the name, then fills itself from the link once", async () => {
+  const enrich = jest.fn(() => json(200, { name: "Lampe en noyer massif", price: "59", imageUrl: "", typeId: "", usedLlm: false }));
+  routes({
+    "GET /capabilities": () => json(200, { apiVersion: "1.2.0", enrich: false, mail: false }),
+    "POST /lists/w/enrich": enrich,
+  });
+  mockParams = { url: "https://shop.example.test/lampe", name: "Lampe de chevet", fill: "1" };
+  await renderForm();
+  expect(screen.getByLabelText("Lien du cadeau").props.value).toBe("https://shop.example.test/lampe");
+  await waitFor(() => expect(screen.getByLabelText("Nom du cadeau").props.value).toBe("Lampe en noyer massif"));
+  expect(screen.getByLabelText("Prix (€)").props.value).toBe("59");
+  expect(enrich).toHaveBeenCalledTimes(1);
+});
+
+test("opened from a share with only text: the name is pre-filled, nothing is fetched", async () => {
+  const enrich = jest.fn(() => json(200, {}));
+  routes({ "GET /capabilities": () => json(200, { apiVersion: "1.2.0", enrich: false, mail: false }), "POST /lists/w/enrich": enrich });
+  mockParams = { url: "", name: "Un puzzle de 1000 pièces", fill: "" };
+  await renderForm();
+  expect(screen.getByLabelText("Nom du cadeau").props.value).toBe("Un puzzle de 1000 pièces");
+  expect(enrich).not.toHaveBeenCalled();
 });
 
 test("the pre-fill button is disabled offline, with the explanation", async () => {
