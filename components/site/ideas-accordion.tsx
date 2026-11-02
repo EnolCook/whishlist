@@ -350,7 +350,12 @@ export function IdeasAccordion({
       </Accordion>
 
       <Dialog open={editingItem !== null} onOpenChange={(open) => !open && setEditingId(null)}>
-        <DialogContent>
+        {/* Sur deux rangées le formulaire dépasse les 40rem du dialogue par défaut : un ascenseur
+            apparaissait et coupait le bouton de suppression. Ce plafond ignore la hauteur réellement
+            disponible — ici on lui laisse la fenêtre (`cn` est un tailwind-merge, la classe remplace
+            bien `max-h-[min(90vh,40rem)]`). En `dvh` et non en `vh` : sur mobile `vh` vaut la hauteur
+            barre d'adresse rétractée, et 90vh peut donc dépasser quand la barre est affichée. */}
+        <DialogContent className="max-h-[90dvh]">
           {editingItem ? (
             <>
               <DialogHeader>
