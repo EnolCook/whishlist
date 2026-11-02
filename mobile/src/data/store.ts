@@ -107,6 +107,16 @@ async function send(change: Change): Promise<void> {
     case "deleteItem":
       await done(api.DELETE("/lists/{listId}/items/{itemId}", { params: { path: { ...path, itemId: change.targetId } } }));
       return;
+    case "moveItem": {
+      const { preview: _preview, ...body } = change.payload;
+      await ok(api.POST("/lists/{listId}/items/{itemId}/move", { params: { path: { ...path, itemId: change.targetId } }, body }));
+      return;
+    }
+    case "copyItem": {
+      const { preview, ...body } = change.payload;
+      await ok(api.POST("/lists/{listId}/items/{itemId}/copy", { params: { path: { ...path, itemId: preview.id } }, body }));
+      return;
+    }
   }
 }
 

@@ -45,6 +45,32 @@ function replaceAt<T>(items: T[], index: number, value: T): T[] {
   return items.map((item, i) => (i === index ? value : item));
 }
 
+type Transfer = Extract<Change, { kind: "moveItem" | "copyItem" }>;
+
+/**
+ * Déplacement ou copie vus depuis `listId` : l'idée quitte la liste de départ (un refus la laisse, avec l'alerte)
+ * et arrive dans la liste d'arrivée, d'après l'aperçu gardé dans le changement. Une copie dans la même liste
+ * s'affiche juste après l'original.
+ */
+function applyTransfer(items: ViewItem[], change: Transfer, listId: string): ViewItem[] {
+  const { targetListId, typeId, personId, preview } = change.payload;
+  const rejected = change.state === "rejected";
+  const lastOrder = items.reduce((max, item) => Math.max(max, item.sortOrder + 1), 0);
+  if (change.kind === "moveItem") {
+    if (targetListId === change.listId) return items;
+    if (change.listId === listId) {
+      return rejected
+        ? items.map((item) => (item.id === change.targetId ? { ...item, ...syncOf(change) } : item))
+        : items.filter((item) => item.id !== change.targetId);
+    }
+    if (targetListId !== listId || rejected || items.some((item) => item.id === change.targetId)) return items;
+    return [...items, { ...preview, typeId, personId, archived: false, sortOrder: lastOrder, ...syncOf(change) }];
+  }
+  if (targetListId !== listId || items.some((item) => item.id === change.payload.id)) return items;
+  const sortOrder = change.listId === listId ? preview.sortOrder + 0.5 : lastOrder;
+  return [...items, { ...preview, id: change.payload.id, typeId, personId, archived: false, sortOrder, ...syncOf(change) }];
+}
+
 /** Liste créée sur le téléphone et pas encore acceptée : ce que l'on sait d'elle. */
 function localList(change: Extract<Change, { kind: "createList" }>): ViewList {
   const { payload } = change;
@@ -87,6 +113,10 @@ export function viewList(
   if (!list) return null;
 
   for (const change of changes) {
+    if (change.kind === "moveItem" || change.kind === "copyItem") {
+      list = { ...list, items: applyTransfer(list.items, change, listId) };
+      continue;
+    }
     if (change.listId !== listId || change.kind === "createList") continue;
     const items: ViewItem[] = list.items;
     const index = items.findIndex((item) => item.id === change.targetId);

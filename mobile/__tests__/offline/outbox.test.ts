@@ -154,3 +154,24 @@ describe("dependencies", () => {
     expect((await listChanges()).map((change) => change.targetId)).toEqual(["other"]);
   });
 });
+
+const preview = { id: "a", name: "Puzzle", typeId: "t", personId: "p", url: null, imageUrl: null, priceCents: null, priceLabel: null, priority: null, archived: false, sortOrder: 0 };
+const moveItem = (id: string): NewChange => ({
+  kind: "moveItem",
+  listId: "w",
+  targetId: id,
+  payload: { targetListId: "w2", typeId: "t2", personId: "p2", preview: { ...preview, id } },
+});
+
+test("deleting a moved idea keeps the pending move: the deletion is for the idea in its new list", async () => {
+  await enqueue(moveItem("a"));
+  await enqueue({ kind: "deleteItem", listId: "w2", targetId: "a", payload: {} });
+  expect((await listChanges()).map((row) => row.kind)).toEqual(["moveItem", "deleteItem"]);
+});
+
+test("an idea never sent, then moved, then deleted: nothing is left to send", async () => {
+  await enqueue(createItem("a"));
+  await enqueue(moveItem("a"));
+  await enqueue({ kind: "deleteItem", listId: "w2", targetId: "a", payload: {} });
+  expect(await listChanges()).toEqual([]);
+});

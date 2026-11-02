@@ -1,5 +1,6 @@
 import { api, ok, type Schemas } from "@/api/client";
 import { newClientId } from "@/offline/ids";
+import type { ViewItem } from "@/offline/optimistic";
 import type { ChangePayloads } from "@/offline/outbox";
 
 import { parsePrice } from "../../../src/domain/price";
@@ -55,6 +56,23 @@ export async function enrich(listId: string, url: string): Promise<Enriched> {
     api.POST("/lists/{listId}/enrich", { params: { path: { listId } }, body: { url } }),
   );
   return { name, price, imageUrl, typeId, usedLlm };
+}
+
+/**
+ * Déplacer ou copier une idée vers une liste (la même est permise pour une copie), en passant par la file.
+ * Le changement garde un aperçu de l'idée, pour l'afficher dans la liste d'arrivée avant l'envoi.
+ */
+export async function transferItem(
+  listId: string,
+  item: ViewItem,
+  mode: "move" | "copy",
+  target: { listId: string; typeId: string; personId: string },
+): Promise<WriteResult> {
+  const { pending: _pending, rejected: _rejected, ...preview } = item;
+  const body = { targetListId: target.listId, typeId: target.typeId, personId: target.personId, preview };
+  if (mode === "move") return write({ kind: "moveItem", listId, targetId: item.id, payload: body });
+  const id = newClientId();
+  return write({ kind: "copyItem", listId, targetId: id, payload: { ...body, id } });
 }
 
 export type MemberItem = Schemas["MemberItem"];

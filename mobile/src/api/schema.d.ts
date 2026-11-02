@@ -1336,6 +1336,126 @@ export interface paths {
         };
         trace?: never;
     };
+    "/lists/{listId}/items/{itemId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: components["parameters"]["listId"];
+                itemId: components["parameters"]["itemId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Déplacer une idée vers une autre liste (depuis 1.5.0)
+         * @description Il faut être membre des deux listes. L'idée garde son identifiant ; `typeId` et `personId`
+         *     sont ceux de la liste d'arrivée. Une idée réservée ne change pas de liste
+         *     (`itemReservedCannotMove`) : la personne qui a réservé ne peut annuler que depuis le lien de
+         *     la liste d'origine. Un renvoi après réussite (même liste d'arrivée, même catégorie, même
+         *     « qui ») rend l'idée déjà déplacée.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: components["parameters"]["listId"];
+                    itemId: components["parameters"]["itemId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ItemTransfer"];
+                };
+            };
+            responses: {
+                /** @description L'idée, dans la liste d'arrivée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MemberItem"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lists/{listId}/items/{itemId}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: components["parameters"]["listId"];
+                itemId: components["parameters"]["itemId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copier une idée, dans la même liste ou une autre (depuis 1.5.0)
+         * @description Il faut être membre des deux listes. Tous les champs de l'idée sont copiés, pas sa
+         *     réservation. Dans la même liste, la copie se place juste après l'original. `id` : comme à
+         *     la création, identifiant choisi par le client ; un renvoi répond `200` sans rien créer.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: components["parameters"]["listId"];
+                    itemId: components["parameters"]["itemId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ItemTransfer"] & {
+                        /** @description Identifiant de la copie choisi par le client. */
+                        id?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Renvoi d'une copie déjà reçue (même `id`) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MemberItem"];
+                    };
+                };
+                /** @description Copie créée */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MemberItem"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lists/{listId}/enrich": {
         parameters: {
             query?: never;
@@ -2150,6 +2270,14 @@ export interface components {
             /** @description Comme saisi sur le site (« 12 */
             price?: string;
             priority?: string;
+        };
+        ItemTransfer: {
+            /** @description Liste d'arrivée (la même est permise pour une copie). */
+            targetListId: string;
+            /** @description Catégorie de la liste d'arrivée. */
+            typeId: string;
+            /** @description « Qui » de la liste d'arrivée. */
+            personId: string;
         };
         MemberItem: {
             id: string;

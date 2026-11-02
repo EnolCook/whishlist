@@ -1,9 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon } from "lucide-react";
 import { parsePriority } from "@/src/domain/priority";
+import { isLocale } from "@/src/i18n/config";
+import { withLocale } from "@/src/i18n/locale-path";
 import {
   deleteItemAction,
   reorderTypesAction,
@@ -12,6 +16,7 @@ import {
 } from "@/src/server/actions";
 import { ConfirmForm } from "@/components/site/confirm-form";
 import { ItemForm } from "@/components/site/item-form";
+import { MoveCopyDialog, type TransferDone, type TransferTarget } from "@/components/site/move-copy-dialog";
 import { PriorityStars } from "@/components/site/priority-stars";
 import {
   Accordion,
@@ -60,15 +65,20 @@ export function IdeasAccordion({
   types,
   people,
   items,
+  targets,
   llmEnabled = false,
 }: {
   wishlistId: string;
   types: TypeCol[];
   people: { id: string; label: string }[];
   items: AccordionIdea[];
+  /** Listes dont on est membre (celle-ci comprise), pour déplacer ou copier une idée. */
+  targets: TransferTarget[];
   llmEnabled?: boolean;
 }) {
-  const { t } = useTranslation(["list", "errors", "common"]);
+  const { t, i18n } = useTranslation(["list", "errors", "common"]);
+  const router = useRouter();
+  const locale = isLocale(i18n.language) ? i18n.language : "fr";
   const [board, setBoard] = useState(items);
   const [typeOrder, setTypeOrder] = useState(() =>
     [...types].sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)),
@@ -90,6 +100,8 @@ export function IdeasAccordion({
   const [overTypeId, setOverTypeId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Message après un déplacement ou une copie, avec le lien vers la liste d'arrivée. */
+  const [notice, setNotice] = useState<{ text: string; href: string | null } | null>(null);
   const [pending, startTransition] = useTransition();
   const [openValues, setOpenValues] = useState<string[]>([]);
 
@@ -173,6 +185,20 @@ export function IdeasAccordion({
     persistTypeOrder(next, typeOrder);
   }
 
+  function onTransferred(item: AccordionIdea, { mode, target }: TransferDone) {
+    setEditingId(null);
+    setError(null);
+    if (mode === "move") setBoard((current) => current.filter((entry) => entry.id !== item.id));
+    const here = target.id === wishlistId;
+    setNotice({
+      text: here
+        ? t("transfer.copiedHere", { name: item.name })
+        : t(mode === "move" ? "transfer.moved" : "transfer.copied", { name: item.name, list: target.title }),
+      href: here ? null : withLocale(locale, `/listes/${target.id}`),
+    });
+    router.refresh();
+  }
+
   function onArchive(itemId: string) {
     const snapshot = board;
     setBoard((current) => current.filter((entry) => entry.id !== itemId));
@@ -193,6 +219,18 @@ export function IdeasAccordion({
       {error ? (
         <Alert variant="destructive">
           <AlertDescription>{t(`errors:${error}`, { defaultValue: error })}</AlertDescription>
+        </Alert>
+      ) : null}
+      {notice ? (
+        <Alert role="status">
+          <AlertDescription>
+            {notice.text}{" "}
+            {notice.href ? (
+              <Link href={notice.href} className="font-medium underline underline-offset-4">
+                {t("transfer.openList")}
+              </Link>
+            ) : null}
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -367,17 +405,28 @@ export function IdeasAccordion({
                 onglet="idees"
                 llmEnabled={llmEnabled}
               />
-              <ConfirmForm
-                title={t("confirm.deleteIdeaTitle")}
-                description={t("confirm.deleteIdeaBody", { name: editingItem.name })}
-                confirmLabel={t("confirm.deleteIdeaConfirm")}
-                cancelLabel={t("confirm.deleteIdeaKeep")}
-                action={deleteItemAction}
-                fields={{ wishlistId, itemId: editingItem.id, onglet: "idees" }}
-                triggerLabel={t("form.delete")}
-                triggerVariant="destructive"
-                triggerSize="sm"
-              />
+              <div className="flex flex-wrap gap-2">
+                <MoveCopyDialog
+                  key={editingItem.id}
+                  wishlistId={wishlistId}
+                  item={editingItem}
+                  typeLabel={typeOrder.find((type) => type.id === editingItem.typeId)?.label}
+                  personLabel={editingItem.personLabel}
+                  targets={targets}
+                  onDone={(done) => onTransferred(editingItem, done)}
+                />
+                <ConfirmForm
+                  title={t("confirm.deleteIdeaTitle")}
+                  description={t("confirm.deleteIdeaBody", { name: editingItem.name })}
+                  confirmLabel={t("confirm.deleteIdeaConfirm")}
+                  cancelLabel={t("confirm.deleteIdeaKeep")}
+                  action={deleteItemAction}
+                  fields={{ wishlistId, itemId: editingItem.id, onglet: "idees" }}
+                  triggerLabel={t("form.delete")}
+                  triggerVariant="destructive"
+                  triggerSize="sm"
+                />
+              </div>
             </>
           ) : null}
         </DialogContent>

@@ -164,6 +164,24 @@
     "aiCo2": "Environ {{grams}} g de CO₂e — soit l’équivalent d’environ {{beef}} g de viande rouge",
     "aiDisclaimer": "Ordres de grandeur indicatifs, pas un bilan carbone certifié."
   },
+  "transfer": {
+    "open": "Déplacer ou copier…",
+    "title": "Déplacer ou copier l’idée",
+    "mode": "Que faire de l’idée ?",
+    "move": "Déplacer",
+    "moveHint": "Elle quitte cette liste.",
+    "copy": "Copier",
+    "copyHint": "Elle reste ici, une copie est ajoutée.",
+    "target": "Vers la liste",
+    "thisList": "{{title}} (cette liste)",
+    "submitMove": "Déplacer l’idée",
+    "submitCopy": "Copier l’idée",
+    "onlyList": "Vous n’avez pas d’autre liste : l’idée peut seulement être copiée dans celle-ci.",
+    "moved": "« {{name}} » est maintenant dans la liste « {{list}} ».",
+    "copied": "« {{name}} » a été copiée dans la liste « {{list}} ».",
+    "copiedHere": "« {{name}} » a été copiée juste en dessous.",
+    "openList": "Voir la liste"
+  },
   "accordion": {
     "hint": "Ouvrez une catégorie pour voir ses idées. Les flèches changent l’ordre des catégories. Le menu déplace une idée.",
     "moveAria": "Déplacer « {{name}} » vers une catégorie",

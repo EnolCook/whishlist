@@ -8,6 +8,7 @@
   "priceNegative": "The price can’t be negative.",
   "itemMissing": "This idea doesn’t exist.",
   "itemHasReservation": "This idea has a reservation. Cancel it first.",
+  "itemReservedCannotMove": "This idea is reserved, so it stays on its list: otherwise the person who reserved it couldn’t find it anymore. You can copy it instead.",
   "typeNeedsName": "Enter a category name.",
   "listMissing": "This wish list couldn’t be found or is no longer available.",
   "typeMissing": "This category doesn’t exist.",

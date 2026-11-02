@@ -122,6 +122,22 @@ export default async function EditListPage({
     priority: item.priority,
     sortOrder: item.sortOrder,
   }));
+  // Listes où l'idée peut être déplacée ou copiée : celles dont on est membre.
+  const transferTargets = doc.memberships
+    .filter((entry) => entry.userId === user.id)
+    .flatMap((entry) => doc.wishlists.filter((wishlist) => wishlist.id === entry.wishlistId))
+    .sort((a, b) => a.title.localeCompare(b.title, locale))
+    .map((wishlist) => ({
+      id: wishlist.id,
+      title: wishlist.title,
+      types: doc.types
+        .filter((type) => type.wishlistId === wishlist.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
+        .map((type) => ({ id: type.id, label: type.label })),
+      people: doc.people
+        .filter((person) => person.wishlistId === wishlist.id)
+        .map((person) => ({ id: person.id, label: person.label })),
+    }));
   const error = query.e ? await translateError(query.e) : null;
   const theme = resolveTheme(list.theme);
   const llmEnabled = llmConfigured();
@@ -201,6 +217,7 @@ export default async function EditListPage({
             }))}
             people={people.map((person) => ({ id: person.id, label: person.label }))}
             items={ideaItems}
+            targets={transferTargets}
             llmEnabled={llmEnabled}
           />
         </div>
