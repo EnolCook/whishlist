@@ -2327,6 +2327,7 @@ export interface components {
         reservationClaims: string;
     };
     requestBodies: {
+        /** @description Un libellé est unique dans sa liste, sans tenir compte de la casse ni des blancs autour : ajouter ou renommer vers un nom déjà pris est refusé (`typeExists` pour une catégorie, `personExists` pour un « qui »). Une entrée peut changer la casse de son propre nom. */
         Label: {
             content: {
                 "application/json": {
