@@ -236,7 +236,7 @@ L’app expose les mêmes parcours que le site sous `/api/v1`, en JSON, pour l�
 
 ### Clés d’API et assistants IA (MCP)
 
-- Une **clé d’API** se crée sur la page **Mon compte** (section « Clés d’API et assistants IA »). Elle s’affiche une seule fois, commence par `oys_`, et s’envoie comme un jeton : `Authorization: Bearer oys_…`. Elle agit pour le compte jusqu’à sa révocation, 120 requêtes par minute au plus, mais ne peut ni se déconnecter, ni changer le mot de passe, ni exporter ou supprimer le compte (`403 apiKeyNotAllowed`).
+- Une **clé d’API** se crée sur la page **Mon compte** (section « Clés d’API et assistants IA »). Elle s’affiche une seule fois, commence par `oys_`, et s’envoie comme un jeton : `Authorization: Bearer oys_…`. Elle agit pour le compte jusqu’à sa révocation, 120 requêtes par minute au plus, mais ne peut ni se déconnecter, ni changer le mot de passe ou l’adresse de connexion, ni exporter ou supprimer le compte (`403 apiKeyNotAllowed`).
 - **Serveur MCP** : `POST /api/mcp` (transport Streamable HTTP, sans état), avec la même clé. Outils :
   - listes : `list_lists`, `get_list`, `create_list`, `rename_list`, `delete_list` ;
   - idées : `add_idea`, `update_idea`, `archive_idea`, `delete_idea`, `fill_from_url` ;

@@ -108,9 +108,11 @@ test("routes de compte : une clé est refusée (403 apiKeyNotAllowed), un jeton 
   assert.equal(await refuseApiKey(api("jeton-de-session")), null);
 });
 
-test("chaque route de compte commence par refuser une clé (mot de passe, suppression, export, déconnexion)", () => {
+test("chaque route de compte commence par refuser une clé (mot de passe, adresse, suppression, export, déconnexion)", () => {
   for (const [file, handlers] of [
     ["app/api/v1/me/password/route.ts", ["POST"]],
+    ["app/api/v1/me/email/route.ts", ["POST", "DELETE"]],
+    ["app/api/v1/me/email-verification/route.ts", ["POST"]],
     ["app/api/v1/me/deletion/route.ts", ["GET", "POST"]],
     ["app/api/v1/me/export/route.ts", ["GET"]],
     ["app/api/v1/auth/logout/route.ts", ["POST"]],
