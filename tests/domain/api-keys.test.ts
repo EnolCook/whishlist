@@ -13,6 +13,8 @@ import {
   touchApiKey,
 } from "../../src/auth/api-keys";
 import { deleteAccount } from "../../src/domain/account";
+import { createPasswordReset, resetPasswordWithToken } from "../../src/domain/password-reset";
+import { changePassword } from "../../src/domain/users";
 import { apiKeyUser, optionalApiUser, usesApiKey } from "../../src/server/api/auth";
 import { refuseApiKey } from "../../src/server/api/http";
 import { createMyApiKey, revokeMyApiKey } from "../../src/server/commands/api-keys";
@@ -136,4 +138,22 @@ test("commandes de la page Compte : créer puis révoquer ; un compte ne révoqu
     assert.deepEqual(await revokeMyApiKey(ctx(doc.users[0]!), { keyId: created.key.id }), { ok: true });
     assert.deepEqual((await readDocument()).apiKeys, []);
   });
+});
+
+test("réinitialisation du mot de passe : les clés du compte sont révoquées, celles des autres restent ; un simple changement les garde", async () => {
+  const { doc } = withKey();
+  const other = createApiKey(doc, doc.users[1]!, { name: "Autre" });
+  assert.ok(other.ok);
+  if (!other.ok) return;
+  const asked = createPasswordReset(other.doc, { email: doc.users[0]!.email });
+  assert.ok(asked.token);
+  const reset = await resetPasswordWithToken(asked.doc, { token: asked.token!, password: "nouveau-mdp-solide" });
+  assert.ok(reset.ok);
+  if (!reset.ok) return;
+  assert.deepEqual(reset.doc.apiKeys.map((key) => key.userId), [doc.users[1]!.id]);
+  assert.equal(findApiKey(reset.doc, other.token)?.user.id, doc.users[1]!.id);
+
+  const changed = await changePassword(other.doc, { userId: doc.users[0]!.id, password: "nouveau-mdp-solide" });
+  assert.ok(changed.ok);
+  if (changed.ok) assert.equal(changed.doc.apiKeys.length, 2);
 });

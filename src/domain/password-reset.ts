@@ -59,6 +59,8 @@ export async function resetPasswordWithToken(
   if (user.emailVerifiedAt === null) user.emailVerifiedAt = now.toISOString();
   next.passwordResets = next.passwordResets.filter((entry) => entry.userId !== user.id);
   next.emailConfirmations = next.emailConfirmations.filter((entry) => entry.userId !== user.id);
+  // Un reset sert souvent à reprendre un compte compromis : une clé d'API volée ne doit pas survivre.
+  next.apiKeys = next.apiKeys.filter((entry) => entry.userId !== user.id);
   return { ok: true, doc: next, userId: user.id, sessionVersion: user.sessionVersion };
 }
 
