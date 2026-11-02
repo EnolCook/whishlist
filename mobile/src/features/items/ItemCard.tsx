@@ -20,7 +20,7 @@ import { fixableInForm } from "./draft";
 
 /**
  * Une idée dans sa catégorie, comme l'`article` de `components/site/ideas-accordion.tsx` :
- * nom, étoiles, badges « qui » et prix, puis Modifier, le choix de catégorie et Archiver, en bout de rangée.
+ * nom, description (trois lignes au plus), étoiles, badges « qui » et prix, puis Modifier, le choix de catégorie et Archiver, en bout de rangée.
  */
 export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
   const { t } = useTranslation("list");
@@ -33,6 +33,11 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
     <View style={{ gap: tokens.space[2] }}>
       <Shadow testID={`list.item-${item.id}`} style={{ backgroundColor: palette.background, padding: tokens.space[3], gap: tokens.space[2] }}>
         <Text>{item.name}</Text>
+        {item.description ? (
+          <Text size="sm" color={tokens.colors.mutedForeground} numberOfLines={3} testID="item-card.description">
+            {item.description}
+          </Text>
+        ) : null}
         <Stars value={item.priority} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tokens.space[1] }}>
           {person ? <Badge>{person}</Badge> : null}

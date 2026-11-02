@@ -141,6 +141,9 @@
   },
   "form": {
     "name": "Nom du cadeau",
+    "description": "Description",
+    "descriptionPlaceholder": "Ex. : pour mes trajets en train, de préférence la couverture rouge.",
+    "descriptionHint": "Ce que c’est, pourquoi vous le voulez, à quoi il vous servira. Visible sur la liste partagée.",
     "type": "Catégorie",
     "person": "Pour qui ?",
     "url": "Lien du cadeau",

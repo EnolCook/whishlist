@@ -68,6 +68,7 @@ export function apiDoc(): Database {
       priceCents: 1990,
       priority: null,
       secondHandOk: false,
+      description: null,
       personId: "p",
       sortOrder,
       archived: id === "taken",

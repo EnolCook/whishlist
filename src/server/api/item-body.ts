@@ -15,5 +15,7 @@ export function itemFieldsFrom(wishlistId: string, body: JsonBody, itemId?: stri
     priority: text(body.priority),
     // Absent (client antérieur à 1.5.0) : non transmis, la valeur enregistrée est gardée.
     secondHandOk: typeof body.secondHandOk === "boolean" ? body.secondHandOk : undefined,
+    // Absent (client antérieur à 1.5.0) : non transmis, la description enregistrée est gardée. null l'efface.
+    description: typeof body.description === "string" || body.description === null ? body.description : undefined,
   };
 }

@@ -162,6 +162,45 @@ test("saved from a share: always the list, even with a screen behind; a second t
   expect(posts).toHaveLength(1);
 });
 
+test("the description is sent with the idea, and pre-fill only fills it when it is empty", async () => {
+  const sent: Record<string, unknown>[] = [];
+  routes({
+    "GET /capabilities": () => json(200, { apiVersion: "1.5.0", enrich: true, mail: false }),
+    "POST /lists/w/enrich": () =>
+      json(200, { name: "Puzzle", price: "", imageUrl: "", typeId: "", description: "Un puzzle de 1000 pièces.", usedLlm: true }),
+    "POST /lists/w/items": async (request) => {
+      sent.push((await request.json()) as Record<string, unknown>);
+      return json(400, { error: { code: "typeNotInList", message: "x" } });
+    },
+  });
+  await renderForm();
+  const description = () => screen.getByLabelText(i18n.t("list:form.description"));
+  await fireEvent.changeText(screen.getByLabelText("Lien du cadeau"), "https://shop.example.test/puzzle");
+  await fireEvent.press(screen.getByTestId("enrich"));
+  await waitFor(() => expect(description().props.value).toBe("Un puzzle de 1000 pièces."));
+
+  await fireEvent.changeText(description(), "Pour les soirées d'hiver.");
+  await fireEvent.press(screen.getByTestId("enrich"));
+  await waitFor(() => expect(screen.getByLabelText("Nom du cadeau").props.value).toBe("Puzzle"));
+  expect(description().props.value).toBe("Pour les soirées d'hiver.");
+
+  await fireEvent.press(screen.getByRole("button", { name: "Ajouter l'idée" }));
+  await screen.findByTestId("form-error");
+  expect(sent[0]).toMatchObject({ name: "Puzzle", description: "Pour les soirées d'hiver." });
+});
+
+test("an older server (before 1.5.0) sends no description: pre-fill leaves the field alone", async () => {
+  routes({
+    "GET /capabilities": () => json(200, { apiVersion: "1.2.0", enrich: true, mail: false }),
+    "POST /lists/w/enrich": () => json(200, { name: "Puzzle", price: "", imageUrl: "", typeId: "", usedLlm: false }),
+  });
+  await renderForm();
+  await fireEvent.changeText(screen.getByLabelText("Lien du cadeau"), "https://shop.example.test/puzzle");
+  await fireEvent.press(screen.getByTestId("enrich"));
+  await waitFor(() => expect(screen.getByLabelText("Nom du cadeau").props.value).toBe("Puzzle"));
+  expect(screen.getByLabelText(i18n.t("list:form.description")).props.value).toBe("");
+});
+
 test("the pre-fill button is disabled offline, with the explanation", async () => {
   routes({ "GET /capabilities": () => json(200, { apiVersion: "1.1.0", enrich: false, mail: false }) });
   watchNetwork();

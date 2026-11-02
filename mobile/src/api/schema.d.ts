@@ -1381,6 +1381,8 @@ export interface paths {
                             price: string;
                             imageUrl: string;
                             typeId: string;
+                            /** @description Depuis 1.5.0. Quelques phrases sur le produit (300 caractères au plus), vide si rien trouvé. À proposer seulement si la description de l'idée est vide. */
+                            description: string;
                             usedLlm: boolean;
                         };
                     };
@@ -2116,6 +2118,8 @@ export interface components {
             priority: string | null;
             /** @description Depuis 1.5.0. L'idée convient aussi d'occasion. */
             secondHandOk: boolean;
+            /** @description Depuis 1.5.0. Contexte écrit par la liste : ce qu'est le produit, pourquoi il fait envie. */
+            description: string | null;
             /** @description Réservée par ce client. */
             mine: boolean;
             /** @description Seulement si `mine`. */
@@ -2157,6 +2161,8 @@ export interface components {
             priority?: string;
             /** @description Depuis 1.5.0. Absent à la création : false. Absent en modification : la valeur enregistrée est gardée. */
             secondHandOk?: boolean;
+            /** @description Depuis 1.5.0. Absente à la création : aucune. Absente en modification : celle enregistrée est gardée. Vide ou null l'efface. Plus de 2000 caractères → descriptionTooLong. */
+            description?: string | null;
         };
         MemberItem: {
             id: string;
@@ -2170,6 +2176,8 @@ export interface components {
             priority: string | null;
             /** @description Depuis 1.5.0. */
             secondHandOk: boolean;
+            /** @description Depuis 1.5.0. */
+            description: string | null;
             archived: boolean;
             sortOrder: number;
         };

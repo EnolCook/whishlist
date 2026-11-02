@@ -6,6 +6,7 @@
   "urlMustBeHttp": "Enter a link starting with http:// or https://.",
   "imageMustBeHttp": "Enter an image link starting with http:// or https://.",
   "priceNegative": "The price can’t be negative.",
+  "descriptionTooLong": "The description can’t be longer than 2,000 characters.",
   "itemMissing": "This idea doesn’t exist.",
   "itemHasReservation": "This idea has a reservation. Cancel it first.",
   "typeNeedsName": "Enter a category name.",

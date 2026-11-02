@@ -20,6 +20,7 @@ function item(id: string, sortOrder: number): Item {
     priceCents: null,
     priority: null,
     secondHandOk: false,
+    description: null,
     personId: "p",
     sortOrder,
     archived: false,

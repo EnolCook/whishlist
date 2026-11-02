@@ -141,6 +141,9 @@
   },
   "form": {
     "name": "Gift name",
+    "description": "Description",
+    "descriptionPlaceholder": "E.g. for my train commute, ideally the red cover.",
+    "descriptionHint": "What it is, why you want it, what you’d use it for. Shown on the shared list.",
     "type": "Category",
     "person": "Gift recipient",
     "url": "Gift link",

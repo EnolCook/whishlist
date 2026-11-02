@@ -12,6 +12,7 @@ import { Checkbox } from "@/ui/Checkbox";
 import { Input } from "@/ui/Input";
 import { PillTabs } from "@/ui/PillTabs";
 import { Text } from "@/ui/Text";
+import { Textarea } from "@/ui/Textarea";
 
 function style(testID: string) {
   return StyleSheet.flatten(screen.getByTestId(testID).props.style);
@@ -302,4 +303,12 @@ describe("Checkbox", () => {
     expect(onChange).toHaveBeenCalledWith(true);
     expect(StyleSheet.flatten(screen.getByTestId("check").props.style).minHeight).toBeGreaterThanOrEqual(tokens.touchTarget);
   });
+});
+
+test("Textarea: an Input on several lines, at least 64 high, text from the top", async () => {
+  await render(<Textarea accessibilityLabel="Description" />);
+  const field = screen.getByLabelText("Description");
+  expect(field.props.multiline).toBe(true);
+  expect(field.props.textAlignVertical).toBe("top");
+  expect(StyleSheet.flatten(field.props.style)).toMatchObject({ minHeight: 64, fontSize: tokens.fontSize.base });
 });

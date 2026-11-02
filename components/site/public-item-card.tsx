@@ -60,6 +60,9 @@ export function PublicItemCard({
                 <p className="shrink-0 text-2xl leading-none font-bold tabular-nums">{item.priceLabel}</p>
               ) : null}
             </div>
+            {item.description ? (
+              <p className="text-sm break-words whitespace-pre-line text-pretty">{item.description}</p>
+            ) : null}
             <div className="flex flex-wrap items-center gap-2">
               <CardDescription className="flex flex-wrap gap-2">
                 <Badge variant="outline">{item.personLabel}</Badge>

@@ -342,6 +342,7 @@ export type ItemFormDraft = {
   price: string;
   priority: string;
   secondHandOk: boolean;
+  description: string;
 };
 
 export type SaveItemState = {
@@ -359,6 +360,7 @@ function itemDraftFromForm(formData: FormData): ItemFormDraft {
     price: String(formData.get("price") ?? ""),
     priority: String(formData.get("priority") ?? ""),
     secondHandOk: formData.get("secondHandOk") === "on",
+    description: String(formData.get("description") ?? ""),
   };
 }
 
@@ -391,6 +393,7 @@ export async function enrichFromUrlAction(input: {
       price: string;
       imageUrl: string;
       typeId: string;
+      description: string;
       usedLlm: boolean;
       impact: LlmImpact | null;
     }

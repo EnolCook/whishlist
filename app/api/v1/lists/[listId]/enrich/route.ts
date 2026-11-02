@@ -10,8 +10,8 @@ export const POST = withApi<{ listId: string }>(async (api, { listId }) => {
   if (!body.ok) return apiError(body.error, api.locale, api.cors);
   const result = await enrichFromUrl(await commandContext(api), { wishlistId: listId, url: text(body.body.url) });
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
-  const { name, price, imageUrl, typeId, usedLlm } = result;
-  return apiJson({ name, price, imageUrl, typeId, usedLlm }, 200, api.cors);
+  const { name, price, imageUrl, typeId, description, usedLlm } = result;
+  return apiJson({ name, price, imageUrl, typeId, description, usedLlm }, 200, api.cors);
 });
 
 export const OPTIONS = apiPreflight;
