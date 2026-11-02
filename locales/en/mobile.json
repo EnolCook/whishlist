@@ -61,5 +61,10 @@
   "collapsible": {
     "expand": "Expand",
     "collapse": "Collapse"
+  },
+  "links": {
+    "confirming": "Confirming your email address…",
+    "passwordSaved": "Your password is saved. Sign in with your new password.",
+    "inviteChecking": "Opening the invitation…"
   }
 }

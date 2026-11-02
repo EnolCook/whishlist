@@ -5,13 +5,18 @@ import { router } from "expo-router";
 import Login from "../../app/(auth)/login";
 import Register from "../../app/(auth)/register";
 import { deleteAccount, getSession, signIn } from "@/auth/session";
+import { afterSignIn, clearPendingLink } from "@/links/pending";
 import { i18n } from "@/i18n";
 import { watchNetwork } from "@/network";
 
 import { fakeFetch, json, me } from "../helpers/fetch";
 import { freshDb } from "../helpers/memory-db";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
+const params: { next?: string } = {};
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
+  useLocalSearchParams: () => params,
+}));
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
 
 beforeEach(async () => {
@@ -68,4 +73,19 @@ test.each([
   await fireEvent.press(await screen.findByRole("link", { name: "Mentions légales" }));
   await fireEvent.press(screen.getByRole("link", { name: "Données personnelles" }));
   expect(jest.mocked(router.push).mock.calls.slice(-2)).toEqual([["/legal/mentions"], ["/legal/privacy"]]);
+});
+
+test("connexion ouverte par /connexion?next=/inviter/… (011) : l'invitation est gardée pour après", async () => {
+  params.next = "/inviter/tok";
+  try {
+    await render(<Login />);
+    expect(afterSignIn()).toBe("/links/invite/tok");
+    clearPendingLink();
+    params.next = "/compte";
+    await render(<Register />);
+    expect(afterSignIn()).toBe("/");
+  } finally {
+    delete params.next;
+    clearPendingLink();
+  }
 });

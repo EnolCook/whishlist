@@ -79,6 +79,10 @@ Les PNG sont écrits dans `public/guide/fr` et `public/guide/en`.
 | `OPENAI_API_KEY` | non | Enrichissement URL (fallback) |
 | `GEMINI_MODEL` / `OPENAI_MODEL` | non | Override modèles |
 | `API_ALLOWED_ORIGINS` | non | Origines web autorisées à appeler l’API (`/api/v1`), séparées par des virgules, ex. `capacitor://localhost,https://localhost`. Sans elle : seuls le site et les clients natifs appellent l’API |
+| `APPLE_TEAM_ID` | non | Identifiant d'équipe Apple (10 caractères) : sert `/.well-known/apple-app-site-association`, pour que les liens du site ouvrent l'app iOS. Sans elle : 404, les liens ouvrent le site |
+| `ANDROID_CERT_SHA256` | non | Empreintes SHA-256 des certificats de signature de l'app Android (Play Console), séparées par des virgules : sert `/.well-known/assetlinks.json`. Sans elle : 404, les liens ouvrent le site |
+| `APP_STORE_URL` | non | Fiche de l'app sur l'App Store (`https://apps.apple.com/…`) : badge de la fenêtre « l'app sur votre téléphone » du site. Sans elle : pas de badge App Store |
+| `PLAY_STORE_URL` | non | Fiche de l'app sur Google Play (`https://play.google.com/…`). Sans elle : pas de badge Google Play ; sans aucune des deux, l'icône de téléphone n'apparaît pas |
 
 En Docker / compose, les mêmes valeurs sont souvent préfixées `WHISHLIST_*` dans le fichier env hôte (voir `deploy/compose.prod.yml`).
 
@@ -255,6 +259,18 @@ EXPO_PUBLIC_API_URL=http://localhost:3010 npm --prefix mobile run ios       # ou
   La variante vient de `APP_VARIANT` (`mobile/app.config.ts`) : sans elle, c’est la production, y compris pour `run ios|android` ; `APP_VARIANT=development` devant la commande donne le client de dev en local. Les deux apps s’installent côte à côte. L’app Android passe par Google Play (piste de test interne, clé du compte de service dans `mobile/play-service-account.json`, ignorée par git) ; l’app iOS passe par TestFlight (équipe Apple `JW4X82845H`), sans ad hoc ni appareils enregistrés.
 - Vérifications : `npm --prefix mobile run lint`, `typecheck`, `test` ; parcours à la main dans [`specs/005-mobile-list-app/quickstart.md`](specs/005-mobile-list-app/quickstart.md).
 - Captures du site en largeur de téléphone (référence de design) : `DEMO_BASE_URL=http://localhost:3010 npm run demo:capture -- --mobile`.
+
+### Liens de l’app
+
+Les liens envoyés par e-mail ou partagés (confirmation d’adresse, réinitialisation, invitation, lien public d’une liste) gardent leur adresse sur le site. Sur un téléphone où l’app est installée (1.1.0 et plus), ils ouvrent l’app ; sinon, le site. La liste des chemins ouverts par l’app est dans `src/site/app-links.ts` (contrat : [`specs/011-app-deep-links/contracts/links.md`](specs/011-app-deep-links/contracts/links.md)).
+
+- Le site publie `/.well-known/apple-app-site-association` et `/.well-known/assetlinks.json` quand `APPLE_TEAM_ID` et `ANDROID_CERT_SHA256` sont réglés (404 sinon) :
+  - `APPLE_TEAM_ID` : l’équipe Apple ci-dessus ;
+  - `ANDROID_CERT_SHA256` : Play Console → l’app → Intégrité de l’app → Signature de l’app, empreintes SHA-256 de la **clé de signature de l’app** et de la **clé d’importation**, séparées par une virgule.
+- L’app ne déclare le domaine que pour un serveur en `https` (`mobile/app.config.ts`) ; un nouveau build natif est nécessaire après un changement de la table des chemins.
+- Vérifier après un déploiement : `curl -sI https://ohyoushouldnt.app/.well-known/apple-app-site-association` (200, `application/json`, sans redirection), même chose pour `assetlinks.json` ; le CDN d’Apple (`https://app-site-association.cdn-apple.com/a/v1/ohyoushouldnt.app`) ; sur Android, `adb shell pm get-app-links app.ohyoushouldnt.mobile` doit dire `verified`.
+- En local, sans domaine associé, les mêmes chemins s’ouvrent par le schéma de l’app : `xcrun simctl openurl booted "ohyoushouldnt://reinitialiser/<jeton>"`.
+- `APP_STORE_URL` et `PLAY_STORE_URL` font apparaître, sur le site consulté depuis un téléphone, l’icône qui propose l’app.
 
 ---
 

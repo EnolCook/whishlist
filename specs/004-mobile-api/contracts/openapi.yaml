@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.3.0"
+  version: "1.4.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -21,6 +21,11 @@ info:
       `POST /invitations/{inviteToken}/accept`, et peut redemander le lien (`POST /me/email-verification`).
       Changement d'adresse : `POST /me/email`, annulation `DELETE /me/email`, `Me.pendingEmail`.
       La confirmation se fait sur le site (lien reçu par e-mail).
+    - 1.4.0 : liens de l'app. Les liens envoyés par e-mail ou partagés ouvrent l'app quand elle est
+      installée (chemins revendiqués : `specs/011-app-deep-links/contracts/links.md`), le site sinon.
+      L'app finit elle-même l'action du lien : confirmation de l'adresse (`POST /auth/email-confirmation`),
+      nouveau mot de passe (`POST /auth/password-reset/confirm`), aperçu d'une invitation
+      (`GET /invitations/{inviteToken}`).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
@@ -262,7 +267,7 @@ paths:
     post:
       tags: [auth]
       summary: Demander un lien de réinitialisation
-      description: Même réponse que l'e-mail existe ou non. Le lien envoyé ouvre le site.
+      description: Même réponse que l'e-mail existe ou non. Le lien envoyé ouvre l'app si elle est installée, le site sinon.
       security: []
       requestBody:
         required: true
@@ -278,6 +283,91 @@ paths:
           description: |
             Demande prise en compte. Sans e-mail configuré, le lien est écrit dans le journal du
             serveur, comme sur le site ; il n'est jamais rendu dans la réponse.
+        "429": { $ref: "#/components/responses/Error" }
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      summary: Choisir le nouveau mot de passe depuis le lien reçu
+      description: |
+        Comme la page `/reinitialiser/{token}` du site : le mot de passe change, l'adresse est marquée
+        vérifiée et les autres connexions du compte tombent. Avec `signIn`, la réponse ouvre une session
+        pour ce compte ; l'app l'envoie seulement si personne n'y est connecté. 20 essais par IP en 15 min.
+        Depuis 1.4.0.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string, description: Dernier segment du lien reçu. }
+                password: { type: string }
+                signIn: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Mot de passe changé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [session]
+                properties:
+                  session:
+                    description: Rempli si `signIn` est vrai.
+                    oneOf:
+                      - $ref: "#/components/schemas/Session"
+                      - type: "null"
+        "400":
+          description: "`passwordTooShort`, `resetLinkInvalid` (inconnu ou déjà utilisé) ou `resetLinkExpired`."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /auth/email-confirmation:
+    post:
+      tags: [auth]
+      summary: Confirmer une adresse depuis le lien reçu
+      description: |
+        Comme le bouton de la page `/confirmer-email/{token}` du site : validation de l'adresse ou
+        changement d'adresse, selon le lien. Le jeton porte toute l'autorisation ; un bearer, facultatif,
+        sert seulement à `ownAccount`. Après un changement, l'ancienne adresse est prévenue.
+        20 essais par IP en 15 min. Depuis 1.4.0.
+      security: [{}, { bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, description: Dernier segment du lien reçu. }
+                suite: { type: string, description: Paramètre `suite` du lien, s'il y en a un. }
+      responses:
+        "200":
+          description: Adresse confirmée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [purpose, ownAccount, suite]
+                properties:
+                  purpose: { enum: [verify, change] }
+                  ownAccount: { type: boolean, description: Le lien est celui du compte du bearer. }
+                  suite:
+                    type: [string, "null"]
+                    description: Chemin interne du site où reprendre (`/inviter/…`), sinon null.
+        "400":
+          description: |
+            `confirmationLinkInvalid` (inconnu, déjà utilisé, remplacé), `confirmationLinkExpired`, ou
+            `emailTaken` (changement vers une adresse prise entre-temps).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "429": { $ref: "#/components/responses/Error" }
 
   /me:
@@ -318,7 +408,7 @@ paths:
       tags: [auth]
       summary: Renvoyer le lien de confirmation de l'adresse
       description: |
-        Un nouveau lien part vers l'adresse du compte ; le précédent ne vaut plus rien. Le lien ouvre le site.
+        Un nouveau lien part vers l'adresse du compte ; le précédent ne vaut plus rien. Le lien ouvre l'app si elle est installée, le site sinon.
         Depuis 1.3.0.
       responses:
         "202":
@@ -346,7 +436,8 @@ paths:
       description: |
         Mot de passe actuel exigé. Avec l'envoi d'e-mail actif, un lien part vers la nouvelle adresse :
         `email` ne change pas encore et `pendingEmail` vaut la nouvelle adresse. Sans envoi d'e-mail,
-        la nouvelle adresse s'applique tout de suite. Une nouvelle demande remplace la précédente. Depuis 1.3.0.
+        la nouvelle adresse s'applique tout de suite. Une nouvelle demande remplace la précédente. Le lien envoyé
+        ouvre l'app si elle est installée, le site sinon. Depuis 1.3.0.
       requestBody:
         required: true
         content:
@@ -895,6 +986,36 @@ paths:
         "204": { description: Quittée }
         "400": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+
+  /invitations/{inviteToken}:
+    get:
+      tags: [sharing]
+      summary: Aperçu d'une invitation avant de la rejoindre
+      description: |
+        N'écrit rien. N'exige pas une adresse confirmée : seul `accept` l'exige (`emailNotVerified`).
+        Depuis 1.4.0.
+      parameters:
+        - { name: inviteToken, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Invitation valide
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [title, listId]
+                properties:
+                  title: { type: string }
+                  listId:
+                    type: [string, "null"]
+                    description: Rempli seulement si le compte est déjà membre de la liste.
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404":
+          description: Invitation inconnue ou régénérée (`inviteLinkBroken`).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   /invitations/{inviteToken}/accept:
     post:

@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
 import { apiStatusFor, publicErrorCode } from "../../src/server/api/errors";
-import { apiError, apiLocaleFrom, originDecision, parseAllowedOrigins, readJsonBody } from "../../src/server/api/http";
+import {
+  apiError,
+  apiLocaleFrom,
+  originDecision,
+  parseAllowedOrigins,
+  readJsonBody,
+  redactedApiPath,
+} from "../../src/server/api/http";
+import { resetPasswordWithLink } from "../../src/server/commands/auth";
 import { createList } from "../../src/server/commands/lists";
+import { previewInvite } from "../../src/server/commands/sharing";
 import { readDocument } from "../../src/store/db";
 import { apiDoc, ctx, ensurePasswordHash, withMailDryRun, withStore } from "./helpers/api-fixtures";
 
@@ -31,6 +40,54 @@ test("apiStatusFor : un statut par famille de codes", () => {
   assert.equal(apiStatusFor("readPasswordRequired"), 423);
   assert.equal(apiStatusFor("rateLimited"), 429);
   assert.equal(apiStatusFor("mailNotConfigured"), 503);
+});
+
+test("liens ouverts dans l'app (011) : lien invalide ou expiré en 400, invitation cassée en 404", () => {
+  for (const code of [
+    "confirmationLinkInvalid",
+    "confirmationLinkExpired",
+    "emailTaken",
+    "resetLinkInvalid",
+    "resetLinkExpired",
+    "passwordTooShort",
+  ]) {
+    assert.equal(apiStatusFor(code), 400, code);
+  }
+  assert.equal(apiStatusFor("inviteLinkBroken"), 404);
+});
+
+test("GET /invitations/{inviteToken} (011) : 200 avec le titre, 401 sans compte, 404 pour un lien cassé", async () => {
+  await withStore(apiDoc(), async () => {
+    const camille = (await readDocument()).users[1]!;
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: null });
+    for (const [result, status] of [
+      [await previewInvite(ctx(), { token: "it" }), 401],
+      [await previewInvite(ctx(camille), { token: "cassé" }), 404],
+    ] as const) {
+      assert.ok(!result.ok);
+      assert.equal((await apiError(result.error, "fr")).status, status);
+    }
+  });
+});
+
+test("journal des erreurs d'API : les jetons d'invitation et de lien public sont masqués (011, FR-009)", () => {
+  assert.equal(redactedApiPath("/api/v1/invitations/secret-token/accept"), "/api/v1/invitations/…/accept");
+  assert.equal(redactedApiPath("/api/v1/invitations/secret-token"), "/api/v1/invitations/…");
+  assert.equal(redactedApiPath("/api/v1/public/lists/read-token/reservations/r1"), "/api/v1/public/lists/…/reservations/r1");
+  assert.equal(redactedApiPath("/api/v1/lists/w/items"), "/api/v1/lists/w/items");
+});
+
+test("POST /auth/password-reset/confirm avec un lien inconnu : 400 resetLinkInvalid, avec son message (011)", async () => {
+  await withStore(apiDoc(), async () => {
+    // Même chaîne que la route : commande puis `apiError`.
+    const result = await resetPasswordWithLink(ctx(), { token: "inconnu", password: "nouveau-mdp-solide", signIn: true });
+    assert.ok(!result.ok);
+    const response = await apiError(result.error, "en");
+    assert.equal(response.status, 400);
+    const body = (await response.json()) as { error: { code: string; message: string } };
+    assert.equal(body.error.code, "resetLinkInvalid");
+    assert.ok(body.error.message.length > 0);
+  });
 });
 
 test("POST /lists d'un compte non confirmé : 403 emailNotVerified, avec son message (T021)", async () => {

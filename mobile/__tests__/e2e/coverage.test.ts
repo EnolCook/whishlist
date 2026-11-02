@@ -10,6 +10,7 @@ const specs = {
   "006": "specs/006-mobile-legal-account/spec.md",
   "009": "specs/009-account-cards-expand/spec.md",
   "010": "specs/010-email-verification-change/spec.md",
+  "011": "specs/011-app-deep-links/spec.md",
 };
 
 function storiesOf(feature: string, file: string): string[] {

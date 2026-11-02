@@ -114,6 +114,7 @@ Sous-parcours disponibles dans `subflows/` :
 | `register` | crée un compte `e2e-…`, dont l'adresse est dans `output.email`, et confirme cette adresse |
 | `register-unconfirmed` | comme `register`, sans confirmer l'adresse (rappel affiché, création de liste bloquée) |
 | `confirm-email` | ouvre le dernier lien de confirmation reçu par `TO` dans MailDev, appuie sur « Confirmer », attend `DONE`, revient à l'app |
+| `open-mail-link` | ouvre **dans l'app** le dernier lien `KIND` (`confirmer-email`, `reinitialiser`, `inviter`) reçu par `TO` dans MailDev, par le schéma `ohyoushouldnt://` (011) |
 | `submit-register` | remplit et envoie l'inscription (`NAME`, `EMAIL`), sans attendre d'écran |
 | `logout` | déconnexion |
 | `create-list` | crée une liste (`TITLE`) |
@@ -122,6 +123,13 @@ Sous-parcours disponibles dans `subflows/` :
 | `open-new-item` / `submit-item-form` | ouvre le formulaire d'idée, puis l'envoie |
 | `open-category` | déplie une catégorie (`CATEGORY`, `ITEM`) |
 | `close-share-sheet` | referme la feuille de partage du système |
+
+Scripts de `scripts/` utiles aux parcours :
+
+| Script | Rôle |
+|--------|------|
+| `maildev-link.js` | dernier lien `KIND` (par défaut `confirmer-email`) reçu par `TO` dans MailDev → `output.link` |
+| `app-link.js` | adresse du site `URL` → même chemin au schéma de l'app, `output.appLink` (011) : en local, le domaine n'est pas associé à l'app, et un lien `http` ouvrirait le navigateur |
 
 `npm --prefix mobile test` vérifie deux choses sans simulateur :
 

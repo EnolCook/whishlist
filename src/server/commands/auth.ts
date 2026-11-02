@@ -1,6 +1,6 @@
 import { issueApiSession, pruneApiSessions, revokeApiSession } from "../../auth/api-session";
 import { pendingEmailChange } from "../../domain/email-confirmation";
-import { createPasswordReset } from "../../domain/password-reset";
+import { createPasswordReset, resetPasswordWithToken } from "../../domain/password-reset";
 import type { User } from "../../domain/types";
 import { authenticate, changePassword, normalizeEmail, registerUser, updateDisplayName } from "../../domain/users";
 import { withLocale } from "../../i18n/locale-path";
@@ -161,4 +161,25 @@ export async function requestPasswordReset(
   const mail = await sendPasswordResetMail({ to: created.email, resetUrl, locale: ctx.locale });
   const reveal = !mail.sent && process.env.NODE_ENV !== "production";
   return { ok: true, resetUrl: reveal ? resetUrl : null };
+}
+
+/**
+ * Nouveau mot de passe choisi depuis le lien reçu par e-mail : page du site et app (011, R7).
+ * Le mot de passe change, l'adresse est vérifiée et les autres connexions tombent (`sessionVersion`).
+ * Avec `signIn`, une session d'API est ouverte pour ce compte ; le site ouvre la sienne (cookie) lui-même.
+ */
+export async function resetPasswordWithLink(
+  ctx: CommandContext,
+  input: { token: string; password: string; signIn: boolean },
+): Promise<CommandResult<{ userId: string; sessionVersion: number; session: SessionView | null }>> {
+  rateLimitForIp("password-reset-confirm", ctx.ip, 20, 15 * 60 * 1000);
+  const reset = await updateDocument(async (doc) => {
+    const saved = await resetPasswordWithToken(doc, { token: input.token, password: input.password });
+    return { doc: saved.ok ? saved.doc : doc, result: saved };
+  });
+  if (!reset.ok) return { ok: false, error: reset.error };
+  if (!input.signIn) return { ok: true, userId: reset.userId, sessionVersion: reset.sessionVersion, session: null };
+  const opened = await openApiSession(reset.userId);
+  if (!opened.ok) return opened;
+  return { ok: true, userId: reset.userId, sessionVersion: reset.sessionVersion, session: opened.session };
 }

@@ -6,6 +6,7 @@ import { api, ok } from "@/api/client";
 import { signIn, useSession } from "@/auth/session";
 import { AuthLayout } from "@/features/account/AuthLayout";
 import { useServerAction } from "@/features/errors";
+import { useNextLink } from "@/links/pending";
 import { useOnline } from "@/network";
 import { Alert } from "@/ui/Alert";
 import { Button } from "@/ui/Button";
@@ -17,6 +18,7 @@ import { NetworkNote } from "@/ui/NetworkNote";
 export default function Login() {
   const { t } = useTranslation(["auth", "mobile"]);
   const session = useSession();
+  useNextLink();
   const online = useOnline();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

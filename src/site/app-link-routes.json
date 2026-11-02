@@ -1,0 +1,10 @@
+[
+  { "site": "/confirmer-email/:token", "app": "/links/confirm-email/:token", "keepQuery": ["suite"] },
+  { "site": "/reinitialiser/:token", "app": "/links/reset-password/:token", "keepQuery": [] },
+  { "site": "/inviter/:token", "app": "/links/invite/:token", "keepQuery": [] },
+  { "site": "/connexion", "app": "/login", "keepQuery": ["next"] },
+  { "site": "/inscription", "app": "/register", "keepQuery": ["next"] },
+  { "site": "/l/:readToken", "app": "/guest/:readToken", "keepQuery": ["typeId"] },
+  { "site": "/l/:readToken/reserver", "app": "/guest/:readToken/reserve", "keepQuery": ["itemId", "typeId"] },
+  { "site": "/l/:readToken/types", "app": "/guest/:readToken", "keepQuery": ["typeId"] }
+]

@@ -1,9 +1,10 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import type { ReactNode } from "react";
 import { Linking, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { usePendingCount } from "@/data/store";
+import { appPathForUrl } from "@/links/routes";
 import type { ViewList } from "@/offline/optimistic";
 import { tokens } from "@/theme/tokens";
 import { BackLink } from "@/ui/BackLink";
@@ -95,7 +96,7 @@ export function ListScreen({ tab, children }: { tab: ListTab; children: (list: V
         </View>
       </View>
       {list.readUrl ? (
-        <Button title={t("list:viewAsGuest")} variant="neutral" onPress={() => void Linking.openURL(list.readUrl)} />
+        <Button title={t("list:viewAsGuest")} variant="neutral" onPress={() => viewAsGuest(list.readUrl)} />
       ) : null}
       <PillTabs
         tabs={tabLabels(list, (key) => t(`list:${key}`))}
@@ -107,4 +108,14 @@ export function ListScreen({ tab, children }: { tab: ListTab; children: (list: V
       {children(list)}
     </Screen>
   );
+}
+
+/**
+ * « Voir comme un invité » : la vue invité de l'app (011), sans la redirection des membres vers leur liste.
+ * Le lien public ouvrirait l'app elle-même (lien universel), qui ramènerait le membre ici.
+ */
+function viewAsGuest(readUrl: string): void {
+  const path = appPathForUrl(readUrl);
+  if (path) router.push(`${path}?preview=1` as Href);
+  else void Linking.openURL(readUrl);
 }

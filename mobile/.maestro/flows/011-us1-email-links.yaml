@@ -1,0 +1,88 @@
+# 011 US1 : les liens reçus par e-mail (confirmation d'adresse, réinitialisation, connexion) s'ouvrent dans
+# l'app et y font l'action. Les liens viennent de MailDev et s'ouvrent par le schéma ohyoushouldnt:// :
+# en local, le domaine n'est pas associé à l'app (research R10).
+appId: app.ohyoushouldnt.mobile
+name: "011 US1 — Les liens des e-mails de compte ouvrent l'app"
+tags:
+  - 011-us1
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runFlow: ../subflows/register-unconfirmed.yaml
+- assertVisible:
+    id: verify.banner
+
+# Lien de confirmation : confirmé dès l'ouverture dans l'app, sans navigateur ni bouton.
+- runFlow:
+    file: ../subflows/open-mail-link.yaml
+    env:
+      TO: ${output.email}
+      KIND: confirmer-email
+- extendedWaitUntil:
+    visible:
+      id: confirm-email.status
+    timeout: 20000
+- tapOn:
+    id: confirm-email.next
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+- assertNotVisible:
+    id: verify.banner
+
+# Lien de connexion, déjà connectée : ses listes.
+- openLink: ohyoushouldnt://connexion
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 10000
+
+# Mot de passe oublié : le lien de réinitialisation ouvre le formulaire de l'app, qui connecte.
+- runFlow: ../subflows/logout.yaml
+- tapOn:
+    id: login.forgot
+- tapOn:
+    id: forgot.email
+- inputText: ${output.email}
+- hideKeyboard:
+    optional: true
+- tapOn:
+    id: forgot.submit
+- extendedWaitUntil:
+    visible:
+      id: forgot.sent
+    timeout: 10000
+- runFlow:
+    file: ../subflows/open-mail-link.yaml
+    env:
+      TO: ${output.email}
+      KIND: reinitialiser
+- extendedWaitUntil:
+    visible:
+      id: reset-password.screen
+    timeout: 20000
+- tapOn:
+    id: reset-password.password
+# iOS propose un mot de passe robuste dans une feuille du système (voir submit-register.yaml).
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          point: 92%,61%
+      - tapOn:
+          id: reset-password.password
+- inputText: ${MAESTRO_DEMO_PASSWORD}-011
+- hideKeyboard:
+    optional: true
+- tapOn:
+    id: reset-password.submit
+- tapOn:
+    text: Plus tard|Not Now
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: lists.screen
+    timeout: 20000

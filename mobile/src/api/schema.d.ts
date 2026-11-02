@@ -427,7 +427,7 @@ export interface paths {
         put?: never;
         /**
          * Demander un lien de réinitialisation
-         * @description Même réponse que l'e-mail existe ou non. Le lien envoyé ouvre le site.
+         * @description Même réponse que l'e-mail existe ou non. Le lien envoyé ouvre l'app si elle est installée, le site sinon.
          */
         post: {
             parameters: {
@@ -453,6 +453,142 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                429: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Choisir le nouveau mot de passe depuis le lien reçu
+         * @description Comme la page `/reinitialiser/{token}` du site : le mot de passe change, l'adresse est marquée
+         *     vérifiée et les autres connexions du compte tombent. Avec `signIn`, la réponse ouvre une session
+         *     pour ce compte ; l'app l'envoie seulement si personne n'y est connecté. 20 essais par IP en 15 min.
+         *     Depuis 1.4.0.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Dernier segment du lien reçu. */
+                        token: string;
+                        password: string;
+                        /** @default false */
+                        signIn?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Mot de passe changé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Rempli si `signIn` est vrai. */
+                            session: components["schemas"]["Session"] | null;
+                        };
+                    };
+                };
+                /** @description `passwordTooShort`, `resetLinkInvalid` (inconnu ou déjà utilisé) ou `resetLinkExpired`. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-confirmation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmer une adresse depuis le lien reçu
+         * @description Comme le bouton de la page `/confirmer-email/{token}` du site : validation de l'adresse ou
+         *     changement d'adresse, selon le lien. Le jeton porte toute l'autorisation ; un bearer, facultatif,
+         *     sert seulement à `ownAccount`. Après un changement, l'ancienne adresse est prévenue.
+         *     20 essais par IP en 15 min. Depuis 1.4.0.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Dernier segment du lien reçu. */
+                        token: string;
+                        /** @description Paramètre `suite` du lien */
+                        suite?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Adresse confirmée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {unknown} */
+                            purpose: "verify" | "change";
+                            /** @description Le lien est celui du compte du bearer. */
+                            ownAccount: boolean;
+                            /** @description Chemin interne du site où reprendre (`/inviter/…`), sinon null. */
+                            suite: string | null;
+                        };
+                    };
+                };
+                /**
+                 * @description `confirmationLinkInvalid` (inconnu, déjà utilisé, remplacé), `confirmationLinkExpired`, ou
+                 *     `emailTaken` (changement vers une adresse prise entre-temps).
+                 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
                 };
                 429: components["responses"]["Error"];
             };
@@ -540,7 +676,7 @@ export interface paths {
         put?: never;
         /**
          * Renvoyer le lien de confirmation de l'adresse
-         * @description Un nouveau lien part vers l'adresse du compte ; le précédent ne vaut plus rien. Le lien ouvre le site.
+         * @description Un nouveau lien part vers l'adresse du compte ; le précédent ne vaut plus rien. Le lien ouvre l'app si elle est installée, le site sinon.
          *     Depuis 1.3.0.
          */
         post: {
@@ -596,7 +732,8 @@ export interface paths {
          * Demander un changement d'adresse e-mail
          * @description Mot de passe actuel exigé. Avec l'envoi d'e-mail actif, un lien part vers la nouvelle adresse :
          *     `email` ne change pas encore et `pendingEmail` vaut la nouvelle adresse. Sans envoi d'e-mail,
-         *     la nouvelle adresse s'applique tout de suite. Une nouvelle demande remplace la précédente. Depuis 1.3.0.
+         *     la nouvelle adresse s'applique tout de suite. Une nouvelle demande remplace la précédente. Le lien envoyé
+         *     ouvre l'app si elle est installée, le site sinon. Depuis 1.3.0.
          */
         post: {
             parameters: {
@@ -1801,6 +1938,63 @@ export interface paths {
                 404: components["responses"]["Error"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{inviteToken}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Aperçu d'une invitation avant de la rejoindre
+         * @description N'écrit rien. N'exige pas une adresse confirmée : seul `accept` l'exige (`emailNotVerified`).
+         *     Depuis 1.4.0.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    inviteToken: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invitation valide */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            title: string;
+                            /** @description Rempli seulement si le compte est déjà membre de la liste. */
+                            listId: string | null;
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                /** @description Invitation inconnue ou régénérée (`inviteLinkBroken`). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;

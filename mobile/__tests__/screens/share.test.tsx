@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import * as Clipboard from "expo-clipboard";
-import { Share } from "react-native";
+import { router } from "expo-router";
+import { Linking, Share } from "react-native";
 
 import ShareTab from "../../app/(app)/lists/[listId]/share";
 import type { Schemas } from "@/api/client";
@@ -95,4 +96,19 @@ test("a list not sent yet shows neither QR code nor sharing, but the explanation
   expect(await screen.findByText(i18n.t("mobile:share.pendingList"))).toBeOnTheScreen();
   expect(screen.queryByTestId("qr-value")).toBeNull();
   expect(screen.queryByRole("button", { name: "Partager" })).toBeNull();
+});
+
+test("« Voir comme un invité » ouvre la vue invité de l'app, sans renvoyer le membre à sa liste (011)", async () => {
+  await putSnapshot("list:w", { ...list, readUrl: "https://api.example.test/en/l/rt" });
+  await renderShare("w", { ...list, readUrl: "https://api.example.test/en/l/rt" });
+  await fireEvent.press(await screen.findByText(i18n.t("list:viewAsGuest")));
+  expect(router.push).toHaveBeenCalledWith("/guest/rt?preview=1");
+});
+
+test("« Voir comme un invité » vers un autre serveur que celui de l'app : le navigateur", async () => {
+  const openURL = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+  await renderShare();
+  await fireEvent.press(await screen.findByText(i18n.t("list:viewAsGuest")));
+  expect(openURL).toHaveBeenCalledWith(READ_URL);
+  openURL.mockRestore();
 });

@@ -7,6 +7,7 @@ import {
   deleteList,
   joinInvite,
   leave,
+  previewInvite,
   regenerateInvite,
   removeMember,
   sendInvite,
@@ -114,5 +115,38 @@ test("un non-membre ne partage rien", async () => {
     ]) {
       assert.deepEqual(attempt, { ok: false, error: "notMember" });
     }
+  });
+});
+
+test("aperçu d'une invitation (011) : le titre, et la liste si le compte en est déjà membre", async () => {
+  await withStore(docWithCamille(), async () => {
+    const doc = await readDocument();
+    const alex = doc.users.find((entry) => entry.id === "alex")!;
+    const camille = doc.users.find((entry) => entry.id === "camille")!;
+    assert.deepEqual(await previewInvite(ctx(alex), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: "w" });
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: "w" });
+  });
+  await withStore(apiDoc(), async () => {
+    const camille = (await readDocument()).users.find((entry) => entry.id === "camille")!;
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: true, title: "Liste d'Alex", listId: null });
+    // Rien n'est écrit : Camille n'est toujours pas membre.
+    assert.equal((await readDocument()).memberships.some((entry) => entry.userId === "camille"), false);
+  });
+});
+
+test("aperçu d'une invitation : lien inconnu ou régénéré, sans compte, mot de passe à changer", async () => {
+  await withStore(apiDoc(), async () => {
+    const doc = await readDocument();
+    const alex = doc.users.find((entry) => entry.id === "alex")!;
+    const camille = doc.users.find((entry) => entry.id === "camille")!;
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "inconnu" }), { ok: false, error: "inviteLinkBroken" });
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "" }), { ok: false, error: "inviteLinkBroken" });
+    assert.deepEqual(await previewInvite(ctx(), { token: "it" }), { ok: false, error: "unauthorized" });
+    assert.deepEqual(await previewInvite(ctx({ ...camille, mustChangePassword: true }), { token: "it" }), {
+      ok: false,
+      error: "mustChangePassword",
+    });
+    assert.equal((await regenerateInvite(ctx(alex), { wishlistId: "w" })).ok, true);
+    assert.deepEqual(await previewInvite(ctx(camille), { token: "it" }), { ok: false, error: "inviteLinkBroken" });
   });
 });

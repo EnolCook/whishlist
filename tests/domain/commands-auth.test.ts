@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
 import { findApiSessionUser } from "../../src/auth/api-session";
-import { changePassword } from "../../src/domain/users";
+import { createPasswordReset } from "../../src/domain/password-reset";
+import { authenticate, changePassword } from "../../src/domain/users";
 import {
   changeOwnPassword,
   login,
   logout,
   register,
   requestPasswordReset,
+  resetPasswordWithLink,
   updateOwnDisplayName,
 } from "../../src/server/commands/auth";
 import { isRateLimitError } from "../../src/server/rate-limit";
@@ -170,6 +172,79 @@ test("20 essais de changement de mot de passe en 15 minutes : le 21e est refusé
     }
     await assert.rejects(
       changeOwnPassword(ctx(alex), { currentPassword: PASSWORD, password: "nouveau-mdp-solide" }),
+      isRateLimitError,
+    );
+  });
+});
+
+/** Base de démo avec un lien de réinitialisation pour Alex, et ce lien. */
+function docWithReset(now?: Date) {
+  const created = createPasswordReset(apiDoc(), { email: "alex@example.test", now });
+  if (!created.token) throw new Error("lien de réinitialisation non créé");
+  created.doc.users[0]!.emailVerifiedAt = null;
+  return { doc: created.doc, token: created.token };
+}
+
+test("nouveau mot de passe par le lien (011) : changé, adresse vérifiée, autres connexions tombées", async () => {
+  const { doc, token } = docWithReset();
+  await withStore(doc, async () => {
+    const before = (await readDocument()).users[0]!.sessionVersion ?? 0;
+    const result = await resetPasswordWithLink(ctx(), { token, password: "nouveau-mdp-solide", signIn: false });
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.session, null);
+    const after = await readDocument();
+    const alex = after.users[0]!;
+    assert.equal(alex.sessionVersion, before + 1);
+    assert.notEqual(alex.emailVerifiedAt, null);
+    assert.equal(after.passwordResets.length, 0);
+    assert.equal((await authenticate(after, "alex@example.test", "nouveau-mdp-solide"))?.id, "alex");
+  });
+});
+
+test("nouveau mot de passe par le lien avec signIn : une session d'API pour ce compte", async () => {
+  const { doc, token } = docWithReset();
+  await withStore(doc, async () => {
+    const result = await resetPasswordWithLink(ctx(), { token, password: "nouveau-mdp-solide", signIn: true });
+    assert.equal(result.ok && result.session?.user.id, "alex");
+    if (!result.ok || !result.session) return;
+    assert.equal(findApiSessionUser(await readDocument(), result.session.token)?.id, "alex");
+  });
+});
+
+test("nouveau mot de passe par le lien : trop court, lien inconnu, déjà utilisé ou expiré", async () => {
+  const { doc, token } = docWithReset();
+  await withStore(doc, async () => {
+    assert.deepEqual(await resetPasswordWithLink(ctx(), { token, password: "court", signIn: false }), {
+      ok: false,
+      error: "passwordTooShort",
+    });
+    assert.deepEqual(await resetPasswordWithLink(ctx(), { token: "inconnu", password: "nouveau-mdp-solide", signIn: true }), {
+      ok: false,
+      error: "resetLinkInvalid",
+    });
+    assert.equal((await resetPasswordWithLink(ctx(), { token, password: "nouveau-mdp-solide", signIn: false })).ok, true);
+    assert.deepEqual(await resetPasswordWithLink(ctx(), { token, password: "autre-mdp-solide", signIn: false }), {
+      ok: false,
+      error: "resetLinkInvalid",
+    });
+  });
+  const old = docWithReset(new Date(Date.now() - 2 * 60 * 60 * 1000));
+  await withStore(old.doc, async () => {
+    assert.deepEqual(await resetPasswordWithLink(ctx(), { token: old.token, password: "nouveau-mdp-solide", signIn: false }), {
+      ok: false,
+      error: "resetLinkExpired",
+    });
+  });
+});
+
+test("20 essais de nouveau mot de passe par lien en 15 minutes depuis une IP : le 21e est refusé", async () => {
+  await withStore(apiDoc(), async () => {
+    for (let i = 0; i < 20; i += 1) {
+      await resetPasswordWithLink(ctx(), { token: `faux-${i}`, password: "nouveau-mdp-solide", signIn: false });
+    }
+    await assert.rejects(
+      resetPasswordWithLink(ctx(), { token: "faux", password: "nouveau-mdp-solide", signIn: false }),
       isRateLimitError,
     );
   });

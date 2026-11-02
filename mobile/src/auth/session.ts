@@ -5,6 +5,7 @@ import { AppState } from "react-native";
 import { api, configureClient, done, NetworkError, ok, type Schemas } from "@/api/client";
 import { resetStore } from "@/data/store";
 import { removeExportFiles } from "@/features/account/exportData";
+import { clearGuestAccess } from "@/features/guest/storage";
 import { currentLocale } from "@/i18n";
 import { clearAll, ensureUser, getSnapshot, putSnapshot } from "@/offline/snapshot";
 
@@ -137,6 +138,9 @@ export async function signOut(): Promise<void> {
   } catch {
     // Hors ligne : le jeton expirera de lui-même ; on l'oublie quand même.
   }
+  // Seulement à la déconnexion et à la suppression, pas à l'expiration : les claims servent à annuler
+  // une réservation faite en invité (011).
+  await clearGuestAccess();
   await forgetEverything({ status: "signedOut", expired: false });
 }
 
@@ -147,5 +151,6 @@ export async function signOut(): Promise<void> {
  */
 export async function deleteAccount(password: string): Promise<void> {
   await done(api.POST("/me/deletion", { body: { password } }));
+  await clearGuestAccess();
   await forgetEverything({ status: "signedOut", expired: false, deleted: true });
 }

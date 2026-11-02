@@ -173,6 +173,18 @@ test("confirmation : l'adresse n'est lisible en entier que par son compte, et la
   );
 });
 
+test("confirmation dans l'app avec la session du compte du lien (011) : ownAccount vrai, suite interne gardée", async () => {
+  await withMailDryRun(() =>
+    withStore(apiDoc(), async () => {
+      const created = await register(ctx(), { email: "sam@example.test", password: "mot-de-passe-long", displayName: "Sam" });
+      assert.ok(created.ok && created.user);
+      const token = await lastConfirmationToken();
+      const confirmed = await confirmEmailWithToken(ctx(created.user), { token, suite: "/inviter/it" });
+      assert.deepEqual(confirmed, { ok: true, purpose: "verify", suite: "/inviter/it", ownAccount: true });
+    }),
+  );
+});
+
 test("renvoi du lien : le nouveau confirme, l'ancien ne vaut plus rien (US2)", async () => {
   await withMailDryRun(() =>
     withStore(unverifiedDoc(), async () => {
