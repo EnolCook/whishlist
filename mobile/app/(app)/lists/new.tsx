@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { createList } from "@/data/lists";
+import { useSession } from "@/auth/session";
+import { createList, newListDefaults, useMyLists } from "@/data/lists";
 import { translateError } from "@/i18n";
 import { getChange } from "@/offline/outbox";
 import { Alert } from "@/ui/Alert";
@@ -17,7 +18,8 @@ import { Screen } from "@/ui/Screen";
 type Ids = { id: string; categoryId: string; personId: string };
 
 /**
- * Nouvelle liste, d'après `05-nouvelle-liste.png` (FR-011). Marche hors ligne : la liste est créée
+ * Nouvelle liste, d'après `05-nouvelle-liste.png` (FR-011). Comme sur le site, aucun champ n'est obligatoire :
+ * chacun montre en placeholder la valeur qu'il prendra s'il reste vide. Marche hors ligne : la liste est créée
  * sur le téléphone et envoyée plus tard (FR-026). `?retry=<seq>` : « Corriger » une création refusée.
  */
 export default function NewList() {
@@ -30,6 +32,14 @@ export default function NewList() {
   const [ids, setIds] = useState<Ids | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const session = useSession();
+  const displayName = "user" in session ? (session.user?.displayName ?? "") : "";
+  const { lists } = useMyLists();
+  // La liste reprise par « Corriger » ne compte pas : son propre nom par défaut ne doit pas la numéroter.
+  const defaults = useMemo(
+    () => newListDefaults(displayName, lists.filter((list) => list.id !== ids?.id).map((list) => list.title), (key, vars) => t(key, vars)),
+    [displayName, lists, ids?.id, t],
+  );
 
   // « Corriger » : le formulaire reprend ce qui avait été saisi, avec les mêmes identifiants.
   useEffect(() => {
@@ -49,7 +59,7 @@ export default function NewList() {
     setBusy(true);
     setError(null);
     try {
-      const result = await createList({ title, category, person }, retrySeq, ids);
+      const result = await createList({ title, category, person }, defaults, retrySeq, ids);
       if (!result.ok) {
         setError(translateError(result.error));
         return;
@@ -71,19 +81,19 @@ export default function NewList() {
         </CardHeader>
         <CardContent>
           <Field label={t("newList.titleLabel")}>
-            <Input testID="new-list.title" accessibilityLabel={t("newList.titleLabel")} placeholder={t("newList.titlePlaceholder")} value={title} onChangeText={setTitle} />
+            <Input testID="new-list.title" accessibilityLabel={t("newList.titleLabel")} placeholder={defaults.title} value={title} onChangeText={setTitle} />
           </Field>
           <Field label={t("newList.categoryLabel")} description={t("newList.categoryHint")}>
             <Input
               testID="new-list.category"
               accessibilityLabel={t("newList.categoryLabel")}
-              placeholder={t("newList.categoryPlaceholder")}
+              placeholder={defaults.category}
               value={category}
               onChangeText={setCategory}
             />
           </Field>
           <Field label={t("newList.personLabel")} description={t("newList.personHint")}>
-            <Input testID="new-list.person" accessibilityLabel={t("newList.personLabel")} placeholder={t("newList.personPlaceholder")} value={person} onChangeText={setPerson} />
+            <Input testID="new-list.person" accessibilityLabel={t("newList.personLabel")} placeholder={defaults.person} value={person} onChangeText={setPerson} />
           </Field>
           {error ? <Alert variant="destructive" testID="new-list.error">{error}</Alert> : null}
           <Button testID="new-list.submit" title={t("newList.submit")} fullWidth disabled={busy} onPress={() => void submit()} />

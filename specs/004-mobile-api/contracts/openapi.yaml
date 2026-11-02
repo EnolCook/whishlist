@@ -587,15 +587,27 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, category, person]
+              description: >-
+                Aucun champ n'est obligatoire : un champ vide ou absent prend sa valeur par défaut, dans la langue
+                de la requête (`Accept-Language`).
               properties:
-                title: { type: string }
+                title:
+                  type: string
+                  description: >-
+                    Nom de la liste. Vide ou absent : « Liste de <nom affiché> » / "<nom affiché>’s list" (« Ma
+                    liste » / "My list" si le nom affiché est vide), suivi d'un numéro (« 2 », « 3 »…) si une liste
+                    du compte porte déjà ce nom.
                 category:
                   type: string
-                  description: Comme le libellé d'une catégorie, une saisie séparée par des virgules en crée plusieurs. `categoryId` ne vaut que pour la première.
+                  description: >-
+                    Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut
+                    que pour la première. Vide ou absente (ou faite seulement de virgules) : « Cadeaux » / "Gifts".
                 person:
                   type: string
-                  description: Comme le libellé d'un « qui », une saisie séparée par des virgules en crée plusieurs. `personId` ne vaut que pour le premier.
+                  description: >-
+                    Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut
+                    que pour le premier. Vide ou absent (ou fait seulement de virgules) : le nom affiché du compte,
+                    tel quel (jamais découpé), ou « Moi » / "Me" s'il est vide.
                 id: { $ref: "#/components/schemas/ClientId" }
                 categoryId: { $ref: "#/components/schemas/ClientId" }
                 personId: { $ref: "#/components/schemas/ClientId" }

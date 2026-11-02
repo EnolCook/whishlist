@@ -1020,11 +1020,12 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        title: string;
-                        /** @description Comme le libellé d'une catégorie, une saisie séparée par des virgules en crée plusieurs. `categoryId` ne vaut que pour la première. */
-                        category: string;
-                        /** @description Comme le libellé d'un « qui », une saisie séparée par des virgules en crée plusieurs. `personId` ne vaut que pour le premier. */
-                        person: string;
+                        /** @description Nom de la liste. Vide ou absent : « Liste de <nom affiché> » / "<nom affiché>’s list" (« Ma liste » / "My list" si le nom affiché est vide), suivi d'un numéro (« 2 », « 3 »…) si une liste du compte porte déjà ce nom. */
+                        title?: string;
+                        /** @description Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut que pour la première. Vide ou absente (ou faite seulement de virgules) : « Cadeaux » / "Gifts". */
+                        category?: string;
+                        /** @description Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut que pour le premier. Vide ou absent (ou fait seulement de virgules) : le nom affiché du compte, tel quel (jamais découpé), ou « Moi » / "Me" s'il est vide. */
+                        person?: string;
                         id?: components["schemas"]["ClientId"];
                         categoryId?: components["schemas"]["ClientId"];
                         personId?: components["schemas"]["ClientId"];
