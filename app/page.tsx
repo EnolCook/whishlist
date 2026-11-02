@@ -88,20 +88,24 @@ export default async function HomePage() {
       ) : (
         <div className="flex flex-col gap-3">
           {mine.map((list) => (
-            <Card key={list.id} size="sm">
+            // `relative` + `after:inset-0` sur le lien du titre : toute la carte est cliquable,
+            // alors qu'il n'y a toujours qu'un seul lien à parcourir au clavier ; le contour de
+            // focus passe du titre à la carte. La couverture reste décorative (`alt` vide) : le
+            // lien porte déjà le titre, un lecteur d'écran ne l'entend qu'une fois.
+            <Card key={list.id} size="sm" className="relative">
               <CardHeader className="flex flex-row items-center gap-3">
-                <Link href={withLocale(locale, `/listes/${list.id}`)} className="shrink-0" tabIndex={-1} aria-hidden>
-                  <WishlistCover
-                    coverImageUrl={list.coverImageUrl}
-                    theme={resolveTheme(list.theme)}
-                    size="xs"
-                    framed={false}
-                    alt={list.title}
-                  />
-                </Link>
+                <WishlistCover
+                  coverImageUrl={list.coverImageUrl}
+                  theme={resolveTheme(list.theme)}
+                  size="xs"
+                  framed={false}
+                />
                 <div className="flex min-w-0 flex-col gap-1">
                   <CardTitle>
-                    <Link href={withLocale(locale, `/listes/${list.id}`)} className="hover:underline">
+                    <Link
+                      href={withLocale(locale, `/listes/${list.id}`)}
+                      className="hover:underline after:absolute after:inset-0 after:rounded-base focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-solid focus-visible:after:outline-offset-2 focus-visible:after:outline-black"
+                    >
                       {list.title}
                     </Link>
                   </CardTitle>
