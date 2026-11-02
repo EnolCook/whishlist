@@ -193,13 +193,14 @@ describe("flows to run", () => {
     expect(resolveFlowPaths(["nope.yaml"], { mobileRoot, flowsDir })).toEqual({ ok: false, message: "Parcours introuvable : nope.yaml" });
   });
 
-  test("android-only flows are skipped on iOS only", () => {
+  test("android-only flows are skipped on iOS, ios-only flows on Android", () => {
     const flows = [
       { name: "A", tags: ["005-us1"] },
       { name: "B", tags: ["005-us5", "android-only"] },
+      { name: "C", tags: ["015-us1", "ios-only"] },
     ];
     expect(skippedOn("ios", flows)).toEqual([flows[1]]);
-    expect(skippedOn("android", flows)).toEqual([]);
+    expect(skippedOn("android", flows)).toEqual([flows[2]]);
   });
 });
 

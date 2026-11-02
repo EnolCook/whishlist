@@ -1,0 +1,44 @@
+# PR #15 (sans spec) : un lien partagé depuis Safari devient une idée. Choix de la liste, formulaire prérempli,
+# ajout, puis la liste s'ouvre avec l'idée. Deux cas : app déjà ouverte (à chaud) et app fermée (à froid).
+# iOS seulement : le partage passe par Safari et la feuille de partage d'iOS (voir exclusions.md).
+appId: app.ohyoushouldnt.mobile
+name: "015 US1 — Partager un lien depuis Safari vers une liste"
+tags:
+  - 015-us1
+  - ios-only
+---
+- runFlow: ../subflows/launch-clean.yaml
+- runScript: ../scripts/strings.generated.js
+- runScript: ../scripts/unique.js
+- runFlow:
+    file: ../subflows/login.yaml
+    env:
+      EMAIL: alex@example.test
+# Une deuxième liste, pour que l'écran « Ajouter à une liste » propose un choix.
+- runFlow:
+    file: ../subflows/create-list.yaml
+    env:
+      TITLE: Partage ${output.unique}
+
+# À chaud : l'app tourne déjà.
+- runFlow:
+    file: ../subflows/share-from-safari.yaml
+    env:
+      URL: http://localhost:3010/l/demo-list-lecture
+- runFlow:
+    file: ../subflows/share-pick-and-add.yaml
+    env:
+      URL: http://localhost:3010/l/demo-list-lecture
+      NAME: Partagé à chaud ${output.unique}
+
+# À froid : l'app est fermée quand on partage.
+- stopApp
+- runFlow:
+    file: ../subflows/share-from-safari.yaml
+    env:
+      URL: http://localhost:3010/l/demo-list-lecture
+- runFlow:
+    file: ../subflows/share-pick-and-add.yaml
+    env:
+      URL: http://localhost:3010/l/demo-list-lecture
+      NAME: Partagé à froid ${output.unique}

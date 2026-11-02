@@ -1,0 +1,42 @@
+# Après un partage reçu : choisit la liste demo-list sur « Ajouter à une liste », vérifie le lien prérempli,
+# nomme l'idée NAME, l'ajoute, puis vérifie que la liste s'ouvre avec l'idée (catégorie Livres, la première).
+appId: app.ohyoushouldnt.mobile
+---
+- extendedWaitUntil:
+    visible:
+      id: incoming.screen
+    timeout: 30000
+- assertVisible:
+    id: incoming.url
+    text: ${URL}
+- tapOn:
+    id: incoming.list-demo-list
+- extendedWaitUntil:
+    visible:
+      id: item-form.name
+    timeout: 10000
+- assertVisible:
+    id: item-form.url
+    text: ${URL}
+# « Remplir depuis le lien » part tout seul : on attend qu'il ait fini avant de saisir le nom.
+- extendedWaitUntil:
+    visible:
+      id: enrich
+      enabled: true
+    timeout: 15000
+- tapOn:
+    id: item-form.name
+- inputText: ${NAME}
+- runFlow: submit-item-form.yaml
+# L'idée enregistrée ouvre la liste (à froid, il n'y a pas d'écran derrière le formulaire).
+- extendedWaitUntil:
+    visible:
+      id: list.screen
+    timeout: 10000
+- assertNotVisible:
+    id: item-form.screen
+- runFlow:
+    file: open-category.yaml
+    env:
+      CATEGORY: Livres
+      ITEM: ${NAME}

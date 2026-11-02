@@ -39,8 +39,8 @@ function usedIds() {
   return used;
 }
 
-// Éléments du système (feuille de partage iOS) et du dev client (menu développeur), absents du code de l'app.
-const systemIds = new Set(["ShareSheet.RemoteContainerView", "PopoverDismissRegion", "xmark"]);
+// Éléments du système (feuille de partage iOS, Safari) et du dev client (menu développeur), absents du code de l'app.
+const systemIds = new Set(["ShareSheet.RemoteContainerView", "PopoverDismissRegion", "shareCell", "MoreMenuButton", "ShareButton", "xmark"]);
 
 test("every id: used by a flow is a testID of the app", () => {
   const { literals, prefixes } = declaredIds();
