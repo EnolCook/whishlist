@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { ArchiveIcon } from "lucide-react-native";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -19,7 +20,7 @@ import { fixableInForm } from "./draft";
 
 /**
  * Une idée dans sa catégorie, comme l'`article` de `components/site/ideas-accordion.tsx` :
- * nom, étoiles, badges « qui » et prix, puis Modifier, Archiver et le choix de catégorie.
+ * nom, étoiles, badges « qui » et prix, puis Modifier, le choix de catégorie et Archiver, en bout de rangée.
  */
 export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
   const { t } = useTranslation("list");
@@ -47,14 +48,6 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
             onPress={edit}
             testID="item-card.edit"
           />
-          <Button
-            title={t("accordion.archive")}
-            accessibilityLabel={t("accordion.archiveAria", { name: item.name })}
-            variant="ghost"
-            size="sm"
-            onPress={() => void patchItem(list.id, item.id, { archived: true })}
-            testID="item-card.archive"
-          />
           {categories.length > 1 ? (
             <View style={{ minWidth: 140, flexGrow: 1 }}>
               <Select
@@ -65,6 +58,16 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
               />
             </View>
           ) : null}
+          <Button
+            title={t("accordion.archive")}
+            icon={<ArchiveIcon size={16} color={tokens.colors.black} />}
+            accessibilityLabel={t("accordion.archiveAria", { name: item.name })}
+            variant="ghost"
+            size="sm"
+            onPress={() => void patchItem(list.id, item.id, { archived: true })}
+            style={{ marginStart: "auto" }}
+            testID="item-card.archive"
+          />
         </View>
       </Shadow>
       {item.rejected ? (
