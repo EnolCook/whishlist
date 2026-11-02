@@ -44,6 +44,15 @@
     "manageOnSite": "Manage sharing on the website",
     "pendingList": "This list hasn't been sent yet. Its link will be available once you are back online."
   },
+  "incoming": {
+    "title": "Add to a list",
+    "hint": "Choose the list for this idea.",
+    "nothingTitle": "Nothing to use",
+    "nothingBody": "This share has no link or text. Share the link of the gift’s page instead.",
+    "noListTitle": "No list yet",
+    "noListBody": "Create a list, then share the link again.",
+    "cancel": "Cancel"
+  },
   "settings": {
     "offline": "List settings need a connection. Try again once you are back online."
   },

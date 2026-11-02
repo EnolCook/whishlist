@@ -84,6 +84,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-sqlite",
     "expo-localization",
     "expo-font",
+    // Recevoir un lien partagé depuis une autre app (« Ajouter à une liste ») : liens et texte seulement.
+    [
+      "expo-sharing",
+      {
+        ios: { enabled: true, activationRule: { supportsText: true, supportsWebUrlWithMaxCount: 1 } },
+        android: { enabled: true, singleShareMimeTypes: ["text/plain"] },
+      },
+    ],
     [
       "expo-splash-screen",
       { backgroundColor: "#e8f0ff", image: "./assets/images/splash-icon.png", imageWidth: 160 },

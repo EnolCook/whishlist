@@ -1,0 +1,24 @@
+# iOS : ouvre URL dans Safari et la partage vers l'app par la feuille de partage du système.
+# La cellule de l'app vit dans une vue distante : Maestro la voit (shareCell), mais avec des positions relatives à
+# la feuille, donc on appuie sur sa position à l'écran (3e icône de la rangée des apps). Position relevée sur un
+# iPhone 17 Pro Max (iOS 26.5) : à vérifier sur un autre modèle (voir exclusions.md).
+appId: com.apple.mobilesafari
+---
+- launchApp:
+    appId: com.apple.mobilesafari
+- openLink:
+    link: ${URL}
+    browser: true
+- tapOn:
+    id: MoreMenuButton
+- tapOn:
+    id: ShareButton
+- extendedWaitUntil:
+    visible:
+      id: ShareSheet.RemoteContainerView
+    timeout: 10000
+- assertVisible:
+    id: shareCell
+    index: 2
+- tapOn:
+    point: "61%,72%"

@@ -47,9 +47,14 @@ function resolveFlowPaths(args, { mobileRoot, flowsDir }) {
   return { ok: true, files };
 }
 
-/** Parcours qui ne tournent pas sur cette plateforme : `android-only` sur iOS. */
-function skippedOn(platform, flows) {
-  return platform === "ios" ? flows.filter((flow) => flow.tags.includes("android-only")) : [];
+/** Tag des parcours à ne pas jouer sur cette plateforme : `android-only` sur iOS, `ios-only` sur Android. */
+function excludedTag(platform) {
+  return platform === "ios" ? "android-only" : "ios-only";
 }
 
-module.exports = { parseFlowHeader, readFlowHeader, resolveFlowPaths, skippedOn };
+/** Parcours qui ne tournent pas sur cette plateforme. */
+function skippedOn(platform, flows) {
+  return flows.filter((flow) => flow.tags.includes(excludedTag(platform)));
+}
+
+module.exports = { excludedTag, parseFlowHeader, readFlowHeader, resolveFlowPaths, skippedOn };

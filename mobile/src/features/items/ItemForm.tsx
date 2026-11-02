@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -46,6 +46,7 @@ export function ItemForm({
   busy,
   submitLabel,
   onSubmit,
+  autoFill = false,
 }: {
   list: ViewList;
   initial: Draft;
@@ -54,6 +55,8 @@ export function ItemForm({
   busy: boolean;
   submitLabel: string;
   onSubmit: (draft: Draft) => void;
+  /** Lien reçu par un partage : remplir depuis le lien dès que c'est possible (une fois). */
+  autoFill?: boolean;
 }) {
   const { t } = useTranslation(["list", "common"]);
   const online = useOnline();
@@ -92,6 +95,14 @@ export function ItemForm({
   const people = list.people.map((p) => ({ value: p.id, label: p.label }));
   // Préremplissage : exige le serveur, et une liste qui existe déjà sur le serveur.
   const canEnrich = online && !list.localOnly && draft.url.trim() !== "" && !enriching;
+  const autoFilled = useRef(false);
+  useEffect(() => {
+    if (!autoFill || autoFilled.current || !canEnrich) return;
+    autoFilled.current = true;
+    void fill();
+    // `fill` lit le brouillon courant : seul le premier moment où c'est possible compte.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFill, canEnrich]);
 
   return (
     <View style={{ gap: tokens.space[4] }}>

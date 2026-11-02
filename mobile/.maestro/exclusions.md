@@ -33,3 +33,11 @@ Les vérifications « visible sur le site » des stories restent manuelles aussi
 | 009-us3 | Carte dépliée hors ligne, téléchargement désactivé (scénario 4) | Demande le mode avion (Android seulement) ; couvert par le test d'écran hors ligne | [009 quickstart, US3](../../specs/009-account-cards-expand/quickstart.md#us3--carte-données-et-informations) |
 | 009-us4 | Animation des catégories et des licences, « Réduire les animations » (scénario 2) | Se juge à l'œil, et le réglage est hors de portée de la suite ; couvert par les tests de `IdeasAccordion` et de l'écran des licences | [009 quickstart, US4](../../specs/009-account-cards-expand/quickstart.md#us4--catégories-de-longlet-idées) |
 | 011-us3 | Story entière : icône « l'app sur votre téléphone » du site et sa fenêtre des stores | Story du site seulement, qui n'a pas de test e2e (AGENTS.md) ; `phonePlatform` et les adresses des stores sont couverts par `tests/domain/device.test.ts` | [011 quickstart, US3](../../specs/011-app-deep-links/quickstart.md#us3--icône-de-lapp-sur-le-site) |
+
+## Partage vers l'app (PR #15, sans spec)
+
+Le partage d'un lien depuis une autre app (« Ajouter à une liste ») n'a ni `spec.md` ni `quickstart.md` : il n'a donc pas de ligne dans le tableau ci-dessus. Son parcours `flows/015-us1-share-into-list.yaml` (tag `ios-only`) partage une page de Safari à chaud puis à froid. Restent à la main, sur un appareil :
+
+- Le parcours sur Android (feuille de partage de Chrome) : non écrit, le parcours est sauté sur Android.
+- Un autre modèle d'iPhone : la cellule de l'app dans la feuille de partage est dans une vue distante, que Maestro voit sans sa position à l'écran ; `subflows/share-from-safari.yaml` appuie donc sur une position relevée sur un iPhone 17 Pro Max (iOS 26.5).
+- Un partage reçu sans session (la connexion ramène à « Ajouter à une liste »), un partage sans lien (image seule) et le préremplissage depuis une vraie page produit : couverts par les tests de `__tests__/features/incoming-share.test.tsx` et `__tests__/screens/item-form.test.tsx`.
