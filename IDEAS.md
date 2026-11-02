@@ -18,8 +18,7 @@ court et sûr, ensuite ce qui touche au schéma et au contrat d'API, enfin les g
 
 | # | Quoi | Pourquoi d'abord |
 |---|---|---|
-| 1 | **MAC du déverrouillage de lecture** (`src/auth/read-unlock.ts:15`) | Vrai défaut de sécurité, correction d'une ligne, test évident. Le meilleur rapport du lot. |
-| 2 | **B5 — erreurs CSP** | 33 par page. Diagnostic d'abord : soit c'est cosmétique, soit des styles ne s'appliquent pas en production. Tant qu'on ne sait pas, on ne peut pas arbitrer. |
+| 1 | **MAC du déverrouillage de lecture** (`src/auth/read-unlock.ts:15`) | Gravité faible : il faut modifier volontairement le cookie, et cela ne concerne que les listes protégées par mot de passe. Un lien simple n'expire jamais. À faire en passant. |
 | 3 | **Rejoindre une liste sur un GET** (`app/inviter/[token]/page.tsx:43`) | Effet de bord dans un rendu ; passer par un bouton. Petit et isolé. |
 | 4 | **Trous IPv6 du filtre SSRF** (`src/domain/safe-http.ts:52`) | Quelques lignes, entièrement couvrable par des tests purs. |
 | 5 | **B4 — doublons de libellés** | Décision produit à trancher, puis quelques lignes. |
@@ -48,25 +47,19 @@ PR séparée sans coordination.
 
 ### Ce que je ferais ensuite, concrètement
 
-Le **1** (MAC du déverrouillage) : c'est une faille réelle, la correction tient en une ligne et le
-test est trivial. Puis le **2** (CSP), parce qu'on ignore encore s'il cache un vrai problème — et
-tant qu'on l'ignore, il peut invalider des arbitrages d'interface pris plus tard.
+**A1** (alléger la création de liste) : c'est le gain le plus visible.
 
 ---
 
-## Déjà corrigé (branches poussées sur le fork, aucune PR ouverte)
+## Déjà corrigé (PR ouvertes sur cloeduc/whishlist)
 
-| Sujet | Branche |
-|---|---|
-| Crénelage du cadeau du hero sur Firefox (rotation conservée ailleurs) | `fix/hero-gift-aliasing` |
-| B1 — dialogue « Modifier l'idée » illisible (requêtes de conteneur) | `fix/item-form-container-queries` |
-| Colonne « niveau d'envie » qui écrasait la grille en pleine page | `improve/item-form-priority-column` |
-| B2 — toute la carte de « Mes listes » ouvre la liste | `fix/list-card-click-target` |
-| B3 — les virgules créent plusieurs catégories / « qui » | `feat/split-labels-on-comma` |
-
-Les deux branches du formulaire touchent la même ligne : chacune s'applique seule sur `main`,
-mais les fusionner toutes les deux demande une résolution d'une ligne (réunir les deux jeux de
-classes).
+| Sujet | PR | Branche |
+|---|---|---|
+| B1 et colonne « niveau d'envie » | #1 | `fix/item-form-container-queries` |
+| B3 — virgules | #3 | `feat/split-labels-on-comma` |
+| B2 — toute la carte ouvre la liste | #4 | `fix/list-card-click-target` |
+| Crénelage du hero sur Firefox | #5 | `fix/hero-gift-aliasing` |
+| `npm run lint` | #6 | `fix/lint-analytics` |
 
 ---
 
@@ -86,25 +79,11 @@ existe déjà *à l'intérieur* d'une saisie (`splitLabels`), pas contre l'exist
 
 ---
 
-### B5 — 33 erreurs CSP à chaque chargement de page
+### B5 — Erreurs CSP dans la console : clos, sans correction
 
-**Observé** : la console du navigateur affiche ~33 fois
-`Applying inline style violates the following Content Security Policy directive 'style-src ...'`
-sur l'accueil, connecté comme déconnecté.
-
-**Pré-existant** : compté sur `main` et sur nos branches, **33 des deux côtés** — ce n'est pas une
-régression de nos changements.
-
-**Pas encore diagnostiqué** : la politique pose pourtant `style-src-attr 'unsafe-inline'`
-(`src/server/content-security.ts`), donc l'attribut `style` est censé être autorisé ; le message
-pointe `style-src`, ce qui ferait plutôt penser à une feuille ou un élément `<style>` injecté sans
-nonce par un composant d'interface (Base UI ?).
-
-**Pourquoi ça compte** : en développement c'est du bruit, mais si un style est réellement refusé,
-il ne s'applique pas non plus en production. À qualifier avant de décider quoi que ce soit :
-trouver *quel* composant déclenche l'erreur, et si quelque chose casse visuellement.
-
-**Priorité** : à diagnostiquer tôt (vague 1), à corriger selon ce qu'on trouve.
+Les 33 erreurs viennent uniquement de l'outil de développement de Next (`next-devtools`), qui
+injecte des `<style>` sans nonce. Sur un build de production de `main` : 0 violation dans Chromium
+et Firefox, sur l'accueil, la connexion, la FAQ, « Mes listes » et une liste. Rien à corriger.
 
 ---
 
