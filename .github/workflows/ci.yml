@@ -1,0 +1,69 @@
+# Vérifications de chaque PR et de chaque push sur main : site, app mobile, image Docker.
+# `pull_request` (et non `pull_request_target`) : le code d'un fork tourne sans secret, avec un jeton en lecture seule.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Une PR : seul le dernier push compte. main : chaque fusion garde son propre résultat.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  site:
+    name: Site (lint, types, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  mobile:
+    name: Mobile app (API types, lint, types, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+      # L'app reprend des modules du site (src/i18n, locales…) : il lui faut aussi les dépendances de la racine.
+      - run: npm ci
+      - run: npm --prefix mobile ci
+      # En premier, avec un message clair : c'est l'oubli le plus fréquent après un changement du contrat.
+      - name: API types match the contract
+        run: |
+          npm --prefix mobile run api:types
+          if ! git diff --quiet -- mobile/src/api/schema.d.ts; then
+            echo "::error file=mobile/src/api/schema.d.ts::mobile/src/api/schema.d.ts does not match the API contract (specs/004-mobile-api/contracts/openapi.yaml). Run 'npm --prefix mobile run api:types' and commit mobile/src/api/schema.d.ts."
+            git diff --stat -- mobile/src/api/schema.d.ts
+            exit 1
+          fi
+      - run: npm --prefix mobile run lint
+      - run: npm --prefix mobile run typecheck
+      - run: npm --prefix mobile test -- --ci
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t whishlist:ci .
