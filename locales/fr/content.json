@@ -6,65 +6,65 @@
     "legal": "Mentions légales"
   },
   "project": {
-    "metaTitle": "Le projet — Oh, mais fallait pas !",
+    "metaTitle": "Le projet — Oh, mais fallait pas !",
     "metaDescription": "Pourquoi nous avons créé cette application libre de listes de cadeaux, et pourquoi nous recommandons les listes volontairement bien remplies.",
-    "eyebrow": "Pourquoi ce projet ?",
+    "eyebrow": "Pourquoi ce projet ?",
     "title": "Des listes bien remplies, des cadeaux qui font vraiment plaisir.",
-    "intro": "Dans notre famille, nous notons nos envies au fil de l’année. Nos listes contiennent volontairement plus d’idées qu’il n’en faut : nos proches trouvent facilement un cadeau qui nous plaît. Les personnes qui gèrent la liste voient les réservations.",
+    "intro": "Dans notre famille, nous notons nos envies au fil de l’année. Nos listes contiennent volontairement plus d’idées qu’il n’en faut : nos proches trouvent facilement un cadeau qui nous plaît. Les personnes qui gèrent la liste voient les réservations.",
     "practiceTitle": "La liste sur-alimentée",
-    "practiceBody": "Une bonne liste ne dicte pas un cadeau précis. Elle ouvre assez de possibilités pour laisser le choix à la personne qui offre. Petites envies, beaux objets, livres, expériences : plus la liste est variée, plus il est simple de choisir.",
+    "practiceBody": "Une bonne liste ne dicte pas un cadeau précis. Elle ouvre assez de possibilités pour laisser le choix à la personne qui offre. Petites envies, beaux objets, livres, expériences : plus la liste est variée, plus il est simple de choisir.",
     "beforeTitle": "Avant cette application",
-    "beforeBody": "Nous utilisions un outil no-code qui n’avait pas été conçu pour cet usage. Les services disponibles ne nous convenaient pas : suivi commercial des liens, publicité, compte obligatoire pour consulter une liste, ou impossibilité de préparer une liste à plusieurs.",
+    "beforeBody": "Nous utilisions un outil no-code qui n’avait pas été conçu pour cet usage. Les services disponibles ne nous convenaient pas : suivi commercial des liens, publicité, compte obligatoire pour consulter une liste, ou impossibilité de préparer une liste à plusieurs.",
     "buildTitle": "Un projet libre",
-    "buildBody": "Le projet est libre et auto-hébergeable : chacun peut le consulter, l’adapter ou l’installer.",
-    "usefulTitle": "Et pour les autres ?",
-    "usefulBody": "Nous ne savons pas encore si cette application sera utile au-delà de notre famille. En revanche, nous recommandons sans hésiter la liste sur-alimentée : elle laisse le choix à la personne qui offre, et les réservations restent visibles pour qui gère la liste.",
+    "buildBody": "Le projet est libre et auto-hébergeable : chacun peut le consulter, l’adapter ou l’installer.",
+    "usefulTitle": "Et pour les autres ?",
+    "usefulBody": "Nous ne savons pas encore si cette application sera utile au-delà de notre famille. En revanche, nous recommandons sans hésiter la liste sur-alimentée : elle laisse le choix à la personne qui offre, et les réservations restent visibles pour qui gère la liste.",
     "cta": "Créer ma liste",
     "guide": "Lire le guide",
     "github": "Voir le code sur GitHub",
     "support": "Soutenir le projet"
   },
   "faq": {
-    "metaTitle": "Questions fréquentes — Oh, mais fallait pas !",
-    "metaDescription": "Comptes, réservations, listes collaboratives, confidentialité et fonctionnement d’Oh, mais fallait pas !",
+    "metaTitle": "Questions fréquentes — Oh, mais fallait pas !",
+    "metaDescription": "Comptes, réservations, listes collaboratives, confidentialité et fonctionnement d’Oh, mais fallait pas !",
     "eyebrow": "Questions fréquentes",
     "title": "Tout ce qu’il faut savoir avant de faire une liste.",
     "intro": "Créer une liste demande un compte. La consulter et réserver un cadeau n’en demande pas.",
     "items": [
       {
-        "q": "Pourquoi mettre beaucoup d’idées dans une liste ?",
+        "q": "Pourquoi mettre beaucoup d’idées dans une liste ?",
         "a": "Une liste bien remplie donne de vrais repères sans imposer un cadeau. Vos proches choisissent selon leur budget et leurs envies. Les personnes qui gèrent la liste voient les réservations."
       },
       {
-        "q": "Faut-il un compte pour consulter une liste ?",
+        "q": "Faut-il un compte pour consulter une liste ?",
         "a": "Non. Toute personne qui dispose du lien peut consulter la liste et réserver un cadeau. Si la liste est protégée par un mot de passe, elle devra aussi le saisir."
       },
       {
-        "q": "Que fait une réservation ?",
+        "q": "Que fait une réservation ?",
         "a": "Elle indique qu’une personne prévoit d’offrir ce cadeau. Aucun achat ni paiement n’est effectué sur le site."
       },
       {
-        "q": "Puis-je préparer une liste avec quelqu’un ?",
+        "q": "Puis-je préparer une liste avec quelqu’un ?",
         "a": "Oui. Envoyez le lien d’invitation à modifier. La personne devra se connecter ou créer un compte avant de rejoindre la liste."
       },
       {
-        "q": "Pourquoi confirmer mon adresse e-mail, et puis-je la changer ?",
-        "a": "Le lien de confirmation, reçu à l’inscription, montre que l’adresse est bien la vôtre : sans lui, vous pouvez consulter et réserver, mais pas créer ni rejoindre une liste. Pour changer d’adresse, ouvrez « Mon compte » : un lien part vers la nouvelle adresse, et elle ne remplace l’ancienne qu’une fois confirmée."
+        "q": "Pourquoi confirmer mon adresse e-mail, et puis-je la changer ?",
+        "a": "Le lien de confirmation, reçu à l’inscription, montre que l’adresse est bien la vôtre : sans lui, vous pouvez consulter et réserver, mais pas créer ni rejoindre une liste. Pour changer d’adresse, ouvrez « Mon compte » : un lien part vers la nouvelle adresse, et elle ne remplace l’ancienne qu’une fois confirmée."
       },
       {
-        "q": "Qui peut voir les réservations ?",
+        "q": "Qui peut voir les réservations ?",
         "a": "Les personnes qui gèrent la liste peuvent consulter les réservations. Si la liste est pour vous, mieux vaut donc éviter cet écran — sauf si vous êtes aussi du genre à retourner la maison pour découvrir où sont cachés les cadeaux de Noël. Sur la liste partagée, la personne qui a réservé retrouve aussi ses propres réservations dans le même navigateur ou avec son compte."
       },
       {
-        "q": "Peut-on annuler une réservation ?",
+        "q": "Peut-on annuler une réservation ?",
         "a": "Oui, si elle a été faite avec votre compte ou depuis le même navigateur. Le cadeau redevient alors disponible."
       },
       {
-        "q": "Les liens de cadeaux sont-ils suivis à des fins commerciales ?",
+        "q": "Les liens de cadeaux sont-ils suivis à des fins commerciales ?",
         "a": "Non. Le projet n’ajoute pas de lien affilié et ne revend pas votre navigation. Les liens mènent directement aux sites indiqués dans les idées cadeaux."
       },
       {
-        "q": "Puis-je installer l’application moi-même ?",
+        "q": "Puis-je installer l’application moi-même ?",
         "a": "Oui. Le code est libre et le dépôt contient les instructions de déploiement."
       }
     ]
@@ -78,7 +78,7 @@
     "steps": [
       {
         "title": "1. Créez votre compte",
-        "body": "Renseignez votre nom affiché, votre adresse e-mail et un mot de passe, puis confirmez votre adresse avec le lien reçu par e-mail. Votre compte sert à créer et modifier des listes ; vos proches n’en ont pas besoin pour les consulter."
+        "body": "Renseignez votre nom affiché, votre adresse e-mail et un mot de passe, puis confirmez votre adresse avec le lien reçu par e-mail. Votre compte sert à créer et modifier des listes ; vos proches n’en ont pas besoin pour les consulter."
       },
       {
         "title": "2. Créez une liste",
@@ -94,28 +94,28 @@
       },
       {
         "title": "5. Partagez le bon lien",
-        "body": "Le lien de la liste permet de consulter et réserver. Le lien d’invitation permet de rejoindre la liste pour la modifier : partagez-le seulement avec les personnes concernées."
+        "body": "Le lien de la liste permet de consulter et réserver. Le lien d’invitation permet de rejoindre la liste pour la modifier : partagez-le seulement avec les personnes concernées."
       },
       {
         "title": "6. Suivez les réservations",
-        "body": "L’onglet Réservations indique les cadeaux réservés. Une réservation ne passe aucune commande : l’achat reste à effectuer séparément."
+        "body": "L’onglet Réservations indique les cadeaux réservés. Une réservation ne passe aucune commande : l’achat reste à effectuer séparément."
       }
     ],
-    "guestTitle": "Vous avez reçu une liste ?",
-    "guestBody": "Ouvrez le lien, parcourez les idées et choisissez « Réserver ce cadeau ». Vous pouvez laisser votre nom et un message. Aucun compte n’est nécessaire.",
+    "guestTitle": "Vous avez reçu une liste ?",
+    "guestBody": "Ouvrez le lien, parcourez les idées et choisissez « Réserver ce cadeau ». Vous pouvez laisser votre nom et un message. Aucun compte n’est nécessaire.",
     "tipTitle": "Notre conseil",
-    "tipBody": "N’attendez pas une occasion précise. Ajoutez vos envies toute l’année et gardez plus d’idées que nécessaire : vos proches choisissent plus facilement. Les personnes qui gèrent la liste voient les réservations.",
+    "tipBody": "N’attendez pas une occasion précise. Ajoutez vos envies toute l’année et gardez plus d’idées que nécessaire : vos proches choisissent plus facilement. Les personnes qui gèrent la liste voient les réservations.",
     "screens": {
       "publicAlt": "Exemple d’une liste partagée avec ses filtres et ses idées cadeaux.",
       "publicCaption": "La liste partagée filtre les idées et laisse réserver un cadeau sans compte.",
       "listsAlt": "Écran présentant les listes créées et partagées avec le compte.",
       "listsCaption": "Une fois connecté, vos listes sont regroupées ici. Une seule suffit pour commencer.",
       "adminAlt": "Écran de gestion d’une liste avec le formulaire d’ajout et les catégories.",
-      "adminCaption": "Les idées se rangent par catégorie dans un accordéon : pratique pour une liste bien fournie.",
+      "adminCaption": "Les idées se rangent par catégorie dans un accordéon : pratique pour une liste bien fournie.",
       "settingsAlt": "Réglages de personnalisation d’une liste de cadeaux.",
-      "settingsCaption": "Catégories, destinataires et apparence : tout ce qui donne une identité à la liste.",
+      "settingsCaption": "Catégories, destinataires et apparence : tout ce qui donne une identité à la liste.",
       "sharingAlt": "Réglages de partage d’une liste de cadeaux.",
-      "sharingCaption": "Deux liens distincts : un pour consulter et réserver, un pour rejoindre la liste en édition.",
+      "sharingCaption": "Deux liens distincts : un pour consulter et réserver, un pour rejoindre la liste en édition.",
       "reservationsAlt": "Écran de suivi des cadeaux réservés.",
       "reservationsCaption": "Le suivi des réservations est utile… sauf si la liste est pour vous.",
       "reserveAlt": "Formulaire permettant de réserver un cadeau depuis une liste partagée.",
@@ -125,23 +125,23 @@
       "publicTitle": "La liste vue par vos proches",
       "reserveTitle": "Réserver un cadeau",
       "ideaAlt": "Formulaire d’ajout d’une nouvelle idée cadeau.",
-      "ideaCaption": "Ajoutez une idée : un lien suffit souvent pour démarrer, le reste se complète à la main.",
+      "ideaCaption": "Ajoutez une idée : un lien suffit souvent pour démarrer, le reste se complète à la main.",
       "aiAlt": "Message indiquant qu’une IA a prérempli les champs, avec estimation d’impact.",
       "aiCaption": "Quand l’IA intervient, c’est indiqué clairement, avec une estimation de tokens et de CO₂.",
       "aiTitle": "Récupération assistée par IA",
       "categoriesAlt": "Liste d’idées organisée en accordéon par catégories.",
-      "categoriesCaption": "Les catégories forment un accordéon : les flèches changent l’ordre, le menu déplace une idée. Le glisser reste possible.",
+      "categoriesCaption": "Les catégories forment un accordéon : les flèches changent l’ordre, le menu déplace une idée. Le glisser reste possible.",
       "categoriesTitle": "Ranger par catégories"
     },
     "cta": "Créer ma liste",
     "extrasTitle": "Deux gestes utiles"
   },
   "legal": {
-    "metaTitle": "Mentions légales — Oh, mais fallait pas !",
-    "metaDescription": "Qui publie Oh, mais fallait pas !, comment le site est hébergé, et où écrire.",
+    "metaTitle": "Mentions légales — Oh, mais fallait pas !",
+    "metaDescription": "Qui publie Oh, mais fallait pas !, comment le site est hébergé, et où écrire.",
     "eyebrow": "Informations légales",
     "title": "Mentions légales",
-    "intro": "Qui publie Oh, mais fallait pas !, comment le site est hébergé, et où écrire.",
+    "intro": "Qui publie Oh, mais fallait pas !, comment le site est hébergé, et où écrire.",
     "publisherTitle": "Éditeur",
     "publisherBody": "Ce site est édité à titre non professionnel, par un particulier.",
     "publisherLaw": "Conformément à l’article 1-1, II, de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l’économie numérique, l’éditeur a communiqué ses éléments d’identification personnelle à l’hébergeur et ne les tient pas à disposition du public.",
@@ -153,34 +153,34 @@
     "privacyLink": "Comment vos données sont traitées",
     "hostAddressLabel": "Adresse",
     "hostWebsiteLabel": "Site web",
-    "contact": "Pour une question ou pour exercer un droit : {{email}}."
+    "contact": "Pour une question ou pour exercer un droit : {{email}}."
   },
   "privacy": {
-    "metaTitle": "Données personnelles — Oh, mais fallait pas !",
-    "metaDescription": "Ce que Oh, mais fallait pas ! garde sur vous, combien de temps, avec quels prestataires, et comment télécharger vos données ou supprimer votre compte.",
+    "metaTitle": "Données personnelles — Oh, mais fallait pas !",
+    "metaDescription": "Ce que Oh, mais fallait pas ! garde sur vous, combien de temps, avec quels prestataires, et comment télécharger vos données ou supprimer votre compte.",
     "eyebrow": "Informations légales",
     "title": "Données personnelles",
     "intro": "Ce que le site et l’app gardent sur vous, pourquoi, combien de temps, et comment exercer vos droits. Pas de publicité, et aucun suivi commercial ajouté aux liens de cadeaux.",
     "accountTitle": "Votre compte",
     "accountBody": "Votre e-mail et la date à laquelle vous l’avez confirmé, votre nom affiché, une empreinte de votre mot de passe (jamais le mot de passe lui-même) et la date de création. Ils servent à vous connecter et à montrer votre nom aux membres de vos listes, qui ne voient pas votre e-mail. Pendant un changement d’adresse, la nouvelle adresse est gardée jusqu’à sa confirmation, au plus 24 heures.",
     "listsTitle": "Vos listes et vos idées",
-    "listsBody": "Les listes, leurs catégories, les « qui » et les idées (nom, lien, image, prix, priorité) que vous et les autres membres ajoutez. Chaque membre d’une liste les voit.",
+    "listsBody": "Les listes, leurs catégories, les « qui » et les idées (nom, lien, image, prix, priorité) que vous et les autres membres ajoutez. Chaque membre d’une liste les voit.",
     "reservationsTitle": "Les réservations",
-    "reservationsBody": "Quand quelqu’un réserve un cadeau : le nom donné, le petit mot éventuel, la date, et le compte si la personne est connectée. Les membres de la liste voient ces réservations.",
+    "reservationsBody": "Quand quelqu’un réserve un cadeau : le nom donné, le petit mot éventuel, la date, et le compte si la personne est connectée. Les membres de la liste voient ces réservations.",
     "retentionTitle": "Combien de temps",
-    "retentionBody": "Vos données restent jusqu’à la suppression de votre compte. Une connexion dure 30 jours, un lien de réinitialisation du mot de passe 1 heure, un lien de confirmation d’adresse 24 heures. Les sauvegardes chiffrées du serveur sont gardées 14 jours : une donnée supprimée en disparaît au plus tard 14 jours après.",
+    "retentionBody": "Vos données restent jusqu’à la suppression de votre compte. Une connexion dure 30 jours, un lien de réinitialisation du mot de passe 1 heure, un lien de confirmation d’adresse 24 heures. Les sauvegardes chiffrées du serveur sont gardées 14 jours : une donnée supprimée en disparaît au plus tard 14 jours après.",
     "cookiesTitle": "Cookies",
-    "cookiesBody": "Le site dépose des cookies : wishlist_session (connexion, 30 jours, httpOnly), NEXT_LOCALE (langue choisie, 1 an), un cookie wl_ru_… qui mémorise le mot de passe d’une liste pendant 14 jours, et un cookie wl_rc_… qui retrouve les réservations faites sans compte pendant 90 jours. Ces cookies ne servent pas à de la publicité.",
+    "cookiesBody": "Le site dépose des cookies : wishlist_session (connexion, 30 jours, httpOnly), NEXT_LOCALE (langue choisie, 1 an), un cookie wl_ru_… qui mémorise le mot de passe d’une liste pendant 14 jours, et un cookie wl_rc_… qui retrouve les réservations faites sans compte pendant 90 jours. Ces cookies ne servent pas à de la publicité.",
     "appTitle": "Dans l’app mobile",
     "appBody": "L’app garde votre connexion dans le stockage sécurisé du téléphone, et une copie de vos listes et des changements pas encore envoyés dans sa base locale. Tout est effacé à la déconnexion ou à la suppression du compte. L’app ne mesure pas l’audience et ne demande aucune autorisation.",
     "providersTitle": "Prestataires",
-    "cloudflareBody": "Le site et l’app passent par Cloudflare, Inc. (États-Unis), qui protège et diffuse le site : les adresses IP, les pages demandées et les échanges transitent par ses serveurs, y compris hors de l’Union européenne.",
+    "cloudflareBody": "Le site et l’app passent par Cloudflare, Inc. (États-Unis), qui protège et diffuse le site : les adresses IP, les pages demandées et les échanges transitent par ses serveurs, y compris hors de l’Union européenne.",
     "mailBody": "Quand l’envoi d’e-mails est configuré, les messages (confirmation d’adresse, changement d’adresse, invitation, réinitialisation de mot de passe, adresse déjà utilisée) passent par Resend. L’adresse du destinataire et le contenu du message sont alors transmis à ce prestataire.",
     "aiBody": "Quand une clé Gemini ou OpenAI est configurée, le contenu de la page d’un lien cadeau peut être envoyé à ce service pour préremplir une idée. Rien n’est envoyé si aucune clé n’est configurée.",
     "audienceBody": "Quand une mesure d’audience est configurée, les visites des pages publiques sont comptées avec Umami, chez l’exploitant de l’instance. Les adresses de listes, de connexion, de compte, d’invitation, de réinitialisation et de confirmation d’adresse ne partent pas. Ce comptage ne dépose pas de cookie. Le refus se règle dans le pied de page et reste dans ce navigateur.",
     "optOut": "Ne pas mesurer ma visite",
     "optOutOn": "Visite non mesurée. Réactiver",
     "rightsTitle": "Vos droits",
-    "rightsBody": "Vous pouvez télécharger vos données et supprimer votre compte vous-même, en bas de « Mon compte », sur le site comme dans l’app. Pour toute autre demande (accès, rectification, opposition) : {{email}}. Vous pouvez aussi adresser une réclamation à la CNIL."
+    "rightsBody": "Vous pouvez télécharger vos données et supprimer votre compte vous-même, en bas de « Mon compte », sur le site comme dans l’app. Pour toute autre demande (accès, rectification, opposition) : {{email}}. Vous pouvez aussi adresser une réclamation à la CNIL."
   }
 }
