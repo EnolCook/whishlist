@@ -1021,10 +1021,10 @@ export interface paths {
                 content: {
                     "application/json": {
                         title: string;
-                        /** @description Comme le libellé d'une catégorie, une saisie séparée par des virgules en crée plusieurs. `categoryId` ne vaut que pour la première. */
-                        category: string;
-                        /** @description Comme le libellé d'un « qui », une saisie séparée par des virgules en crée plusieurs. `personId` ne vaut que pour le premier. */
-                        person: string;
+                        /** @description Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut que pour la première. Vide ou absente, la valeur par défaut de la langue du compte est utilisée (« Cadeaux » / "Gifts"). */
+                        category?: string;
+                        /** @description Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut que pour le premier. Vide ou absent, le nom affiché du compte est utilisé, tel quel (jamais découpé). */
+                        person?: string;
                         id?: components["schemas"]["ClientId"];
                         categoryId?: components["schemas"]["ClientId"];
                         personId?: components["schemas"]["ClientId"];

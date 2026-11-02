@@ -7,22 +7,11 @@ import { apiDoc, ctx, ensurePasswordHash, withStore } from "./helpers/api-fixtur
 
 before(ensurePasswordHash);
 
-test("créer une liste demande une catégorie et un « qui »", async () => {
+test("créer une liste avec sa première catégorie et son « qui »", async () => {
   const doc = apiDoc();
   const camille = ctx(doc.users[1]!);
   await withStore(doc, async () => {
-    assert.deepEqual(await createList(camille, { title: "Noël", category: " ", person: "Camille" }), {
-      ok: false,
-      error: "listNeedsCategory",
-    });
-    assert.deepEqual(await createList(camille, { title: "Noël", category: "Livres", person: "" }), {
-      ok: false,
-      error: "listNeedsPerson",
-    });
-    assert.deepEqual(await createList(camille, { title: "", category: "Livres", person: "Camille" }), {
-      ok: false,
-      error: "listNeedsTitle",
-    });
+    // Les valeurs par défaut des champs vides sont couvertes par list-creation-defaults.test.ts.
     const created = await createList(camille, { title: "Noël", category: "Livres", person: "Camille" });
     assert.equal(created.ok, true);
     if (!created.ok) return;

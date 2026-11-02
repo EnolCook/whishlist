@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "../../../src/auth/current";
 import { createListAction } from "../../../src/server/actions";
+import { listDefaults, memberListTitles, numberedTitle } from "../../../src/domain/list-defaults";
+import { getDocument } from "../../../src/store/db";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +26,12 @@ export default async function NewListPage({
   ]);
   if (!user) redirect(withLocale(locale, "/connexion?next=/listes/new"));
   if (user.mustChangePassword) redirect(withLocale(locale, "/compte"));
+
+  // Noms suggérés, calculés comme côté serveur : le placeholder montre ce qu'on obtient à vide.
+  const defaults = listDefaults(user.displayName, t);
+  const doc = await getDocument();
+  const suggestedTitle = numberedTitle(defaults.titleBase, memberListTitles(doc.memberships, doc.wishlists, user.id));
+
   const error = query.e ? await translateError(query.e) : null;
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-4">
@@ -45,8 +53,8 @@ export default async function NewListPage({
                 <Input
                   id="title"
                   name="title"
-                  required
-                  placeholder={t("newList.titlePlaceholder")}
+                  className="placeholder:italic"
+                  placeholder={suggestedTitle}
                   autoComplete="off"
                 />
               </Field>
@@ -55,8 +63,8 @@ export default async function NewListPage({
                 <Input
                   id="category"
                   name="category"
-                  required
-                  placeholder={t("newList.categoryPlaceholder")}
+                  className="placeholder:italic"
+                  placeholder={defaults.category}
                   autoComplete="off"
                 />
                 <FieldDescription>{t("newList.categoryHint")}</FieldDescription>
@@ -66,8 +74,8 @@ export default async function NewListPage({
                 <Input
                   id="person"
                   name="person"
-                  required
-                  placeholder={t("newList.personPlaceholder")}
+                  className="placeholder:italic"
+                  placeholder={defaults.person}
                   autoComplete="off"
                 />
                 <FieldDescription>{t("newList.personHint")}</FieldDescription>

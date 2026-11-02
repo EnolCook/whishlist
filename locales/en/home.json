@@ -17,16 +17,20 @@
   },
   "newList": {
     "title": "Create a wish list",
-    "description": "Name your wish list, add a first category, and choose who the gifts are for. You can add more categories and recipients later.",
+    "description": "Everything can be changed later in the list settings.",
     "titleLabel": "List name",
     "titlePlaceholder": "e.g. Christmas 2026, Alex’s birthday",
     "categoryLabel": "First category",
     "categoryPlaceholder": "e.g. Books, Kitchen, Hobbies",
-    "categoryHint": "Categories help you organize your gift ideas.",
+    "categoryHint": "Categories help you organize your gift ideas, such as “Books, Kitchen, Hobbies”.",
     "personLabel": "Gift recipient",
     "personPlaceholder": "e.g. Alex, Sam, Both of us",
-    "personHint": "Enter a person or a group, such as “Both of us”.",
+    "personHint": "Enter a person or a group, such as “Alex, Sam, Both of us”.",
     "submit": "Create wish list",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "defaultName": "{{name}}’s list",
+    "defaultCategory": "Gifts",
+    "defaultNameNoName": "My list",
+    "defaultPerson": "Me"
   }
 }

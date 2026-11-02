@@ -8,7 +8,8 @@ type PatchItemBody = paths["/lists/{listId}/items/{itemId}"]["patch"]["requestBo
 
 /** Corps envoyé pour chaque sorte de changement, au format du contrat. */
 export type ChangePayloads = {
-  createList: CreateListBody & { id: string; categoryId: string; personId: string };
+  // Le serveur remplit une catégorie ou un « qui » absents, mais l'app les demande toujours (data/lists.ts).
+  createList: CreateListBody & { id: string; categoryId: string; personId: string; category: string; person: string };
   createItem: ItemInput & { id: string };
   updateItem: ItemInput;
   patchItem: PatchItemBody;
