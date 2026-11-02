@@ -59,9 +59,11 @@ test("import : les champs anciens reçoivent leur valeur par défaut", async () 
     const legacy = JSON.parse(JSON.stringify(apiDoc())) as Record<string, unknown> & Doc;
     delete (legacy as Partial<Doc>).apiSessions;
     delete (legacy as Partial<Doc>).passwordResets;
+    delete (legacy as Partial<Doc>).emailConfirmations;
     const user = legacy.users[0] as Partial<Doc["users"][number]>;
     delete user.sessionVersion;
     delete user.mustChangePassword;
+    delete user.emailVerifiedAt;
     const list = legacy.wishlists[0] as Partial<Doc["wishlists"][number]>;
     delete list.subtitle;
     delete list.coverImageUrl;
@@ -79,6 +81,9 @@ test("import : les champs anciens reçoivent leur valeur par défaut", async () 
     const doc = await readDocument();
     assert.deepEqual(doc.apiSessions, []);
     assert.deepEqual(doc.passwordResets, []);
+    assert.deepEqual(doc.emailConfirmations, []);
+    // Compte d'avant la validation des adresses : vérifié à sa date de création (010, FR-005b).
+    assert.equal(doc.users[0].emailVerifiedAt, doc.users[0].createdAt);
     assert.equal(doc.users[0].sessionVersion, 0);
     assert.equal(doc.users[0].mustChangePassword, false);
     assert.equal(doc.wishlists[0].subtitle, null);
@@ -166,6 +171,34 @@ test("refus : chaque contrôle d'intégrité nomme la collection et l'identifian
       "idée vers une liste absente",
       (d) => (d.items[0].wishlistId = "w-9"),
       /^items: gift → wishlistId absent \(w-9\)/m,
+    ],
+    [
+      "confirmation d'adresse vers un compte absent",
+      (d) =>
+        d.emailConfirmations.push({
+          id: "ec",
+          userId: "u-9",
+          purpose: "verify",
+          email: "alex@example.test",
+          tokenHash: "h",
+          expiresAt: "2026-01-02T00:00:00.000Z",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        }),
+      /^emailConfirmations: ec → userId absent \(u-9\)/m,
+    ],
+    [
+      "deux demandes du même motif pour un compte",
+      (d) => {
+        const request = {
+          userId: "alex",
+          purpose: "change" as const,
+          email: "alex.b@example.test",
+          expiresAt: "2026-01-02T00:00:00.000Z",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        };
+        d.emailConfirmations.push({ ...request, id: "ec-1", tokenHash: "h1" }, { ...request, id: "ec-2", tokenHash: "h2" });
+      },
+      /^emailConfirmations: plusieurs demandes du même motif pour un compte \(ec-1, ec-2\)/m,
     ],
     [
       "vue vers un libellé absent",
@@ -271,5 +304,28 @@ test("demande de réinitialisation expirée importée : toujours refusée", asyn
     assert.deepStrictEqual(doc.passwordResets, issued.doc.passwordResets);
     const reset = await resetPasswordWithToken(doc, { token: issued.token, password: "nouveau-mot-de-passe" });
     assert.equal(reset.ok, false);
+  });
+});
+
+test("migration 0001 : les comptes d'une base existante sont vérifiés à leur date de création", async () => {
+  await withTempDataPath(async () => {
+    const { readMigrationFiles } = await import("drizzle-orm/migrator");
+    const [init] = readMigrationFiles({ migrationsFolder: path.join(process.cwd(), "drizzle") });
+    // Base telle qu'en prod avant la 010 : seule la migration initiale, un compte.
+    const old = new Database(databaseFilePath());
+    for (const statement of init.sql) if (statement.trim()) old.exec(statement);
+    old.exec("CREATE TABLE __drizzle_migrations (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at numeric)");
+    old.prepare("INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)").run(init.hash, init.folderMillis);
+    old.prepare("INSERT INTO meta (key, value) VALUES ('legacy_import', 'none')").run();
+    old
+      .prepare(
+        "INSERT INTO users (id, email, password_hash, display_name, created_at) VALUES ('u', 'u@example.test', 'h', 'U', '2026-03-01T00:00:00.000Z')",
+      )
+      .run();
+    old.close();
+
+    const doc = await readDocument();
+    assert.equal(doc.users[0].emailVerifiedAt, "2026-03-01T00:00:00.000Z");
+    assert.deepEqual(doc.emailConfirmations, []);
   });
 });

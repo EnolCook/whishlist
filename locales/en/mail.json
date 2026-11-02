@@ -20,5 +20,24 @@
     "cta": "Join wish list",
     "ctaHint": "an Oh, You Shouldn't! account is required",
     "ignore": "If you weren’t expecting this, ignore it."
+  },
+  "verify": {
+    "subject": "Confirm your email address — Oh, You Shouldn't!",
+    "intro": "Welcome! To finish creating your account, confirm your email address with the button below. This link is valid for 24 hours.",
+    "openLink": "If the button doesn’t work, copy this link into your browser:",
+    "cta": "Confirm my address",
+    "ignore": "If you didn’t create an account, you can ignore this email."
+  },
+  "change": {
+    "subject": "Confirm your new address — Oh, You Shouldn't!",
+    "intro": "You asked to sign in with this address. Confirm it with the button below: it will replace your current address. This link is valid for 24 hours.",
+    "openLink": "If the button doesn’t work, copy this link into your browser:",
+    "cta": "Confirm my new address",
+    "ignore": "If you didn’t ask for this, ignore this email: nothing will change."
+  },
+  "changed": {
+    "subject": "Your sign-in address has changed — Oh, You Shouldn't!",
+    "intro": "Your account's sign-in address is now {{newEmail}}. This address can no longer be used to sign in.",
+    "notYou": "If you didn’t make this change, write to us as soon as possible at {{contact}} from this address: we will help you get your account back."
   }
 }

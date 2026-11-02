@@ -9,6 +9,7 @@ const specs = {
   "005": "specs/005-mobile-list-app/spec.md",
   "006": "specs/006-mobile-legal-account/spec.md",
   "009": "specs/009-account-cards-expand/spec.md",
+  "010": "specs/010-email-verification-change/spec.md",
 };
 
 function storiesOf(feature: string, file: string): string[] {

@@ -31,6 +31,8 @@ test("les adresses de liste, de compte et d'invitation ne partent pas", () => {
   assert.equal(analyticsCollectAllowed("/en/l/secret"), false);
   assert.equal(analyticsCollectAllowed("/inviter/secret"), false);
   assert.equal(analyticsCollectAllowed("/en/reinitialiser/secret"), false);
+  assert.equal(analyticsCollectAllowed("/confirmer-email/secret?suite=%2Finviter%2Fx"), false);
+  assert.equal(analyticsCollectAllowed("/en/confirmer-email/secret"), false);
   assert.equal(analyticsCollectAllowed("/listes/abc"), false);
   assert.equal(analyticsCollectAllowed("/connexion"), false);
   assert.equal(analyticsCollectAllowed("/u/script.js"), false);
@@ -40,6 +42,7 @@ test("le script de filtre ne contient pas d'identifiant d'instance", () => {
   const source = analyticsBeforeSendSource();
   assert.match(source, /wishlist-analytics-optout/);
   assert.match(source, /\/reinitialiser/);
+  assert.match(source, /\/confirmer-email/);
   assert.doesNotMatch(source, /UMAMI_URL|website-id|analytics\.example/);
 });
 

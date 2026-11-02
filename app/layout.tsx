@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import Link from "next/link";
-import { currentUser } from "../src/auth/current";
+import { currentUser, origin } from "../src/auth/current";
 import { AnalyticsScript } from "@/components/site/analytics-script";
 import { GiftMark } from "@/components/site/gift-mark";
 import { SiteFooter } from "@/components/site/site-footer";
+import { EmailVerificationBanner } from "@/components/site/email-verification-banner";
 import { SiteNav } from "@/components/site/site-nav";
 import { cn } from "@/lib/utils";
 import { I18nProvider } from "@/src/i18n/client";
@@ -14,6 +15,7 @@ import { analyticsConfigured } from "@/src/server/analytics";
 import { supportUrl } from "@/src/site/links";
 import { siteOrigin } from "@/src/site/seo";
 import "./globals.css";
+import { emailConfirmationPending } from "@/src/server/commands/context";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -75,6 +77,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 user={user ? { mustChangePassword: user.mustChangePassword } : null}
               />
             </header>
+            {user && emailConfirmationPending(user) ? (
+              <EmailVerificationBanner origin={await origin()} />
+            ) : null}
             <div id="contenu" tabIndex={-1} className="outline-none">
               {children}
             </div>

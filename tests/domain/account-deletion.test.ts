@@ -116,3 +116,19 @@ test("l'aperçu ne compte pas une réservation sur une liste qui sera effacée",
   });
   assert.equal(previewAccountDeletion(doc, "lou").reservationsKept, 2);
 });
+
+test("ses demandes de confirmation d'adresse disparaissent avec le compte", () => {
+  const doc = accountDoc();
+  for (const purpose of ["verify", "change"] as const) {
+    doc.emailConfirmations.push({
+      id: `ec-${purpose}`,
+      userId: "lou",
+      purpose,
+      email: purpose === "verify" ? "lou@example.test" : "lou.b@example.test",
+      tokenHash: `h-${purpose}`,
+      expiresAt: "2026-01-02T00:00:00.000Z",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+  }
+  assert.deepEqual(deleted(doc).emailConfirmations, []);
+});

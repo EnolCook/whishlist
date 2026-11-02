@@ -6,7 +6,7 @@ import { updateWishlistSettings } from "../../domain/membership";
 import type { WishlistTheme } from "../../domain/types";
 import { readDocument, updateDocument } from "../../store/db";
 import { toListSummary, toMemberListView, type ListSummaryView, type MemberListView } from "../api/views";
-import { activeUser, type CommandContext, type CommandResult } from "./context";
+import { activeUser, verifiedUser, type CommandContext, type CommandResult } from "./context";
 
 export async function listMine(ctx: CommandContext): Promise<CommandResult<{ lists: ListSummaryView[] }>> {
   const active = activeUser(ctx);
@@ -52,7 +52,7 @@ export async function createList(
   ctx: CommandContext,
   input: { title: string; category: string; person: string; id?: string; categoryId?: string; personId?: string },
 ): Promise<CommandResult<{ list: MemberListView; replayed: boolean }>> {
-  const active = activeUser(ctx);
+  const active = verifiedUser(ctx);
   if (!active.ok) return active;
   const ids = [input.id, input.categoryId, input.personId].filter((id) => id !== undefined);
   if (!ids.every(isClientId)) return { ok: false, error: "idInvalid" };

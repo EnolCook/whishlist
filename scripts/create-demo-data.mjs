@@ -48,6 +48,8 @@ const member = await registerUser(doc, {
 });
 if (!member.ok) throw new Error(member.error);
 doc = member.doc;
+// Comptes de démo (et de revue des stores) utilisables sans recevoir d'e-mail : adresses vérifiées.
+for (const user of doc.users) user.emailVerifiedAt = user.createdAt;
 
 const created = createWishlist(doc, {
   ownerId: owner.value.id,

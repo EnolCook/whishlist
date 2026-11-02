@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
+import { AppState } from "react-native";
 
 import { api, configureClient, done, NetworkError, ok, type Schemas } from "@/api/client";
 import { resetStore } from "@/data/store";
@@ -95,6 +96,11 @@ export async function refreshMe(): Promise<void> {
     throw error;
   }
 }
+
+// Au retour au premier plan : le compte a pu changer ailleurs (adresse confirmée dans le navigateur, 010).
+AppState.addEventListener("change", (status) => {
+  if (status === "active") refreshMe().catch(() => undefined);
+});
 
 /** Enregistre la connexion rendue par login, register ou /me/password. */
 export async function signIn(session: Schemas["Session"]): Promise<void> {

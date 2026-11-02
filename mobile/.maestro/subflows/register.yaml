@@ -1,21 +1,20 @@
-# Nouveau compte e2e-<unique>@example.test (R6), mot de passe DEMO_PASSWORD, depuis l'écran de connexion.
-# Rend l'adresse dans output.email ; attend « Mes listes ».
+# Nouveau compte e2e-<unique>@example.test (R6), mot de passe DEMO_PASSWORD, depuis l'écran de connexion,
+# adresse confirmée par le lien reçu dans MailDev (010). Rend l'adresse dans output.email ; attend « Mes listes ».
 appId: app.ohyoushouldnt.mobile
 ---
-# Avant de créer un compte : preuve que l'app parle au serveur local de la suite (voir login.yaml).
+# Textes attendus (output.t) : certains parcours appelants ne les chargent pas eux-mêmes.
+- runScript: ../scripts/strings.generated.js
+- runFlow: register-unconfirmed.yaml
 - runFlow:
-    file: login.yaml
+    file: confirm-email.yaml
     env:
-      EMAIL: alex@example.test
-- runFlow: logout.yaml
-- runScript: ../scripts/unique.js
-- evalScript: ${output.email = 'e2e-' + output.unique + '@example.test'}
-- runFlow:
-    file: submit-register.yaml
-    env:
-      NAME: E2E ${output.unique}
-      EMAIL: ${output.email}
+      TO: ${output.email}
+      DONE: ${output.t.auth.confirmEmail.verified}
 - extendedWaitUntil:
     visible:
       id: lists.screen
     timeout: 20000
+- extendedWaitUntil:
+    notVisible:
+      id: verify.banner
+    timeout: 10000

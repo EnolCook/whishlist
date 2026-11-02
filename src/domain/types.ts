@@ -15,6 +15,8 @@ export interface User {
   mustChangePassword: boolean;
   /** Incrémenté à chaque changement de mot de passe. Les jetons plus anciens sont refusés. */
   sessionVersion?: number;
+  /** Date de confirmation de l'adresse. null : adresse non vérifiée. */
+  emailVerifiedAt: string | null;
 }
 
 export interface Wishlist {
@@ -98,6 +100,21 @@ export interface PasswordReset {
   createdAt: string;
 }
 
+/**
+ * Lien de confirmation d'une adresse : `verify` pour l'adresse actuelle, `change` pour une nouvelle.
+ * Au plus une demande par compte et par motif ; le jeton n'est stocké que haché.
+ */
+export interface EmailConfirmation {
+  id: string;
+  userId: string;
+  purpose: "verify" | "change";
+  /** Adresse à confirmer, normalisée. */
+  email: string;
+  tokenHash: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
 /** Connexion d'un client d'API (app mobile). Le jeton n'est stocké que haché. */
 export interface ApiSession {
   id: string;
@@ -120,6 +137,7 @@ export interface Database {
   reservations: Reservation[];
   passwordResets: PasswordReset[];
   apiSessions: ApiSession[];
+  emailConfirmations: EmailConfirmation[];
 }
 
 export interface SeedFile {
@@ -159,5 +177,6 @@ export function emptyDatabase(): Database {
     reservations: [],
     passwordResets: [],
     apiSessions: [],
+    emailConfirmations: [],
   };
 }

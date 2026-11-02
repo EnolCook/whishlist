@@ -17,4 +17,11 @@ export function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-export const me = { id: "alex", email: "alex@example.test", displayName: "Alex", mustChangePassword: false };
+export const me = {
+  id: "alex",
+  email: "alex@example.test",
+  displayName: "Alex",
+  mustChangePassword: false,
+  emailVerified: true,
+  pendingEmail: null as string | null,
+};

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useMyLists, usePendingCount } from "@/data/store";
 import { AppHeader } from "@/features/account/AppHeader";
+import { useEmailUnverified, VerificationBanner } from "@/features/account/VerificationBanner";
 import { tokens } from "@/theme/tokens";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
@@ -20,10 +21,14 @@ import { Text } from "@/ui/Text";
 
 /** Mes listes, d'après `04-mes-listes.png` (FR-010) ; copie locale et listes créées hors ligne (FR-025). */
 export default function MyLists() {
-  const { t } = useTranslation("home");
+  const { t } = useTranslation(["home", "errors"]);
   const { lists, loaded, fetchedAt, refreshing, refresh } = useMyLists();
   const pendingCount = usePendingCount();
-  const newList = <Button title={t("mine.newList")} size="sm" onPress={() => router.push("/lists/new")} testID="lists.new" />;
+  // Adresse pas encore confirmée : le serveur refuserait la création (010, FR-005).
+  const unverified = useEmailUnverified();
+  const newList = (
+    <Button title={t("mine.newList")} size="sm" onPress={() => router.push("/lists/new")} disabled={unverified} testID="lists.new" />
+  );
 
   if (!loaded) return <LiveGiftMark />;
 
@@ -35,10 +40,16 @@ export default function MyLists() {
       refreshing={refreshing}
     >
       <AppHeader />
+      <VerificationBanner />
       <PageTitle title={t("mine.title")} action={lists.length > 0 ? newList : undefined} />
+      {unverified ? (
+        <Text testID="lists.new-locked" size="sm" color={tokens.colors.mutedForeground}>
+          {t("errors:emailNotVerified")}
+        </Text>
+      ) : null}
       {lists.length === 0 ? (
         <Empty testID="lists.empty" title={t("mine.emptyTitle")} description={t("mine.emptyBody")} media={<GiftMark size={64} />}>
-          <Button title={t("mine.newList")} onPress={() => router.push("/lists/new")} testID="lists.new" />
+          <Button title={t("mine.newList")} onPress={() => router.push("/lists/new")} disabled={unverified} testID="lists.new" />
         </Empty>
       ) : (
         <View style={{ gap: tokens.space[3] }}>

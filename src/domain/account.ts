@@ -1,6 +1,7 @@
 import { withLocale } from "../i18n/locale-path";
 import type { Locale } from "../i18n/config";
 import { clone } from "./access";
+import { pendingEmailChange } from "./email-confirmation";
 import { leaveWishlist, pickHeir, wipeWishlist } from "./membership";
 import type { Database, Role, WishlistTheme } from "./types";
 
@@ -64,6 +65,7 @@ export function deleteAccount(
   }
   next.apiSessions = next.apiSessions.filter((s) => s.userId !== userId);
   next.passwordResets = next.passwordResets.filter((r) => r.userId !== userId);
+  next.emailConfirmations = next.emailConfirmations.filter((c) => c.userId !== userId);
   next.users = next.users.filter((u) => u.id !== userId);
   return { ok: true, doc: next };
 }
@@ -98,7 +100,13 @@ export type AccountExport = {
   format: "ohyoushouldnt-export";
   version: 1;
   exportedAt: string;
-  account: { email: string; displayName: string; createdAt: string };
+  account: {
+    email: string;
+    displayName: string;
+    createdAt: string;
+    emailVerifiedAt: string | null;
+    pendingEmail: string | null;
+  };
   lists: ExportedList[];
   myReservations: {
     listTitle: string;
@@ -196,7 +204,13 @@ export function exportAccount(
     format: "ohyoushouldnt-export",
     version: 1,
     exportedAt: now.toISOString(),
-    account: { email: user.email, displayName: user.displayName, createdAt: user.createdAt },
+    account: {
+      email: user.email,
+      displayName: user.displayName,
+      createdAt: user.createdAt,
+      emailVerifiedAt: user.emailVerifiedAt,
+      pendingEmail: pendingEmailChange(doc, user.id, now),
+    },
     lists,
     myReservations,
   };

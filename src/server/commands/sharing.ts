@@ -17,7 +17,7 @@ import { readDocument, updateDocument } from "../../store/db";
 import type { MemberListView } from "../api/views";
 import { mailConfigured, sendInviteMail } from "../mail";
 import { rateLimitForIp } from "../rate-limit";
-import { activeUser, type CommandContext, type CommandResult } from "./context";
+import { activeUser, verifiedUser, type CommandContext, type CommandResult } from "./context";
 import { memberListView } from "./lists";
 
 type DomainResult = { ok: true; doc: Database } | { ok: false; error: string };
@@ -65,7 +65,7 @@ export async function regenerateInvite(
 }
 
 export async function sendInvite(ctx: CommandContext, input: { wishlistId: string; email: string }): Promise<CommandResult> {
-  const active = activeUser(ctx);
+  const active = verifiedUser(ctx);
   if (!active.ok) return active;
   rateLimitForIp(`invite:${active.user.id}`, ctx.ip, 8, 60 * 60 * 1000);
   const email = normalizeEmail(input.email);
@@ -111,7 +111,7 @@ export async function joinInvite(
   ctx: CommandContext,
   input: { token: string },
 ): Promise<CommandResult<{ list: MemberListView }>> {
-  const active = activeUser(ctx);
+  const active = verifiedUser(ctx);
   if (!active.ok) return active;
   const joined = await updateDocument<CommandResult<{ wishlistId: string }>>((doc) => {
     const saved = acceptInvite(doc, { token: input.token, userId: active.user.id });

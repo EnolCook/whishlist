@@ -134,6 +134,92 @@ test("the password card opens collapsed, shows the error then the success in the
   expect(screen.getByTestId("account.password-toggle").props.accessibilityState).toMatchObject({ expanded: true });
 });
 
+test("address not confirmed: the reminder shows at the top of « Mon compte » (010)", async () => {
+  fakeFetch({});
+  await signIn({ token: "secret-token", expiresAt: "2099-01-01T00:00:00.000Z", user: { ...me, emailVerified: false } });
+  await render(<Account />);
+  expect(await screen.findByTestId("verify.banner")).toBeOnTheScreen();
+});
+
+test("address confirmed: no reminder on « Mon compte »", async () => {
+  await render(<Account />);
+  expect(await screen.findByTestId("account.screen")).toBeOnTheScreen();
+  expect(screen.queryByTestId("verify.banner")).toBeNull();
+});
+
+test("« Renvoyer le lien » asks the server for a new link and says so (010, US2)", async () => {
+  fakeFetch({});
+  await signIn({ token: "secret-token", expiresAt: "2099-01-01T00:00:00.000Z", user: { ...me, emailVerified: false } });
+  const { calls } = fakeFetch({ "POST /me/email-verification": () => json(202, { sent: true }) });
+  await render(<Account />);
+  await fireEvent.press(await screen.findByTestId("verify.resend"));
+  expect(await screen.findByTestId("verify.sent")).toBeOnTheScreen();
+  expect(screen.getByText(/Un nouveau lien vient de partir/)).toBeOnTheScreen();
+  expect(calls).toContain("POST /me/email-verification");
+});
+
+test("« Renvoyer le lien » shows the server's refusal", async () => {
+  fakeFetch({});
+  await signIn({ token: "secret-token", expiresAt: "2099-01-01T00:00:00.000Z", user: { ...me, emailVerified: false } });
+  fakeFetch({
+    "POST /me/email-verification": () =>
+      json(409, { error: { code: "emailAlreadyVerified", message: "Votre adresse e-mail est déjà confirmée." } }),
+  });
+  await render(<Account />);
+  await fireEvent.press(await screen.findByTestId("verify.resend"));
+  expect(await screen.findByText("Votre adresse e-mail est déjà confirmée.")).toBeOnTheScreen();
+});
+
+test("« Adresse de connexion »: a pending change shows the new address and can be cancelled (010, US3)", async () => {
+  const { calls } = fakeFetch({
+    "POST /me/email": () => json(200, { ...me, pendingEmail: "alex.b@example.test" }),
+    "DELETE /me/email": () => json(200, me),
+  });
+  await render(<Account />);
+  await fireEvent.press(await screen.findByTestId("account.email-toggle"));
+  expect(screen.getByText("Adresse actuelle : alex@example.test")).toBeOnTheScreen();
+  expect(screen.getByTestId("account.email-submit")).toBeDisabled();
+  await fireEvent.changeText(screen.getByTestId("account.email-new"), " alex.b@example.test ");
+  await fireEvent.changeText(screen.getByTestId("account.email-password"), "secret-ok!!");
+  await fireEvent.press(screen.getByTestId("account.email-submit"));
+  expect(await screen.findByTestId("account.email-pending")).toHaveTextContent(/alex\.b@example\.test/);
+  expect(screen.getByTestId("account.email-saved")).toHaveTextContent(/Un lien de confirmation est parti/);
+
+  await fireEvent.press(screen.getByTestId("account.email-cancel"));
+  expect(await screen.findByText("Le changement d'adresse est annulé.")).toBeOnTheScreen();
+  expect(screen.queryByTestId("account.email-pending")).toBeNull();
+  expect(calls).toEqual(expect.arrayContaining(["POST /me/email", "DELETE /me/email"]));
+});
+
+test("« Adresse de connexion »: a server without email applies the address at once", async () => {
+  fakeFetch({ "POST /me/email": () => json(200, { ...me, email: "alex.b@example.test" }) });
+  await render(<Account />);
+  await fireEvent.press(await screen.findByTestId("account.email-toggle"));
+  await fireEvent.changeText(screen.getByTestId("account.email-new"), "alex.b@example.test");
+  await fireEvent.changeText(screen.getByTestId("account.email-password"), "secret-ok!!");
+  await fireEvent.press(screen.getByTestId("account.email-submit"));
+  expect(await screen.findByText("Votre adresse de connexion est maintenant alex.b@example.test.")).toBeOnTheScreen();
+  expect(screen.getByText("Adresse actuelle : alex.b@example.test")).toBeOnTheScreen();
+});
+
+test("« Adresse de connexion »: the server's refusals show in the card", async () => {
+  let attempts = 0;
+  fakeFetch({
+    "POST /me/email": () =>
+      ++attempts === 1
+        ? json(400, { error: { code: "wrongCurrentPassword", message: "wrong" } })
+        : json(400, { error: { code: "emailTaken", message: "taken" } }),
+  });
+  await render(<Account />);
+  await fireEvent.press(await screen.findByTestId("account.email-toggle"));
+  await fireEvent.changeText(screen.getByTestId("account.email-new"), "camille@example.test");
+  await fireEvent.changeText(screen.getByTestId("account.email-password"), "faux");
+  await fireEvent.press(screen.getByTestId("account.email-submit"));
+  expect(await screen.findByText("Mot de passe actuel incorrect.")).toBeOnTheScreen();
+  await fireEvent.press(screen.getByTestId("account.email-submit"));
+  expect(await screen.findByText("Cet e-mail est déjà utilisé.")).toBeOnTheScreen();
+});
+
 // Dernier : le réseau reste coupé pour la suite du fichier.
 test("offline: download and deletion are disabled, the legal pages stay open", async () => {
   watchNetwork();

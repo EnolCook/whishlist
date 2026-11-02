@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.2.0"
+  version: "1.3.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -16,6 +16,11 @@ info:
       `ListSummary` gagne `subtitle`, `coverImageUrl` et `theme` (carte de « Mes listes »).
     - 1.2.0 : suppression du compte (`GET`/`POST /me/deletion`), export de ses données
       (`GET /me/export`), `analytics` dans `/capabilities`.
+    - 1.3.0 : validation de l'adresse e-mail. `Me` gagne `emailVerified`. Un compte non vérifié reçoit
+      `emailNotVerified` (403) sur `POST /lists`, `POST /lists/{listId}/invitations` et
+      `POST /invitations/{inviteToken}/accept`, et peut redemander le lien (`POST /me/email-verification`).
+      Changement d'adresse : `POST /me/email`, annulation `DELETE /me/email`, `Me.pendingEmail`.
+      La confirmation se fait sur le site (lien reçu par e-mail).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
@@ -57,7 +62,7 @@ paths:
                 type: object
                 required: [apiVersion, enrich, mail, analytics]
                 properties:
-                  apiVersion: { type: string, example: "1.2.0" }
+                  apiVersion: { type: string, example: "1.3.0" }
                   enrich:
                     type: boolean
                     description: Préremplissage depuis un lien avec IA (sinon seulement les métadonnées de la page).
@@ -305,6 +310,80 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Me" }
         "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /me/email-verification:
+    post:
+      tags: [auth]
+      summary: Renvoyer le lien de confirmation de l'adresse
+      description: |
+        Un nouveau lien part vers l'adresse du compte ; le précédent ne vaut plus rien. Le lien ouvre le site.
+        Depuis 1.3.0.
+      responses:
+        "202":
+          description: Demande prise en compte. `sent` est faux si l'envoi a échoué (réessayer plus tard).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sent]
+                properties:
+                  sent: { type: boolean }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409":
+          description: Adresse déjà confirmée, ou validation non exigée sur ce serveur (`emailAlreadyVerified`).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /me/email:
+    post:
+      tags: [auth]
+      summary: Demander un changement d'adresse e-mail
+      description: |
+        Mot de passe actuel exigé. Avec l'envoi d'e-mail actif, un lien part vers la nouvelle adresse :
+        `email` ne change pas encore et `pendingEmail` vaut la nouvelle adresse. Sans envoi d'e-mail,
+        la nouvelle adresse s'applique tout de suite. Une nouvelle demande remplace la précédente. Depuis 1.3.0.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, currentPassword]
+              properties:
+                email: { type: string, format: email }
+                currentPassword: { type: string }
+      responses:
+        "200":
+          description: Demande enregistrée (ou adresse changée sans envoi d'e-mail)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "400":
+          description: |
+            `emailInvalid`, `emailUnchanged` ou `wrongCurrentPassword` ; `emailTaken` seulement sans envoi
+            d'e-mail. Avec l'envoi actif, l'adresse d'un autre compte reçoit la même réponse `200` qu'une
+            adresse libre, pour ne pas révéler les comptes.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [auth]
+      summary: Annuler le changement d'adresse en attente
+      description: Le lien envoyé ne vaut plus rien. Sans demande en attente, ne fait rien. Depuis 1.3.0.
+      responses:
+        "200":
+          description: Annulé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
 
@@ -749,6 +828,11 @@ paths:
       responses:
         "202": { description: Invitation envoyée }
         "400": { $ref: "#/components/responses/Error" }
+        "403":
+          description: Adresse du compte pas encore confirmée (`emailNotVerified`). Depuis 1.3.0.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "429": { $ref: "#/components/responses/Error" }
         "502":
@@ -825,6 +909,11 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MemberList" }
         "401": { $ref: "#/components/responses/Error" }
+        "403":
+          description: Adresse du compte pas encore confirmée (`emailNotVerified`). Depuis 1.3.0.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "404": { $ref: "#/components/responses/Error" }
 
 components:
@@ -903,12 +992,20 @@ components:
 
     Me:
       type: object
-      required: [id, email, displayName, mustChangePassword]
+      required: [id, email, displayName, mustChangePassword, emailVerified, pendingEmail]
       properties:
         id: { type: string }
         email: { type: string }
         displayName: { type: string }
         mustChangePassword: { type: boolean }
+        emailVerified:
+          type: boolean
+          description: |
+            Faux seulement si la validation est exigée (envoi d'e-mail actif) et l'adresse pas encore
+            confirmée : créer une liste, rejoindre ou inviter est alors refusé. Depuis 1.3.0.
+        pendingEmail:
+          type: [string, "null"]
+          description: Nouvelle adresse en attente de confirmation (lien envoyé, encore valable). Depuis 1.3.0.
 
     Theme:
       type: object
@@ -1080,11 +1177,18 @@ components:
         account:
           type: object
           additionalProperties: false
-          required: [email, displayName, createdAt]
+          required: [email, displayName, createdAt, emailVerifiedAt, pendingEmail]
           properties:
             email: { type: string }
             displayName: { type: string }
             createdAt: { type: string, format: date-time }
+            emailVerifiedAt:
+              type: [string, "null"]
+              format: date-time
+              description: Date de confirmation de l'adresse, null si elle n'est pas confirmée. Depuis 1.3.0.
+            pendingEmail:
+              type: [string, "null"]
+              description: Nouvelle adresse en attente de confirmation. Depuis 1.3.0.
         lists:
           type: array
           items: { $ref: "#/components/schemas/ExportedList" }

@@ -4,6 +4,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   invalidCredentials: 401,
 
   mustChangePassword: 403,
+  emailNotVerified: 403,
   originNotAllowed: 403,
   accessDenied: 403,
   ownerRegenerateInvite: 403,
@@ -24,6 +25,7 @@ const STATUS_BY_CODE: Record<string, number> = {
 
   itemAlreadyReserved: 409,
   idConflict: 409,
+  emailAlreadyVerified: 409,
   apiVersionUnsupported: 410,
   payloadTooLarge: 413,
   unsupportedMediaType: 415,

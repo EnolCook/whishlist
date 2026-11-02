@@ -28,7 +28,7 @@ appId: app.ohyoushouldnt.mobile
     commands:
       - waitForAnimationToEnd
       - tapOn:
-          point: 91%,58%
+          point: 92%,61%
       - tapOn:
           id: register.password
 - inputText: ${MAESTRO_DEMO_PASSWORD}

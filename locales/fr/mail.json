@@ -20,5 +20,24 @@
     "cta": "Rejoindre la liste",
     "ctaHint": "un compte Oh, mais fallait pas ! est nécessaire",
     "ignore": "Si vous n'attendiez pas ce message, ignorez-le."
+  },
+  "verify": {
+    "subject": "Confirmez votre adresse e-mail — Oh, mais fallait pas !",
+    "intro": "Bienvenue ! Pour finir la création de votre compte, confirmez votre adresse e-mail avec le bouton ci-dessous. Ce lien est valable 24 heures.",
+    "openLink": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
+    "cta": "Confirmer mon adresse",
+    "ignore": "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail."
+  },
+  "change": {
+    "subject": "Confirmez votre nouvelle adresse — Oh, mais fallait pas !",
+    "intro": "Vous avez demandé à vous connecter avec cette adresse. Confirmez-la avec le bouton ci-dessous : elle remplacera votre adresse actuelle. Ce lien est valable 24 heures.",
+    "openLink": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
+    "cta": "Confirmer ma nouvelle adresse",
+    "ignore": "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : rien ne changera."
+  },
+  "changed": {
+    "subject": "Votre adresse de connexion a changé — Oh, mais fallait pas !",
+    "intro": "L'adresse de connexion de votre compte est maintenant {{newEmail}}. Cette adresse-ci ne permet plus de vous connecter.",
+    "notYou": "Si vous n'êtes pas à l'origine de ce changement, écrivez-nous au plus vite à {{contact}} depuis cette adresse : nous vous aiderons à récupérer votre compte."
   }
 }

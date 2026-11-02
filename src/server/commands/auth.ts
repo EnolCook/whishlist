@@ -1,13 +1,15 @@
 import { issueApiSession, pruneApiSessions, revokeApiSession } from "../../auth/api-session";
+import { pendingEmailChange } from "../../domain/email-confirmation";
 import { createPasswordReset } from "../../domain/password-reset";
 import type { User } from "../../domain/types";
 import { authenticate, changePassword, normalizeEmail, registerUser, updateDisplayName } from "../../domain/users";
 import { withLocale } from "../../i18n/locale-path";
-import { sendAlreadyRegisteredMail, sendPasswordResetMail } from "../mail";
+import { emailVerificationRequired, sendAlreadyRegisteredMail, sendPasswordResetMail } from "../mail";
 import { readDocument, updateDocument } from "../../store/db";
-import { toMe, type SessionView } from "../api/views";
+import { toMe, type MeView, type SessionView } from "../api/views";
 import { rateLimitForIp } from "../rate-limit";
 import { activeUser, type CommandContext, type CommandResult } from "./context";
+import { sendVerificationLink } from "./email";
 
 /** Vérifie e-mail et mot de passe, avec la même limite que la connexion du site. */
 export async function checkCredentials(
@@ -30,7 +32,11 @@ export async function openApiSession(userId: string): Promise<CommandResult<{ se
       doc: issued.doc,
       result: {
         ok: true,
-        session: { token: issued.token, expiresAt: issued.session.expiresAt, user: toMe(user) },
+        session: {
+          token: issued.token,
+          expiresAt: issued.session.expiresAt,
+          user: toMe(user, pendingEmailChange(doc, user.id)),
+        },
       },
     };
   });
@@ -53,24 +59,32 @@ export async function logout(_ctx: CommandContext, input: { token: string }): Pr
 /**
  * Inscription. Un e-mail déjà inscrit ne donne pas d'erreur : un e-mail part vers cette adresse
  * et `user` vaut null (pas de connexion), pour ne pas révéler les comptes existants.
+ * Avec l'envoi d'e-mail actif, un lien de confirmation part vers l'adresse (`next` : où reprendre ensuite) ;
+ * `verificationUrl` n'est rendu qu'en dev quand l'e-mail n'est pas parti.
  */
 export async function register(
   ctx: CommandContext,
-  input: { email: string; password: string; displayName: string },
-): Promise<CommandResult<{ user: User | null }>> {
+  input: { email: string; password: string; displayName: string; next?: string | null },
+): Promise<CommandResult<{ user: User | null; verificationUrl: string | null; mailFailed: boolean }>> {
   rateLimitForIp("register", ctx.ip, 5, 60 * 60 * 1000);
   const result = await updateDocument(async (doc) => {
     const created = await registerUser(doc, input);
     return { doc: created.ok ? created.doc : doc, result: created };
   });
-  if (result.ok) return { ok: true, user: result.value };
+  if (result.ok) {
+    if (!emailVerificationRequired()) return { ok: true, user: result.value, verificationUrl: null, mailFailed: false };
+    const link = await sendVerificationLink(ctx, { userId: result.value.id, suite: input.next });
+    if (!link.ok) return { ok: true, user: result.value, verificationUrl: null, mailFailed: true };
+    return { ok: true, user: result.value, verificationUrl: link.verificationUrl, mailFailed: link.failed };
+  }
   if (result.error !== "emailTaken") return result;
-  await sendAlreadyRegisteredMail({
+  // `mailFailed` vaut aussi pour cet e-mail : la réponse ne distingue pas un compte existant.
+  const mail = await sendAlreadyRegisteredMail({
     to: normalizeEmail(input.email),
     loginUrl: `${ctx.origin}${withLocale(ctx.locale, "/connexion")}`,
     locale: ctx.locale,
   });
-  return { ok: true, user: null };
+  return { ok: true, user: null, verificationUrl: null, mailFailed: mail.failed };
 }
 
 /**
@@ -99,16 +113,26 @@ export async function changeOwnPassword(
       result: {
         ok: true,
         user: saved.value,
-        session: { token: issued.token, expiresAt: issued.session.expiresAt, user: toMe(saved.value) },
+        session: {
+          token: issued.token,
+          expiresAt: issued.session.expiresAt,
+          user: toMe(saved.value, pendingEmailChange(saved.doc, saved.value.id)),
+        },
       },
     };
   });
 }
 
+/** Le compte connecté tel que l'API le montre, même s'il doit changer son mot de passe (le client l'apprend ici). */
+export async function readMe(ctx: CommandContext): Promise<CommandResult<{ me: MeView }>> {
+  if (!ctx.user) return { ok: false, error: "unauthorized" };
+  return { ok: true, me: toMe(ctx.user, pendingEmailChange(await readDocument(), ctx.user.id)) };
+}
+
 export async function updateOwnDisplayName(
   ctx: CommandContext,
   input: { displayName: string },
-): Promise<CommandResult<{ user: User }>> {
+): Promise<CommandResult<{ user: User; me: MeView }>> {
   const active = activeUser(ctx);
   if (!active.ok) return active;
   const result = await updateDocument((doc) => {
@@ -116,7 +140,7 @@ export async function updateOwnDisplayName(
     return { doc: saved.ok ? saved.doc : doc, result: saved };
   });
   if (!result.ok) return result;
-  return { ok: true, user: result.value };
+  return { ok: true, user: result.value, me: toMe(result.value, pendingEmailChange(result.doc, result.value.id)) };
 }
 
 /**

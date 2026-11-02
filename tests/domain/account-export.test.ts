@@ -23,6 +23,8 @@ test("en-tête du document et compte", () => {
     email: "lou@example.test",
     displayName: "Lou",
     createdAt: "2026-01-01T00:00:00.000Z",
+    emailVerifiedAt: "2026-01-01T00:00:00.000Z",
+    pendingEmail: null,
   });
 });
 
@@ -112,4 +114,18 @@ test("nom du fichier d'export : daté, et dans la langue du compte", () => {
   assert.equal(isExportFileName("ohyoushouldnt-donnees-2026-10-28.json"), true);
   assert.equal(isExportFileName("ohyoushouldnt-data-2026-10-28.json"), true);
   assert.equal(isExportFileName("autre.json"), false);
+});
+
+test("un changement d'adresse en attente figure dans l'export (FR-020)", () => {
+  const doc = accountDoc();
+  doc.emailConfirmations.push({
+    id: "ec",
+    userId: "lou",
+    purpose: "change",
+    email: "lou.b@example.test",
+    tokenHash: "h",
+    expiresAt: "2026-10-29T10:00:00.000Z",
+    createdAt: "2026-10-28T10:00:00.000Z",
+  });
+  assert.equal(exportAccount(doc, "lou", SITE, NOW)?.account.pendingEmail, "lou.b@example.test");
 });

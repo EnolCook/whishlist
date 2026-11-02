@@ -41,6 +41,7 @@ export async function registerUser(
     createdAt: (input.now ?? new Date()).toISOString(),
     mustChangePassword: false,
     sessionVersion: 0,
+    emailVerifiedAt: null,
   };
   const next = clone(doc);
   next.users.push(user);
@@ -75,22 +76,34 @@ export async function changePassword(
   user.passwordHash = await hashPassword(password);
   user.mustChangePassword = false;
   user.sessionVersion = (user.sessionVersion ?? 0) + 1;
+  // Compte repris en main : un changement d'adresse demandé avant ne vaut plus rien (010).
+  next.emailConfirmations = next.emailConfirmations.filter(
+    (entry) => !(entry.userId === user.id && entry.purpose === "change"),
+  );
   return { ok: true, doc: next, value: user };
 }
 
+/** Adresse normalisée, valide et qu'aucun autre compte n'utilise. */
+export function validateNewEmail(doc: Database, userId: string, value: string): { ok: true; email: string } | Err {
+  const email = normalizeEmail(value);
+  if (!email || !email.includes("@")) return { ok: false, error: "emailInvalid" };
+  if (doc.users.some((u) => u.email === email && u.id !== userId)) return { ok: false, error: "emailTaken" };
+  return { ok: true, email };
+}
+
+/** Nouvelle adresse de connexion, confirmée à `now` (lien ouvert, ou sans envoi d'e-mail). */
 export function setUserEmail(
   doc: Database,
-  input: { userId: string; email: string },
+  input: { userId: string; email: string; now?: Date },
 ): Ok<User> | Err {
-  const email = normalizeEmail(input.email);
-  if (!email || !email.includes("@")) return { ok: false, error: "emailInvalid" };
-  if (doc.users.some((u) => u.email === email && u.id !== input.userId)) {
-    return { ok: false, error: "emailTaken" };
-  }
+  const checked = validateNewEmail(doc, input.userId, input.email);
+  if (!checked.ok) return checked;
+  const { email } = checked;
   const next = clone(doc);
   const user = next.users.find((entry) => entry.id === input.userId);
   if (!user) return { ok: false, error: "accountMissing" };
   user.email = email;
+  user.emailVerifiedAt = (input.now ?? new Date()).toISOString();
   return { ok: true, doc: next, value: user };
 }
 

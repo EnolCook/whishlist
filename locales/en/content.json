@@ -48,6 +48,10 @@
         "a": "Yes. Send them the editing invitation link. They’ll need to log in or create an account before joining the list."
       },
       {
+        "q": "Why confirm my email address, and can I change it?",
+        "a": "The confirmation link you receive when you sign up shows that the address is yours: without it, you can browse and reserve, but not create or join a list. To change your address, open “My account”: a link is sent to the new address, which only replaces the old one once confirmed."
+      },
+      {
         "q": "Who can see reservations?",
         "a": "People managing the list can view its reservations. If the list is for you, it’s best to avoid that screen — unless you’re also the sort of person who turns the house upside down looking for hidden Christmas presents. On the shared list, gift givers can also recognize their own reservations in the same browser or through their account."
       },
@@ -74,7 +78,7 @@
     "steps": [
       {
         "title": "1. Create your account",
-        "body": "Enter your display name, email address, and a password. Your account is for creating and editing lists; friends and family don’t need one to view them."
+        "body": "Enter your display name, email address, and a password, then confirm your address with the link you receive by email. Your account is for creating and editing lists; friends and family don’t need one to view them."
       },
       {
         "title": "2. Create a wish list",
@@ -158,22 +162,22 @@
     "title": "Personal data",
     "intro": "What the site and the app keep about you, why, for how long, and how to exercise your rights. No advertising, and no commercial tracking added to gift links.",
     "accountTitle": "Your account",
-    "accountBody": "Your email, your display name, a fingerprint of your password (never the password itself) and the creation date. They are used to sign you in and to show your name to the members of your lists, who never see your email.",
+    "accountBody": "Your email and the date you confirmed it, your display name, a fingerprint of your password (never the password itself) and the creation date. They are used to sign you in and to show your name to the members of your lists, who never see your email. During an address change, the new address is kept until it is confirmed, for 24 hours at most.",
     "listsTitle": "Your lists and ideas",
     "listsBody": "Lists, their categories, the “who” labels and the ideas (name, link, image, price, priority) that you and the other members add. Every member of a list sees them.",
     "reservationsTitle": "Reservations",
     "reservationsBody": "When someone reserves a gift: the name given, the optional note, the date, and the account if they are signed in. The members of the list see these reservations.",
     "retentionTitle": "How long",
-    "retentionBody": "Your data stays until you delete your account. A sign-in lasts 30 days, a password-reset link 1 hour. Encrypted server backups are kept for 14 days: deleted data is gone from them at most 14 days later.",
+    "retentionBody": "Your data stays until you delete your account. A sign-in lasts 30 days, a password-reset link 1 hour, an address confirmation link 24 hours. Encrypted server backups are kept for 14 days: deleted data is gone from them at most 14 days later.",
     "cookiesTitle": "Cookies",
     "cookiesBody": "The site sets cookies: wishlist_session (login, 30 days, httpOnly), NEXT_LOCALE (chosen language, 1 year), a wl_ru_… cookie that remembers a list password for 14 days, and a wl_rc_… cookie that finds reservations made without an account for 90 days. These cookies are not used for advertising.",
     "appTitle": "In the mobile app",
     "appBody": "The app keeps your sign-in in the phone’s secure storage, and a copy of your lists and of changes not yet sent in its local database. Everything is erased when you sign out or delete your account. The app does not measure audience and asks for no permission.",
     "providersTitle": "Providers",
     "cloudflareBody": "The site and the app go through Cloudflare, Inc. (United States), which protects and serves the site: IP addresses, requested pages and exchanges pass through its servers, including outside the European Union.",
-    "mailBody": "When email sending is configured, messages (invites, password resets, an address that already has an account) go through Resend. The recipient address and the message content are then sent to that provider.",
+    "mailBody": "When email sending is configured, messages (address confirmation, address change, invites, password resets, an address that already has an account) go through Resend. The recipient address and the message content are then sent to that provider.",
     "aiBody": "When a Gemini or OpenAI key is configured, the page behind a gift link can be sent to that service to prefill an idea. Nothing is sent if no key is configured.",
-    "audienceBody": "When audience measurement is configured, visits to public pages are counted with Umami, on the instance operator’s server. List, login, account, invitation, and password-reset addresses are not sent. This count does not set a cookie. The choice is made in the footer and stays in this browser.",
+    "audienceBody": "When audience measurement is configured, visits to public pages are counted with Umami, on the instance operator’s server. List, login, account, invitation, password-reset, and address-confirmation addresses are not sent. This count does not set a cookie. The choice is made in the footer and stays in this browser.",
     "optOut": "Don’t measure my visit",
     "optOutOn": "Visit not measured. Turn it back on",
     "rightsTitle": "Your rights",

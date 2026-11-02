@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { AppState } from "react-native";
 
 import { getSession, restore, signIn, signOut } from "@/auth/session";
 import { NetworkError } from "@/api/client";
@@ -67,4 +68,16 @@ test("signOut calls /auth/logout then forgets everything, even if the call fails
   expect(await SecureStore.getItemAsync("session.token")).toBeNull();
   expect(await getSnapshot("lists")).toBeNull();
   expect(getSession()).toEqual({ status: "signedOut", expired: false });
+});
+
+test("back to the foreground: the account is read again (address confirmed in the browser, 010)", async () => {
+  fakeFetch({});
+  await signIn({ token: "secret-token", expiresAt: "2099-01-01T00:00:00.000Z", user: { ...me, emailVerified: false } });
+  const { calls } = fakeFetch({ "GET /me": () => json(200, me) });
+  // AppState est un mock de jest-expo : on rejoue les écouteurs posés par les modules.
+  const listeners = jest.mocked(AppState.addEventListener).mock.calls.map(([, listener]) => listener);
+  for (const listener of listeners) listener("active");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(calls).toContain("GET /me");
+  expect(getSession()).toEqual({ status: "signedIn", user: me });
 });

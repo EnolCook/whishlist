@@ -54,7 +54,11 @@ export async function resetPasswordWithToken(
   user.passwordHash = await hashPassword(password);
   user.mustChangePassword = false;
   user.sessionVersion = (user.sessionVersion ?? 0) + 1;
+  // Le lien est arrivé à cette adresse : elle est donc valide (010, FR-007). Compte repris en main :
+  // un changement d'adresse demandé avant (peut-être par quelqu'un d'autre) ne vaut plus rien.
+  if (user.emailVerifiedAt === null) user.emailVerifiedAt = now.toISOString();
   next.passwordResets = next.passwordResets.filter((entry) => entry.userId !== user.id);
+  next.emailConfirmations = next.emailConfirmations.filter((entry) => entry.userId !== user.id);
   return { ok: true, doc: next, userId: user.id, sessionVersion: user.sessionVersion };
 }
 

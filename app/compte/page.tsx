@@ -1,9 +1,17 @@
+import { origin } from "../../src/auth/current";
 import { requireUser } from "../../src/auth/guard";
 import { listMyOffers } from "../../src/domain/offrir";
 import { previewAccountDeletion } from "../../src/domain/account";
-import { changePasswordAction, updateDisplayNameAction } from "../../src/server/actions";
+import { pendingEmailChange } from "../../src/domain/email-confirmation";
+import {
+  cancelEmailChangeAction,
+  changePasswordAction,
+  requestEmailChangeAction,
+  updateDisplayNameAction,
+} from "../../src/server/actions";
 import { getDocument } from "../../src/store/db";
 import { DeleteAccountDialog } from "@/components/site/delete-account-dialog";
+import { DevLinkAlert } from "@/components/site/dev-link-alert";
 import { LinkButton } from "@/components/site/link-button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -16,18 +24,27 @@ import { MIN_PASSWORD_LENGTH } from "@/src/domain/passwords";
 import { intlLocale } from "@/src/i18n/config";
 import { withLocale } from "@/src/i18n/locale-path";
 import { getLocale, getTranslations, translateError } from "@/src/i18n/server";
+import { emailVerificationRequired } from "@/src/server/mail";
 
 export const dynamic = "force-dynamic";
 
 export default async function ComptePage({
   searchParams,
 }: {
-  /** `e` / `ok` : profil et mot de passe ; `x` : export ; `d` : suppression du compte. */
-  searchParams: Promise<{ e?: string; ok?: string; x?: string; d?: string }>;
+  /**
+   * `e` / `ok` : profil et mot de passe ; `email` / `ee` / `lien` : changement d'adresse ; `x` : export ;
+   * `d` : suppression du compte.
+   */
+  searchParams: Promise<{ e?: string; ok?: string; x?: string; d?: string; email?: string; ee?: string; lien?: string }>;
 }) {
   const user = await requireUser({ allowMustChangePassword: true });
   const query = await searchParams;
-  const [t, doc, locale] = await Promise.all([getTranslations("auth"), getDocument(), getLocale()]);
+  const [t, doc, locale, siteOrigin] = await Promise.all([
+    getTranslations("auth"),
+    getDocument(),
+    getLocale(),
+    origin(),
+  ]);
   const forced = user.mustChangePassword;
   const offers = forced ? [] : listMyOffers(doc, user.id, intlLocale(locale));
   const passwordError =
@@ -54,6 +71,18 @@ export default async function ComptePage({
   const deleteError = query.d ? await translateError(query.d) : null;
   const deletion = forced ? null : previewAccountDeletion(doc, user.id);
   const passwordOk = query.ok === "1";
+  const pendingEmail = forced ? null : pendingEmailChange(doc, user.id);
+  const emailError = query.ee ? await translateError(query.ee) : null;
+  const emailFeedback =
+    query.email === "pending"
+      ? t("account.emailChange.sent")
+      : query.email === "failed"
+        ? t("verifyBanner.failed")
+        : query.email === "changed"
+          ? t("account.emailChange.changed", { email: user.email })
+          : query.email === "cancelled"
+            ? t("account.emailChange.cancelled")
+            : null;
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-col gap-6">
@@ -107,6 +136,70 @@ export default async function ComptePage({
           </CardContent>
         </Card>
       )}
+
+      {!forced ? (
+        <Card id="email">
+          <CardHeader>
+            <CardTitle>{t("account.emailChange.title")}</CardTitle>
+            <CardDescription>
+              {emailVerificationRequired() ? t("account.emailChange.description") : t("account.emailChange.descriptionNoMail")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="flex flex-wrap items-center gap-2 text-sm">
+              {t("account.emailChange.current", { email: user.email })}
+              {emailVerificationRequired() ? (
+                <Badge variant={user.emailVerifiedAt ? "secondary" : "default"}>
+                  {user.emailVerifiedAt ? t("account.emailChange.verified") : t("account.emailChange.unverified")}
+                </Badge>
+              ) : null}
+            </p>
+            {emailFeedback ? (
+              <Alert>
+                <AlertDescription>{emailFeedback}</AlertDescription>
+              </Alert>
+            ) : null}
+            <DevLinkAlert
+              label={t("account.emailChange.devLink")}
+              url={query.lien}
+              origin={siteOrigin}
+              page="/confirmer-email/"
+            />
+            {emailError ? (
+              <Alert variant="destructive">
+                <AlertDescription>{emailError}</AlertDescription>
+              </Alert>
+            ) : null}
+            {pendingEmail ? (
+              <form action={cancelEmailChangeAction} className="flex flex-col gap-2">
+                <p className="text-sm text-muted-foreground">{t("account.emailChange.pending", { email: pendingEmail })}</p>
+                <Button type="submit" variant="neutral">
+                  {t("account.emailChange.cancel")}
+                </Button>
+              </form>
+            ) : null}
+            <form action={requestEmailChangeAction}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="new-email">{t("account.emailChange.newEmail")}</FieldLabel>
+                  <Input id="new-email" name="email" type="email" required autoComplete="email" />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="email-current-password">{t("account.emailChange.currentPassword")}</FieldLabel>
+                  <Input
+                    id="email-current-password"
+                    name="currentPassword"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                  />
+                </Field>
+                <Button type="submit">{t("account.emailChange.submit")}</Button>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!forced ? (
         <Card>

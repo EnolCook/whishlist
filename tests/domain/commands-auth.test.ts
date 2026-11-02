@@ -26,6 +26,8 @@ test("se connecter rend un jeton et le compte, sans le hash", async () => {
       email: "alex@example.test",
       displayName: "Alex",
       mustChangePassword: false,
+      emailVerified: true,
+      pendingEmail: null,
     });
     assert.ok(Date.parse(result.session.expiresAt) > Date.now());
     assert.equal(findApiSessionUser(await readDocument(), result.session.token)?.id, "alex");
@@ -86,7 +88,7 @@ test("s'inscrire : nouveau compte connecté ; e-mail déjà pris sans erreur ni 
     const created = await register(ctx(), { email: "sam@example.test", password: "mot-de-passe-long", displayName: "Sam" });
     assert.equal(created.ok && created.user?.email, "sam@example.test");
     const taken = await register(ctx(), { email: "alex@example.test", password: "mot-de-passe-long", displayName: "Alex" });
-    assert.deepEqual(taken, { ok: true, user: null });
+    assert.deepEqual(taken, { ok: true, user: null, verificationUrl: null, mailFailed: false });
     assert.deepEqual(await register(ctx(), { email: "lou@example.test", password: "court", displayName: "Lou" }), {
       ok: false,
       error: "passwordTooShort",

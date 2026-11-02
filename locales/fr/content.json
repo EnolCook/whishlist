@@ -48,6 +48,10 @@
         "a": "Oui. Envoyez le lien d’invitation à modifier. La personne devra se connecter ou créer un compte avant de rejoindre la liste."
       },
       {
+        "q": "Pourquoi confirmer mon adresse e-mail, et puis-je la changer ?",
+        "a": "Le lien de confirmation, reçu à l’inscription, montre que l’adresse est bien la vôtre : sans lui, vous pouvez consulter et réserver, mais pas créer ni rejoindre une liste. Pour changer d’adresse, ouvrez « Mon compte » : un lien part vers la nouvelle adresse, et elle ne remplace l’ancienne qu’une fois confirmée."
+      },
+      {
         "q": "Qui peut voir les réservations ?",
         "a": "Les personnes qui gèrent la liste peuvent consulter les réservations. Si la liste est pour vous, mieux vaut donc éviter cet écran — sauf si vous êtes aussi du genre à retourner la maison pour découvrir où sont cachés les cadeaux de Noël. Sur la liste partagée, la personne qui a réservé retrouve aussi ses propres réservations dans le même navigateur ou avec son compte."
       },
@@ -74,7 +78,7 @@
     "steps": [
       {
         "title": "1. Créez votre compte",
-        "body": "Renseignez votre nom affiché, votre adresse e-mail et un mot de passe. Votre compte sert à créer et modifier des listes ; vos proches n’en ont pas besoin pour les consulter."
+        "body": "Renseignez votre nom affiché, votre adresse e-mail et un mot de passe, puis confirmez votre adresse avec le lien reçu par e-mail. Votre compte sert à créer et modifier des listes ; vos proches n’en ont pas besoin pour les consulter."
       },
       {
         "title": "2. Créez une liste",
@@ -158,22 +162,22 @@
     "title": "Données personnelles",
     "intro": "Ce que le site et l’app gardent sur vous, pourquoi, combien de temps, et comment exercer vos droits. Pas de publicité, et aucun suivi commercial ajouté aux liens de cadeaux.",
     "accountTitle": "Votre compte",
-    "accountBody": "Votre e-mail, votre nom affiché, une empreinte de votre mot de passe (jamais le mot de passe lui-même) et la date de création. Ils servent à vous connecter et à montrer votre nom aux membres de vos listes, qui ne voient pas votre e-mail.",
+    "accountBody": "Votre e-mail et la date à laquelle vous l’avez confirmé, votre nom affiché, une empreinte de votre mot de passe (jamais le mot de passe lui-même) et la date de création. Ils servent à vous connecter et à montrer votre nom aux membres de vos listes, qui ne voient pas votre e-mail. Pendant un changement d’adresse, la nouvelle adresse est gardée jusqu’à sa confirmation, au plus 24 heures.",
     "listsTitle": "Vos listes et vos idées",
     "listsBody": "Les listes, leurs catégories, les « qui » et les idées (nom, lien, image, prix, priorité) que vous et les autres membres ajoutez. Chaque membre d’une liste les voit.",
     "reservationsTitle": "Les réservations",
     "reservationsBody": "Quand quelqu’un réserve un cadeau : le nom donné, le petit mot éventuel, la date, et le compte si la personne est connectée. Les membres de la liste voient ces réservations.",
     "retentionTitle": "Combien de temps",
-    "retentionBody": "Vos données restent jusqu’à la suppression de votre compte. Une connexion dure 30 jours, un lien de réinitialisation du mot de passe 1 heure. Les sauvegardes chiffrées du serveur sont gardées 14 jours : une donnée supprimée en disparaît au plus tard 14 jours après.",
+    "retentionBody": "Vos données restent jusqu’à la suppression de votre compte. Une connexion dure 30 jours, un lien de réinitialisation du mot de passe 1 heure, un lien de confirmation d’adresse 24 heures. Les sauvegardes chiffrées du serveur sont gardées 14 jours : une donnée supprimée en disparaît au plus tard 14 jours après.",
     "cookiesTitle": "Cookies",
     "cookiesBody": "Le site dépose des cookies : wishlist_session (connexion, 30 jours, httpOnly), NEXT_LOCALE (langue choisie, 1 an), un cookie wl_ru_… qui mémorise le mot de passe d’une liste pendant 14 jours, et un cookie wl_rc_… qui retrouve les réservations faites sans compte pendant 90 jours. Ces cookies ne servent pas à de la publicité.",
     "appTitle": "Dans l’app mobile",
     "appBody": "L’app garde votre connexion dans le stockage sécurisé du téléphone, et une copie de vos listes et des changements pas encore envoyés dans sa base locale. Tout est effacé à la déconnexion ou à la suppression du compte. L’app ne mesure pas l’audience et ne demande aucune autorisation.",
     "providersTitle": "Prestataires",
     "cloudflareBody": "Le site et l’app passent par Cloudflare, Inc. (États-Unis), qui protège et diffuse le site : les adresses IP, les pages demandées et les échanges transitent par ses serveurs, y compris hors de l’Union européenne.",
-    "mailBody": "Quand l’envoi d’e-mails est configuré, les messages (invitation, réinitialisation de mot de passe, adresse déjà utilisée) passent par Resend. L’adresse du destinataire et le contenu du message sont alors transmis à ce prestataire.",
+    "mailBody": "Quand l’envoi d’e-mails est configuré, les messages (confirmation d’adresse, changement d’adresse, invitation, réinitialisation de mot de passe, adresse déjà utilisée) passent par Resend. L’adresse du destinataire et le contenu du message sont alors transmis à ce prestataire.",
     "aiBody": "Quand une clé Gemini ou OpenAI est configurée, le contenu de la page d’un lien cadeau peut être envoyé à ce service pour préremplir une idée. Rien n’est envoyé si aucune clé n’est configurée.",
-    "audienceBody": "Quand une mesure d’audience est configurée, les visites des pages publiques sont comptées avec Umami, chez l’exploitant de l’instance. Les adresses de listes, de connexion, de compte, d’invitation et de réinitialisation ne partent pas. Ce comptage ne dépose pas de cookie. Le refus se règle dans le pied de page et reste dans ce navigateur.",
+    "audienceBody": "Quand une mesure d’audience est configurée, les visites des pages publiques sont comptées avec Umami, chez l’exploitant de l’instance. Les adresses de listes, de connexion, de compte, d’invitation, de réinitialisation et de confirmation d’adresse ne partent pas. Ce comptage ne dépose pas de cookie. Le refus se règle dans le pied de page et reste dans ce navigateur.",
     "optOut": "Ne pas mesurer ma visite",
     "optOutOn": "Visite non mesurée. Réactiver",
     "rightsTitle": "Vos droits",

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { before, test } from "node:test";
 import { apiStatusFor, publicErrorCode } from "../../src/server/api/errors";
-import { apiLocaleFrom, originDecision, parseAllowedOrigins, readJsonBody } from "../../src/server/api/http";
+import { apiError, apiLocaleFrom, originDecision, parseAllowedOrigins, readJsonBody } from "../../src/server/api/http";
+import { createList } from "../../src/server/commands/lists";
+import { readDocument } from "../../src/store/db";
+import { apiDoc, ctx, ensurePasswordHash, withMailDryRun, withStore } from "./helpers/api-fixtures";
+
+before(ensurePasswordHash);
 
 test("apiStatusFor : un statut par famille de codes", () => {
   assert.equal(apiStatusFor("itemNeedsName"), 400);
@@ -9,12 +14,14 @@ test("apiStatusFor : un statut par famille de codes", () => {
   assert.equal(apiStatusFor("unauthorized"), 401);
   assert.equal(apiStatusFor("invalidCredentials"), 401);
   assert.equal(apiStatusFor("mustChangePassword"), 403);
+  assert.equal(apiStatusFor("emailNotVerified"), 403);
   assert.equal(apiStatusFor("originNotAllowed"), 403);
   assert.equal(apiStatusFor("ownerDeleteList"), 403);
   assert.equal(apiStatusFor("listMissing"), 404);
   assert.equal(apiStatusFor("itemNotInList"), 404);
   assert.equal(apiStatusFor("notMember"), 404);
   assert.equal(apiStatusFor("itemAlreadyReserved"), 409);
+  assert.equal(apiStatusFor("emailAlreadyVerified"), 409);
   assert.equal(apiStatusFor("apiVersionUnsupported"), 410);
   assert.equal(apiStatusFor("payloadTooLarge"), 413);
   assert.equal(apiStatusFor("unsupportedMediaType"), 415);
@@ -24,6 +31,24 @@ test("apiStatusFor : un statut par famille de codes", () => {
   assert.equal(apiStatusFor("readPasswordRequired"), 423);
   assert.equal(apiStatusFor("rateLimited"), 429);
   assert.equal(apiStatusFor("mailNotConfigured"), 503);
+});
+
+test("POST /lists d'un compte non confirmé : 403 emailNotVerified, avec son message (T021)", async () => {
+  const doc = apiDoc();
+  doc.users[1]!.emailVerifiedAt = null;
+  await withMailDryRun(() =>
+    withStore(doc, async () => {
+      // Même chaîne que la route (`withApi` lit les en-têtes de Next, absents hors requête) : commande puis `apiError`.
+      const camille = (await readDocument()).users[1]!;
+      const result = await createList(ctx(camille), { title: "Ma liste", category: "Livres", person: "Moi" });
+      assert.ok(!result.ok);
+      const response = await apiError(result.error, "fr");
+      assert.equal(response.status, 403);
+      const body = (await response.json()) as { error: { code: string; message: string } };
+      assert.equal(body.error.code, "emailNotVerified");
+      assert.ok(body.error.message.length > 0);
+    }),
+  );
 });
 
 test("un non-membre ne distingue pas une liste qui existe", () => {

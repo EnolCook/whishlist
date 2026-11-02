@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { Role, ViewKind, WishlistTheme } from "../domain/types";
 
 // Une table par collection de `Database`, mêmes noms de champs (colonnes en snake_case).
@@ -14,6 +14,7 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").notNull(),
   mustChangePassword: integer("must_change_password", { mode: "boolean" }).notNull().default(false),
   sessionVersion: integer("session_version").notNull().default(0),
+  emailVerifiedAt: text("email_verified_at"),
 });
 
 export const wishlists = sqliteTable("wishlists", {
@@ -148,6 +149,26 @@ export const passwordResets = sqliteTable(
     createdAt: text("created_at").notNull(),
   },
   (table) => [index("password_resets_user_id").on(table.userId)],
+);
+
+export const emailConfirmations = sqliteTable(
+  "email_confirmations",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    purpose: text("purpose", { enum: ["verify", "change"] }).notNull(),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    index("email_confirmations_user_id").on(table.userId),
+    uniqueIndex("email_confirmations_user_purpose").on(table.userId, table.purpose),
+    check("email_confirmations_purpose", sql`${table.purpose} in ('verify', 'change')`),
+  ],
 );
 
 export const apiSessions = sqliteTable(
