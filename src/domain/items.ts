@@ -13,6 +13,22 @@ function validUrl(url: string | null): boolean {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
+/**
+ * Même libellé dans la liste (casse et espaces autour ignorés) ; `exceptId` : l'entrée qu'on renomme.
+ * `toLowerCase` et non `toLocaleLowerCase` : le résultat ne dépend pas de la langue du serveur (i turc).
+ */
+function labelTaken(
+  entries: { id: string; wishlistId: string; label: string }[],
+  wishlistId: string,
+  label: string,
+  exceptId?: string,
+): boolean {
+  const wanted = label.trim().toLowerCase();
+  return entries.some(
+    (entry) => entry.wishlistId === wishlistId && entry.id !== exceptId && entry.label.trim().toLowerCase() === wanted,
+  );
+}
+
 export function createItem(
   doc: Database,
   input: {
@@ -176,6 +192,7 @@ export function addType(
   if (!label) return { ok: false, error: "typeNeedsName" };
   const wishlist = doc.wishlists.find((w) => w.id === input.wishlistId);
   if (!wishlist) return { ok: false, error: "listMissing" };
+  if (labelTaken(doc.types, input.wishlistId, label)) return { ok: false, error: "typeExists" };
   const typeId = input.id ?? newId();
   const next = clone(doc);
   const sortOrder =
@@ -207,6 +224,7 @@ export function renameType(
   const next = clone(doc);
   const type = next.types.find((t) => t.id === input.typeId && t.wishlistId === input.wishlistId);
   if (!type) return { ok: false, error: "typeMissing" };
+  if (labelTaken(doc.types, input.wishlistId, label, input.typeId)) return { ok: false, error: "typeExists" };
   type.label = label;
   for (const view of next.views) {
     if (
@@ -292,6 +310,7 @@ export function addPerson(
   if (!label) return { ok: false, error: "personNeedsName" };
   const wishlist = doc.wishlists.find((w) => w.id === input.wishlistId);
   if (!wishlist) return { ok: false, error: "listMissing" };
+  if (labelTaken(doc.people, input.wishlistId, label)) return { ok: false, error: "personExists" };
   const personId = input.id ?? newId();
   const next = clone(doc);
   next.people.push({ id: personId, wishlistId: input.wishlistId, label });
@@ -319,6 +338,7 @@ export function renamePerson(
   const next = clone(doc);
   const person = next.people.find((p) => p.id === input.personId && p.wishlistId === input.wishlistId);
   if (!person) return { ok: false, error: "personMissing" };
+  if (labelTaken(doc.people, input.wishlistId, label, input.personId)) return { ok: false, error: "personExists" };
   person.label = label;
   for (const view of next.views) {
     if (

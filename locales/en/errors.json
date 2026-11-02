@@ -9,6 +9,8 @@
   "itemMissing": "This idea doesn’t exist.",
   "itemHasReservation": "This idea has a reservation. Cancel it first.",
   "typeNeedsName": "Enter a category name.",
+  "typeExists": "This category is already on this list.",
+  "personExists": "This recipient is already on this list.",
   "listMissing": "This wish list couldn’t be found or is no longer available.",
   "typeMissing": "This category doesn’t exist.",
   "typeInUse": "This category still contains ideas. Move them before deleting it.",

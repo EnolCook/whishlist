@@ -9,6 +9,8 @@
   "itemMissing": "Cette idée n'existe pas.",
   "itemHasReservation": "Cette idée a une réservation. Annulez-la d'abord.",
   "typeNeedsName": "Indiquez un nom de catégorie.",
+  "typeExists": "Cette catégorie existe déjà dans cette liste.",
+  "personExists": "Ce « qui » existe déjà dans cette liste.",
   "listMissing": "Cette liste est introuvable ou n'est plus accessible.",
   "typeMissing": "Cette catégorie n'existe pas.",
   "typeInUse": "Cette catégorie contient encore des idées. Déplacez-les avant de la supprimer.",
