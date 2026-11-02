@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import Database from "better-sqlite3";
 import path from "node:path";
 import { before, test } from "node:test";
 import { NextRequest } from "next/server";
@@ -12,15 +13,16 @@ import {
   revokeApiKey,
   touchApiKey,
 } from "../../src/auth/api-keys";
+import { issueApiSession } from "../../src/auth/api-session";
 import { deleteAccount } from "../../src/domain/account";
 import { createPasswordReset, resetPasswordWithToken } from "../../src/domain/password-reset";
 import { changePassword } from "../../src/domain/users";
 import { apiKeyUser, optionalApiUser, usesApiKey } from "../../src/server/api/auth";
 import { refuseApiKey } from "../../src/server/api/http";
 import { createMyApiKey, revokeMyApiKey } from "../../src/server/commands/api-keys";
-import { resetRateLimitsForTests } from "../../src/server/rate-limit";
-import { readDocument } from "../../src/store/db";
+import { closeStore, databaseFilePath, openStore, readDocument } from "../../src/store/db";
 import { apiDoc, ctx, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
+import { withTempDataPath } from "./helpers/temp-store";
 
 before(ensurePasswordHash);
 
@@ -83,7 +85,6 @@ test("dernière utilisation : notée, puis pas réécrite avant une heure", () =
 test("API : une clé en bearer donne son compte et note son utilisation ; elle est reconnue comme clé", async () => {
   const { doc, token } = withKey();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     assert.equal(usesApiKey(bearer(token)), true);
     assert.equal(usesApiKey(bearer("jeton-de-session")), false);
     assert.equal((await optionalApiUser(bearer(token)))?.id, "alex");
@@ -92,12 +93,15 @@ test("API : une clé en bearer donne son compte et note son utilisation ; elle e
   });
 });
 
-test("API : au-delà de 120 requêtes par minute, la clé est limitée", async () => {
+test("API : au-delà de 120 requêtes par minute, la clé est limitée ; une autre clé du compte ne l'est pas", async () => {
   const { doc, token } = withKey();
-  await withStore(doc, async () => {
-    resetRateLimitsForTests();
+  const second = createApiKey(doc, doc.users[0]!, { name: "Script" });
+  assert.ok(second.ok);
+  if (!second.ok) return;
+  await withStore(second.doc, async () => {
     for (let i = 0; i < 120; i++) await apiKeyUser(token);
     await assert.rejects(() => apiKeyUser(token), (error: Error) => error.message === "rateLimited");
+    assert.equal((await apiKeyUser(second.token))?.id, "alex", "la limite est par clé");
   });
 });
 
@@ -110,7 +114,7 @@ test("routes de compte : une clé est refusée (403 apiKeyNotAllowed), un jeton 
   assert.equal(await refuseApiKey(api("jeton-de-session")), null);
 });
 
-test("chaque route de compte commence par refuser une clé (mot de passe, adresse, suppression, export, déconnexion)", () => {
+test("chaque route de compte refuse une clé (mot de passe, adresse, suppression, export, déconnexion)", () => {
   for (const [file, handlers] of [
     ["app/api/v1/me/password/route.ts", ["POST"]],
     ["app/api/v1/me/email/route.ts", ["POST", "DELETE"]],
@@ -119,18 +123,17 @@ test("chaque route de compte commence par refuser une clé (mot de passe, adress
     ["app/api/v1/me/export/route.ts", ["GET"]],
     ["app/api/v1/auth/logout/route.ts", ["POST"]],
   ] as const) {
+    // Chaque handler de ces routes passe par `withApi(…, { refuseApiKey: true })`, testé ci-dessus via `refuseApiKey`.
     const source = readFileSync(path.join(process.cwd(), file), "utf8");
-    for (const method of handlers) {
-      const body = source.split(`export const ${method} = withApi(async (api) => {`)[1] ?? "";
-      assert.match(body.trimStart(), /^const refused = await refuseApiKey\(api\);\s+if \(refused\) return refused;/, `${method} ${file}`);
-    }
+    for (const method of handlers) assert.ok(source.includes(`export const ${method} = withApi(`), `${method} ${file}`);
+    assert.equal(source.match(/withApi\(/g)?.length, handlers.length, file);
+    assert.equal(source.match(/\{ refuseApiKey: true \}\)/g)?.length, handlers.length, file);
   }
 });
 
 test("commandes de la page Compte : créer puis révoquer ; un compte ne révoque pas la clé d'un autre", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const created = await createMyApiKey(ctx(doc.users[0]!), { name: "Script" });
     assert.ok(created.ok);
     if (!created.ok) return;
@@ -140,7 +143,7 @@ test("commandes de la page Compte : créer puis révoquer ; un compte ne révoqu
   });
 });
 
-test("réinitialisation du mot de passe : les clés du compte sont révoquées, celles des autres restent ; un simple changement les garde", async () => {
+test("réinitialisation ou changement du mot de passe : les clés du compte sont révoquées, celles des autres restent", async () => {
   const { doc } = withKey();
   const other = createApiKey(doc, doc.users[1]!, { name: "Autre" });
   assert.ok(other.ok);
@@ -155,5 +158,54 @@ test("réinitialisation du mot de passe : les clés du compte sont révoquées, 
 
   const changed = await changePassword(other.doc, { userId: doc.users[0]!.id, password: "nouveau-mdp-solide" });
   assert.ok(changed.ok);
-  if (changed.ok) assert.equal(changed.doc.apiKeys.length, 2);
+  if (changed.ok) assert.deepEqual(changed.doc.apiKeys.map((key) => key.userId), [doc.users[1]!.id]);
+});
+
+test("page Compte : au plus 10 créations de clé par heure", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    for (let i = 0; i < 10; i++) assert.ok((await createMyApiKey(ctx(doc.users[0]!), { name: `Clé ${i}` })).ok);
+    await assert.rejects(() => createMyApiKey(ctx(doc.users[0]!), { name: "Une de trop" }), (error: Error) => error.message === "rateLimited");
+    assert.equal((await readDocument()).apiKeys.length, 10);
+  });
+});
+
+test("jeton de session de l'app : jamais avec le préfixe des clés, sinon il serait lu comme une clé", () => {
+  const tokens = ["oys_premier", "oys_second", "jeton-normal"];
+  const issued = issueApiSession(apiDoc(), apiDoc().users[0]!, Date.now(), () => tokens.shift()!);
+  assert.equal(issued.token, "jeton-normal");
+  assert.equal(usesApiKey(bearer(issued.token)), false);
+});
+
+test("base existante d'avant les clés : la migration ajoute la table api_keys, vide", async () => {
+  await withTempDataPath(async () => {
+    const file = databaseFilePath();
+    const journal = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle", "meta", "_journal.json"), "utf8")) as {
+      entries: { tag: string; when: number }[];
+    };
+    const before = journal.entries.filter((entry) => entry.tag < "0004");
+    assert.deepEqual(before.map((entry) => entry.tag.slice(0, 4)), ["0000", "0001", "0002", "0003"]);
+
+    // La base telle qu'elle était : les migrations 0000 à 0003 appliquées.
+    const old = new Database(file);
+    old.exec("CREATE TABLE IF NOT EXISTS __drizzle_migrations (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at numeric)");
+    for (const entry of before) {
+      const sql = readFileSync(path.join(process.cwd(), "drizzle", `${entry.tag}.sql`), "utf8");
+      for (const statement of sql.split("--> statement-breakpoint")) if (statement.trim()) old.exec(statement);
+      old.prepare("INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)").run(entry.tag, entry.when);
+    }
+    old.exec("insert into meta values ('legacy_import', 'none')");
+    old.close();
+
+    openStore();
+    assert.deepEqual((await readDocument()).apiKeys, []);
+    closeStore();
+    const check = new Database(file, { readonly: true });
+    try {
+      const columns = (check.prepare("pragma table_info(api_keys)").all() as { name: string }[]).map((c) => c.name);
+      assert.deepEqual(columns, ["id", "user_id", "name", "token_hash", "hint", "created_at", "last_used_at"]);
+    } finally {
+      check.close();
+    }
+  });
 });

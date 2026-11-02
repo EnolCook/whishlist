@@ -51,6 +51,18 @@ function edgeDoc(): Database {
     createdAt: "2026-01-03T00:00:00.000Z",
     expiresAt: "2026-02-03T00:00:00.000Z",
   });
+  doc.apiKeys.push(
+    { id: "k1", userId: "camille", name: "Claude", tokenHash: "h5", hint: "abcd", createdAt: "2026-01-03T00:00:00.000Z", lastUsedAt: null },
+    {
+      id: "k2",
+      userId: "camille",
+      name: "Script",
+      tokenHash: "h6",
+      hint: "efgh",
+      createdAt: "2026-01-03T00:00:00.000Z",
+      lastUsedAt: "2026-01-04T00:00:00.000Z",
+    },
+  );
   doc.emailConfirmations.push(
     {
       id: "ec-v",

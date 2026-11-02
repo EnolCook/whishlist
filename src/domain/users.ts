@@ -80,6 +80,8 @@ export async function changePassword(
   next.emailConfirmations = next.emailConfirmations.filter(
     (entry) => !(entry.userId === user.id && entry.purpose === "change"),
   );
+  // Comme les sessions : changer son mot de passe après une fuite doit aussi couper une clé d'API volée.
+  next.apiKeys = next.apiKeys.filter((entry) => entry.userId !== user.id);
   return { ok: true, doc: next, value: user };
 }
 

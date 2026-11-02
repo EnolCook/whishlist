@@ -114,6 +114,15 @@ export function accountDoc(): Database {
     },
   );
   for (const userId of ["lou", "alex"]) {
+    doc.apiKeys.push({
+      id: `k-${userId}`,
+      userId,
+      name: `Clé de ${userId}`,
+      tokenHash: `api-key-hash-${userId}`,
+      hint: "wxyz",
+      createdAt: "2026-04-01T00:00:00.000Z",
+      lastUsedAt: null,
+    });
     doc.apiSessions.push({
       id: `s-${userId}`,
       userId,

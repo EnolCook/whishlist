@@ -141,6 +141,7 @@ export type AccountExport = {
 /**
  * Données du compte, champ par champ (liste blanche) : un champ ajouté plus tard au store
  * ne part pas sans être nommé ici. Ni secret, ni e-mail ou identifiant d'un autre compte.
+ * Les accès (sessions de l'app, clés d'API) n'en font pas partie : ils se voient et se révoquent sur la page Compte.
  */
 export function exportAccount(
   doc: Database,

@@ -1,14 +1,7 @@
-import { createApiKey, listApiKeys, revokeApiKey, type ApiKeyView } from "../../auth/api-keys";
-import { readDocument, updateDocument } from "../../store/db";
+import { createApiKey, revokeApiKey, type ApiKeyView } from "../../auth/api-keys";
+import { updateDocument } from "../../store/db";
 import { rateLimitForIp } from "../rate-limit";
 import { activeUser, type CommandContext, type CommandResult } from "./context";
-
-/** Les clés d'API du compte (page Compte). */
-export async function myApiKeys(ctx: CommandContext): Promise<CommandResult<{ keys: ApiKeyView[] }>> {
-  const active = activeUser(ctx);
-  if (!active.ok) return active;
-  return { ok: true, keys: listApiKeys(await readDocument(), active.user.id) };
-}
 
 /** Crée une clé ; le jeton n'est rendu qu'ici. Limité à 10 créations par heure. */
 export async function createMyApiKey(

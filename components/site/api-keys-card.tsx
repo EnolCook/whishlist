@@ -1,12 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmForm } from "@/components/site/confirm-form";
 import { CopyLinkField } from "@/components/site/copy-link-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { MAX_API_KEY_NAME } from "@/src/auth/api-key-limits";
@@ -21,8 +22,13 @@ export type ApiKeyRow = { id: string; name: string; hint: string; created: strin
 export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUrl: string; notice: string | null }) {
   const { t } = useTranslation(["auth", "errors"]);
   const router = useRouter();
+  const pathname = usePathname();
   const [name, setName] = useState("");
-  const [token, setToken] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ token: string; keyId: string; keysThen: ApiKeyRow[] } | null>(null);
+  // La clé créée reste affichée tant qu'elle existe : avant le rafraîchissement de la liste (`keysThen`), ou
+  // tant que sa ligne y est. Révoquée, elle disparaît avec sa ligne.
+  const token =
+    created && (keys === created.keysThen || keys.some((key) => key.id === created.keyId)) ? created.token : null;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -35,9 +41,11 @@ export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUr
         setError(t(`errors:${result.error}`, { defaultValue: result.error }));
         return;
       }
-      setToken(result.token);
+      setCreated({ token: result.token, keyId: result.keyId, keysThen: keys });
       setName("");
-      router.refresh();
+      // Un avis d'une action précédente (« clé révoquée ») ne vaut plus : on le retire de l'adresse.
+      if (notice) router.replace(pathname, { scroll: false });
+      else router.refresh();
     });
   }
 
@@ -83,7 +91,11 @@ export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUr
       ) : null}
 
       {keys.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("apiKeys.empty")}</p>
+        <Empty className="shadow-none">
+          <EmptyHeader>
+            <EmptyTitle>{t("apiKeys.empty")}</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className="flex flex-col gap-2">
           {keys.map((key) => (
@@ -119,7 +131,7 @@ export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUr
 
       <div className="flex flex-col gap-2 border-t-2 border-border pt-4">
         <p className="font-bold">{t("apiKeys.mcpTitle")}</p>
-        <CopyLinkField id="mcp-url" label={t("apiKeys.mcpUrl")} value={mcpUrl} hint={t("apiKeys.mcpHint")} copyLabel={t("apiKeys.copy")} />
+        <CopyLinkField id="mcp-url" label={t("apiKeys.mcpUrl")} value={mcpUrl} hint={t("apiKeys.mcpHint")} copyLabel={t("apiKeys.copyMcpUrl")} />
       </div>
     </div>
   );

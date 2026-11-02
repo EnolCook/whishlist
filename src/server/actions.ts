@@ -165,11 +165,13 @@ export async function updateDisplayNameAction(formData: FormData) {
 /** Page Compte : nouvelle clé d'API ; le jeton est rendu une fois, pour être copié. */
 export async function createApiKeyAction(input: {
   name: string;
-}): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
+}): Promise<{ ok: true; token: string; keyId: string } | { ok: false; error: string }> {
   await memberId();
+  // Une server action s'appelle aussi à la main : l'entrée n'est pas forcément celle du formulaire.
+  const name = typeof input?.name === "string" ? input.name : "";
   try {
-    const result = await createMyApiKey(await actionContext(), input);
-    return result.ok ? { ok: true, token: result.token } : { ok: false, error: result.error };
+    const result = await createMyApiKey(await actionContext(), { name });
+    return result.ok ? { ok: true, token: result.token, keyId: result.key.id } : { ok: false, error: result.error };
   } catch (error) {
     if (isRateLimitError(error)) return { ok: false, error: "rateLimited" };
     throw error;

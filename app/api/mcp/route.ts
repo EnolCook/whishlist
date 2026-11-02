@@ -1,52 +1,37 @@
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { NextRequest } from "next/server";
-import { isApiKeyToken } from "@/src/auth/api-keys";
 import { origin } from "@/src/auth/current";
-import { apiKeyUser, bearerToken } from "@/src/server/api/auth";
-import { apiLocaleFrom } from "@/src/server/api/http";
+import { apiError, apiLocaleFrom, MAX_BODY_BYTES } from "@/src/server/api/http";
 import type { CommandContext } from "@/src/server/commands/context";
+import { mcpAccess } from "@/src/server/mcp/gate";
 import { buildMcpServer } from "@/src/server/mcp/server";
-import { clientIp, isRateLimitError } from "@/src/server/rate-limit";
+import { clientIp } from "@/src/server/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Sans état : une instance du serveur par requête, construite pour le compte de la clé. */
-const handler = createMcpHandler(({ authInfo }) => buildMcpServer(authInfo?.extra?.ctx as CommandContext));
-
-function refuse(status: number, message: string, extraHeaders: Record<string, string> = {}): Response {
-  return Response.json(
-    { error: message },
-    { status, headers: { "cache-control": "private, no-store", ...extraHeaders } },
-  );
-}
-
 /**
- * Serveur MCP (Streamable HTTP) pour un assistant IA. Une clé d'API (`Authorization: Bearer oys_…`) est
- * obligatoire ; un jeton de session de l'app ne suffit pas. Une page d'un autre site ne peut pas l'appeler.
+ * Serveur MCP (Streamable HTTP, sans état) pour un assistant IA. Une clé d'API (`Authorization: Bearer oys_…`)
+ * est obligatoire ; un jeton de session de l'app ne suffit pas. Une page d'un autre site ne peut pas l'appeler.
+ * Langue des messages : `Accept-Language` (anglais si demandé), sinon le français, comme l'API.
  */
 async function serve(req: NextRequest): Promise<Response> {
+  const locale = apiLocaleFrom(req.headers.get("accept-language"));
   const site = await origin();
-  const from = req.headers.get("origin");
-  if (from && from !== site) return refuse(403, "Origin not allowed.");
-  const token = bearerToken(req);
-  const challenge = { "www-authenticate": 'Bearer realm="mcp"' };
-  if (!token || !isApiKeyToken(token)) return refuse(401, "An API key is required (Authorization: Bearer oys_…).", challenge);
-  let user;
-  try {
-    user = await apiKeyUser(token);
-  } catch (error) {
-    if (isRateLimitError(error)) return refuse(429, "Too many requests for this key. Try again in a minute.");
-    throw error;
+  const access = await mcpAccess({
+    origin: req.headers.get("origin"),
+    siteOrigin: site,
+    authorization: req.headers.get("authorization"),
+  });
+  if (!access.ok) {
+    const refused = await apiError(access.error, locale);
+    if (access.error === "unauthorized") refused.headers.set("www-authenticate", 'Bearer realm="mcp"');
+    return refused;
   }
-  if (!user) return refuse(401, "Unknown or revoked API key.", challenge);
-  const ctx: CommandContext = {
-    user,
-    ip: await clientIp(),
-    locale: apiLocaleFrom(req.headers.get("accept-language")),
-    origin: site,
-  };
-  const response = await handler.fetch(req, { authInfo: { token, clientId: user.id, scopes: [], extra: { ctx } } });
+  const ctx: CommandContext = { user: access.user, ip: await clientIp(), locale, origin: site };
+  // Une instance par requête, construite pour le compte de la clé ; corps borné comme l'API.
+  const handler = createMcpHandler(() => buildMcpServer(ctx), { maxRequestBodySize: MAX_BODY_BYTES });
+  const response = await handler.fetch(req);
   response.headers.set("cache-control", "private, no-store");
   return response;
 }

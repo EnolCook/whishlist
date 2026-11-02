@@ -110,6 +110,9 @@ test("aucun secret ni donnée d'un autre compte dans le fichier", () => {
   assert.equal(json.includes("scrypt$read-secret"), false, "readPasswordHash");
   assert.equal(json.includes("readPasswordHash"), false);
   assert.equal(json.includes("api-token-hash"), false, "apiSessions");
+  assert.equal(json.includes("api-key-hash"), false, "apiKeys");
+  assert.equal(json.includes("tokenHash"), false);
+  assert.equal(json.includes("Clé de lou"), false, "les clés ne font pas partie de l'export");
   assert.equal(json.includes("reset-token-hash"), false, "passwordResets");
   assert.equal(json.includes("alex@example.test"), false);
   assert.equal(json.includes("camille@example.test"), false);

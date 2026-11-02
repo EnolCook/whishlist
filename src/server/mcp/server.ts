@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod";
+import { priceInput } from "../../domain/price";
+import { resolveTypeId } from "../../domain/product-from-url";
 import { translateErrorFor } from "../../i18n/server";
 import { publicErrorCode } from "../api/errors";
 import { isRateLimitError } from "../rate-limit";
@@ -28,6 +30,11 @@ const WRITE = { readOnlyHint: false, destructiveHint: false, openWorldHint: fals
 const DELETE = { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false };
 type ToolResult = { content: { type: "text"; text: string }[]; isError?: boolean };
 
+// Bornes des entrées : le corps est déjà limité à 64 Kio, elles gardent des libellés lisibles.
+const ID = z.string().max(100);
+const NAME = z.string().trim().min(1).max(200);
+const URL_MAX = 2048;
+
 function ok(value: unknown): ToolResult {
   return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
 }
@@ -36,16 +43,17 @@ function fail(text: string): ToolResult {
   return { content: [{ type: "text", text }], isError: true };
 }
 
-/** Catégorie ou « qui » donné par son nom (casse et espaces ignorés) ou son id ; absent : le premier. */
-function pick(options: Labelled[], wanted: string | undefined, what: string): Labelled | string {
-  if (!wanted?.trim()) return options[0] ?? `This list has no ${what} yet.`;
-  const key = wanted.trim().toLocaleLowerCase();
-  const found = options.find((option) => option.id === wanted || option.label.trim().toLocaleLowerCase() === key);
+/** Catégorie ou « qui » donné par son nom (casse et espaces ignorés) ou son id, comme « Remplir depuis le lien ». */
+function find(options: Labelled[], wanted: string, what: string): Labelled | string {
+  const id = resolveTypeId(options, wanted);
+  const found = id ? options.find((option) => option.id === id) : undefined;
   return found ?? `Unknown ${what} "${wanted}". The list's ${what === "category" ? "categories" : "people"}: ${options.map((option) => option.label).join(", ") || "none"}.`;
 }
 
-function priceInput(cents: number | null): string {
-  return cents === null ? "" : (cents / 100).toFixed(2);
+/** Pour une nouvelle idée : absent ou vide, le premier de la liste. */
+function findOrFirst(options: Labelled[], wanted: string | undefined, what: string): Labelled | string {
+  if (!wanted?.trim()) return options[0] ?? `This list has no ${what} yet.`;
+  return find(options, wanted, what);
 }
 
 export function buildMcpServer(ctx: CommandContext): McpServer {
@@ -57,7 +65,9 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
       return await action();
     } catch (error) {
       if (isRateLimitError(error)) return fail(await translateErrorFor(ctx.locale, "rateLimited"));
-      throw error;
+      // Comme l'API : le détail reste dans le journal, jamais dans la réponse lue par le modèle.
+      console.error("MCP tool error", error);
+      return fail(await translateErrorFor(ctx.locale, "serverError"));
     }
   }
   // Comme l'API : un non-membre reçoit la même réponse que pour une liste qui n'existe pas.
@@ -86,8 +96,8 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     "get_list",
     {
       description:
-        "Read one wish list: its categories, its people (who the gifts are for) and its ideas. Archived ideas are left out unless includeArchived is true. `reserved` only says whether a giver has reserved an idea; who reserved it is never shown, to keep the surprise.",
-      inputSchema: z.object({ listId: z.string(), includeArchived: z.boolean().optional() }),
+        "Read one wish list: its categories, its people (who the gifts are for) and its ideas. Archived ideas are left out unless includeArchived is true. `price` is in euros, as add_idea and update_idea take it. `reserved` only says whether a giver has reserved an idea; who reserved it is never shown, to keep the surprise.",
+      inputSchema: z.object({ listId: ID, includeArchived: z.boolean().optional() }),
       annotations: READ,
     },
     ({ listId, includeArchived }) =>
@@ -110,7 +120,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
               category: category.get(item.typeId) ?? null,
               for: person.get(item.personId) ?? null,
               url: item.url,
-              price: item.priceLabel,
+              price: item.priceCents === null ? null : item.priceCents / 100,
               priority: item.priority ? Number(item.priority) : null,
               description: item.description,
               secondHandOk: item.secondHandOk,
@@ -122,12 +132,13 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
   );
 
   const ideaFields = {
-    category: z.string().optional().describe("Category name (or id). Defaults to the list's first category."),
-    for: z.string().optional().describe("Who the gift is for: a person's name (or id) from the list. Defaults to the first one."),
-    url: z.string().optional().describe("Link to the product page (http or https)."),
+    category: z.string().max(200).optional().describe("Category name (or id). Defaults to the list's first category."),
+    for: z.string().max(200).optional().describe("Who the gift is for: a person's name (or id) from the list. Defaults to the first one."),
+    url: z.string().max(URL_MAX).optional().describe("Link to the product page (http or https)."),
     // Un assistant envoie souvent un nombre (32.5) : les deux sont acceptés.
-    price: z.union([z.string(), z.number().nonnegative()]).optional().describe("Price in euros, e.g. \"18.50\" or 18.5."),
+    price: z.union([z.string().max(20), z.number().nonnegative()]).optional().describe("Price in euros, e.g. \"18.50\" or 18.5."),
     priority: z.number().int().min(1).max(5).optional().describe("How much the person wants it, 1 to 5 stars."),
+    // Borné par la règle (descriptionTooLong, message traduit), pas par le schéma.
     description: z
       .string()
       .optional()
@@ -139,16 +150,16 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     "add_idea",
     {
       description: "Add a gift idea to a wish list. Use fill_from_url first to get the name and price from a product link.",
-      inputSchema: z.object({ listId: z.string(), name: z.string().min(1), ...ideaFields }),
+      inputSchema: z.object({ listId: ID, name: NAME, ...ideaFields }),
       annotations: WRITE,
     },
     (input) =>
       run(async () => {
         const list = await listOf(input.listId);
         if (typeof list === "string") return refused(list);
-        const type = pick(list.categories, input.category, "category");
+        const type = findOrFirst(list.categories, input.category, "category");
         if (typeof type === "string") return fail(type);
-        const person = pick(list.people, input.for, "person");
+        const person = findOrFirst(list.people, input.for, "person");
         if (typeof person === "string") return fail(person);
         const saved = await saveItem(ctx, {
           wishlistId: list.id,
@@ -170,11 +181,12 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
   server.registerTool(
     "update_idea",
     {
-      description: "Change an idea: only the fields you give are changed. Use priority 0 to remove the stars.",
+      description:
+        "Change an idea: only the fields you give are changed (an empty category or for keeps the current one). Use priority 0 to remove the stars.",
       inputSchema: z.object({
-        listId: z.string(),
-        ideaId: z.string(),
-        name: z.string().min(1).optional(),
+        listId: ID,
+        ideaId: ID,
+        name: NAME.optional(),
         ...ideaFields,
         priority: z.number().int().min(0).max(5).optional().describe("1 to 5 stars, 0 to remove them."),
       }),
@@ -186,9 +198,10 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
         if (typeof list === "string") return refused(list);
         const current = list.items.find((item) => item.id === input.ideaId);
         if (!current) return refused("itemMissing");
-        const type = input.category === undefined ? { id: current.typeId } : pick(list.categories, input.category, "category");
+        // Absent ou vide : on garde la catégorie et le « qui » de l'idée, au lieu de prendre le premier.
+        const type = input.category?.trim() ? find(list.categories, input.category, "category") : { id: current.typeId };
         if (typeof type === "string") return fail(type);
-        const person = input.for === undefined ? { id: current.personId } : pick(list.people, input.for, "person");
+        const person = input.for?.trim() ? find(list.people, input.for, "person") : { id: current.personId };
         if (typeof person === "string") return fail(person);
         const saved = await saveItem(ctx, {
           wishlistId: list.id,
@@ -213,7 +226,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     "archive_idea",
     {
       description: "Archive an idea (it leaves the shared list but can be restored), or restore it with archived: false.",
-      inputSchema: z.object({ listId: z.string(), ideaId: z.string(), archived: z.boolean().optional() }),
+      inputSchema: z.object({ listId: ID, ideaId: ID, archived: z.boolean().optional() }),
       annotations: WRITE,
     },
     ({ listId, ideaId, archived }) =>
@@ -229,7 +242,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     {
       description:
         "Delete an idea for good. An idea a giver has reserved cannot be deleted. Prefer archive_idea when the person may want it back.",
-      inputSchema: z.object({ listId: z.string(), ideaId: z.string() }),
+      inputSchema: z.object({ listId: ID, ideaId: ID }),
       annotations: DELETE,
     },
     ({ listId, ideaId }) =>
@@ -250,7 +263,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
   ] as const) {
     server.registerTool(
       `add_${noun}`,
-      { description: `Add a ${what} to a wish list.`, inputSchema: z.object({ listId: z.string(), name: z.string().min(1) }), annotations: WRITE },
+      { description: `Add a ${what} to a wish list.`, inputSchema: z.object({ listId: ID, name: NAME }), annotations: WRITE },
       ({ listId, name }) =>
         run(async () => {
           const result = await manageLabel(ctx, { kind, op: "add", wishlistId: listId, label: name });
@@ -259,14 +272,14 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
         }),
     );
 
-    /** Le libellé visé par son nom ou son id ; les outils de renommage et de retrait l'exigent. */
+    /** Le libellé visé par son nom ou son id ; jamais « le premier » par défaut (le schéma refuse un nom vide). */
     async function target(
       listId: string,
       wanted: string,
     ): Promise<{ refused: string } | { failed: string } | { list: { id: string }; entry: Labelled }> {
       const list = await listOf(listId);
       if (typeof list === "string") return { refused: list };
-      const entry = pick(list[entries], wanted, noun);
+      const entry = find(list[entries], wanted, noun);
       return typeof entry === "string" ? { failed: entry } : { list, entry };
     }
 
@@ -274,7 +287,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
       `rename_${noun}`,
       {
         description: `Rename a ${what} of a wish list; its ideas keep it.`,
-        inputSchema: z.object({ listId: z.string(), current: z.string().min(1).describe("Current name (or id)."), name: z.string().min(1) }),
+        inputSchema: z.object({ listId: ID, current: NAME.describe("Current name (or id)."), name: NAME }),
         annotations: WRITE,
       },
       ({ listId, current, name }) =>
@@ -292,7 +305,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
       `delete_${noun}`,
       {
         description: `Remove a ${what} from a wish list. Refused while ideas still use it: change or delete those ideas first.`,
-        inputSchema: z.object({ listId: z.string(), name: z.string().min(1).describe("Name (or id).") }),
+        inputSchema: z.object({ listId: ID, name: NAME.describe("Name (or id).") }),
         annotations: DELETE,
       },
       ({ listId, name }) =>
@@ -313,9 +326,9 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
       description:
         "Create a wish list owned by the user. A list starts with one category and one person (who the gifts are for); add more with add_category and add_person.",
       inputSchema: z.object({
-        title: z.string().min(1),
-        category: z.string().min(1).describe('First category, e.g. "Books".'),
-        for: z.string().min(1).describe("Who the gifts are for, e.g. the user's first name."),
+        title: NAME,
+        category: NAME.describe('First category, e.g. "Books".'),
+        for: NAME.describe("Who the gifts are for, e.g. the user's first name."),
       }),
       annotations: WRITE,
     },
@@ -329,7 +342,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
 
   server.registerTool(
     "rename_list",
-    { description: "Change a wish list's title.", inputSchema: z.object({ listId: z.string(), title: z.string().min(1) }), annotations: WRITE },
+    { description: "Change a wish list's title.", inputSchema: z.object({ listId: ID, title: NAME }), annotations: WRITE },
     ({ listId, title }) =>
       run(async () => {
         const result = await updateSettings(ctx, { wishlistId: listId, title });
@@ -343,7 +356,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     {
       description:
         "Delete a whole wish list for good, with its ideas and reservations, for every member. Only its owner can. Confirm with the user first.",
-      inputSchema: z.object({ listId: z.string() }),
+      inputSchema: z.object({ listId: ID }),
       annotations: DELETE,
     },
     ({ listId }) =>
@@ -361,7 +374,7 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
     {
       description:
         "Read a product page and propose a name, a price, an image and a description for a new idea, like the site's \"Fill from the link\". Creates nothing.",
-      inputSchema: z.object({ listId: z.string(), url: z.string() }),
+      inputSchema: z.object({ listId: ID, url: z.string().max(URL_MAX) }),
       // Lit une page web, ne change rien.
       annotations: { readOnlyHint: true, openWorldHint: true },
     },

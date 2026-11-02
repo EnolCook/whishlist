@@ -36,8 +36,8 @@ info:
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
-    - Clé d'API (`oys_…`, créée sur la page Compte du site, jusqu'à sa révocation ou une
-      réinitialisation du mot de passe) → le même en-tête
+    - Clé d'API (`oys_…`, créée sur la page Compte du site, jusqu'à sa révocation ou un
+      changement ou une réinitialisation du mot de passe) → le même en-tête
       `Authorization: Bearer`. Elle agit pour le compte, 120 requêtes par minute au plus, sauf sur
       `/auth/logout`, `/me/password`, `/me/email`, `/me/email-verification`, `/me/deletion`
       et `/me/export` (`403 apiKeyNotAllowed`). La même clé

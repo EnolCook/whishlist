@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { before, test } from "node:test";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { User } from "../../src/domain/types";
+import { createApiKey, revokeApiKey } from "../../src/auth/api-keys";
+import { mcpAccess } from "../../src/server/mcp/gate";
 import { buildMcpServer } from "../../src/server/mcp/server";
-import { resetRateLimitsForTests } from "../../src/server/rate-limit";
 import { readDocument } from "../../src/store/db";
 import { apiDoc, ctx, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
 
@@ -97,7 +98,6 @@ test("get_list d'une liste dont on n'est pas membre : refus traduit, comme l'API
 test("add_idea : catégorie et « qui » par leur nom (casse ignorée), sinon les premiers ; nom inconnu → la liste des noms", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     const added = json(await alex.call("add_idea", { listId: "w", name: "Puzzle", category: "jeux", for: "ALEX", price: "24.90", priority: 4 }));
     assert.deepEqual(added.added, { id: added.added.id, name: "Puzzle", category: "Jeux", for: "Alex" });
@@ -116,7 +116,6 @@ test("update_idea : seuls les champs donnés changent ; priority 0 retire les é
   doc.items.find((item) => item.id === "gift")!.priority = "3";
   doc.items.find((item) => item.id === "gift")!.url = "https://shop.example.test/a";
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     await alex.call("update_idea", { listId: "w", ideaId: "gift", name: "Idée renommée" });
     let item = (await readDocument()).items.find((entry) => entry.id === "gift")!;
@@ -131,7 +130,6 @@ test("update_idea : seuls les champs donnés changent ; priority 0 retire les é
 test("description et « occasion acceptée » : lues par get_list, posées par add_idea, gardées ou changées par update_idea", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     const added = json(await alex.call("add_idea", { listId: "w", name: "Vélo", description: "  Taille M.  ", secondHandOk: true })).added;
     const shown = () => alex.call("get_list", { listId: "w" }).then((result) => json(result).ideas.find((idea: { id: string }) => idea.id === added.id));
@@ -152,7 +150,6 @@ test("description et « occasion acceptée » : lues par get_list, posées par a
 test("archive_idea, add_category, add_person : mêmes règles que le site (un doublon de nom est refusé par la règle)", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     assert.deepEqual(json(await alex.call("archive_idea", { listId: "w", ideaId: "gift" })), { id: "gift", name: "Idée gift", archived: true });
     assert.equal(json(await alex.call("archive_idea", { listId: "w", ideaId: "gift", archived: false })).archived, false);
@@ -166,7 +163,6 @@ test("archive_idea, add_category, add_person : mêmes règles que le site (un do
 test("delete_idea : supprime ; une idée réservée est refusée, comme sur le site", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     assert.deepEqual(json(await alex.call("delete_idea", { listId: "w", ideaId: "gift" })), { deleted: { id: "gift", name: "Idée gift" } });
     const reserved = await alex.call("delete_idea", { listId: "w", ideaId: "taken" });
@@ -180,7 +176,6 @@ test("delete_idea : supprime ; une idée réservée est refusée, comme sur le s
 test("rename_* et delete_* : catégorie et « qui » par leur nom ; un libellé encore utilisé n'est pas retiré", async () => {
   const doc = apiDoc();
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     assert.deepEqual(json(await alex.call("rename_category", { listId: "w", current: "jeux", name: "Jeux de société" })), {
       renamed: { from: "Jeux", to: "Jeux de société" },
@@ -201,7 +196,6 @@ test("create_list, rename_list, delete_list : seul le propriétaire supprime ; u
   const doc = apiDoc();
   doc.memberships.push({ wishlistId: "w", userId: "camille", role: "member", joinedAt: "2026-01-01T00:00:00.000Z" });
   await withStore(doc, async () => {
-    resetRateLimitsForTests();
     const alex = client(doc.users[0]!);
     const created = json(await alex.call("create_list", { title: "Noël", category: "Livres", for: "Alex" })).created;
     assert.equal(created.title, "Noël");
@@ -213,5 +207,105 @@ test("create_list, rename_list, delete_list : seul le propriétaire supprime ; u
     const after = await readDocument();
     assert.deepEqual(after.wishlists.map((list) => list.title), ["Noël 2026"]);
     assert.equal(after.items.some((item) => item.wishlistId === "w"), false);
+  });
+});
+
+test("accès au serveur : une clé valide seulement ; ni jeton de session, ni clé révoquée, ni page d'un autre site", async () => {
+  const doc = apiDoc();
+  const created = createApiKey(doc, doc.users[0]!, { name: "Claude" });
+  assert.ok(created.ok);
+  if (!created.ok) return;
+  const site = "https://ohyoushouldnt.example.test";
+  const access = (authorization: string | null, origin: string | null = null) => mcpAccess({ origin, siteOrigin: site, authorization });
+  await withStore(created.doc, async () => {
+    const ok = await access(`Bearer ${created.token}`);
+    assert.equal(ok.ok && ok.user.id, "alex");
+    assert.equal((await access(`Bearer ${created.token}`, site)).ok, true, "depuis le site lui-même");
+    assert.deepEqual(await access(null), { ok: false, error: "unauthorized" });
+    assert.deepEqual(await access("Bearer jeton-de-session-de-l-app"), { ok: false, error: "unauthorized" });
+    assert.deepEqual(await access("Bearer oys_inconnue"), { ok: false, error: "unauthorized" });
+    assert.deepEqual(await access(`Bearer ${created.token}`, "https://autre.example.test"), { ok: false, error: "originNotAllowed" });
+  });
+  const revoked = revokeApiKey(created.doc, { userId: "alex", keyId: created.key.id });
+  assert.ok(revoked.ok);
+  if (!revoked.ok) return;
+  await withStore(revoked.doc, async () => {
+    assert.deepEqual(await access(`Bearer ${created.token}`), { ok: false, error: "unauthorized" });
+  });
+});
+
+test("accès au serveur : au-delà de 120 requêtes par minute, la clé reçoit rateLimited", async () => {
+  const doc = apiDoc();
+  const created = createApiKey(doc, doc.users[0]!, { name: "Claude" });
+  assert.ok(created.ok);
+  if (!created.ok) return;
+  await withStore(created.doc, async () => {
+    const access = () => mcpAccess({ origin: null, siteOrigin: "https://ohyoushouldnt.example.test", authorization: `Bearer ${created.token}` });
+    for (let i = 0; i < 120; i++) assert.equal((await access()).ok, true);
+    assert.deepEqual(await access(), { ok: false, error: "rateLimited" });
+  });
+});
+
+test("rename_* et delete_* : un nom vide est refusé, jamais « le premier » de la liste", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    await alex.call("add_person", { listId: "w", name: "Lou" });
+    for (const [tool, args] of [
+      ["delete_person", { listId: "w", name: "  " }],
+      ["delete_category", { listId: "w", name: "" }],
+      ["rename_person", { listId: "w", current: " ", name: "Max" }],
+    ] as const) {
+      assert.equal((await alex.call(tool, args)).isError, true, tool);
+    }
+    const after = await readDocument();
+    assert.deepEqual(after.people.map((person) => person.label).sort(), ["Alex", "Lou"]);
+    assert.deepEqual(after.types.map((type) => type.label), ["Jeux"]);
+  });
+});
+
+test("update_idea : une catégorie ou un « qui » vide garde ceux de l'idée", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    await alex.call("add_category", { listId: "w", name: "Livres" });
+    await alex.call("add_person", { listId: "w", name: "Lou" });
+    await alex.call("update_idea", { listId: "w", ideaId: "gift", category: "livres", for: "lou" });
+    const before = (await readDocument()).items.find((entry) => entry.id === "gift")!;
+    const result = await alex.call("update_idea", { listId: "w", ideaId: "gift", category: "", for: " ", name: "Renommée" });
+    assert.notEqual(result.isError, true);
+    const item = (await readDocument()).items.find((entry) => entry.id === "gift")!;
+    assert.deepEqual({ typeId: item.typeId, personId: item.personId, name: item.name }, { typeId: before.typeId, personId: before.personId, name: "Renommée" });
+  });
+});
+
+test("get_list : le prix en euros, tel que update_idea le reprend", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    const gift = json(await alex.call("get_list", { listId: "w" })).ideas.find((idea: { id: string }) => idea.id === "gift");
+    assert.equal(gift.price, 19.9);
+    await alex.call("update_idea", { listId: "w", ideaId: "gift", price: gift.price });
+    assert.equal((await readDocument()).items.find((entry) => entry.id === "gift")?.priceCents, 1990);
+  });
+});
+
+test("entrées bornées : un nom trop long est refusé avant la commande", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    assert.equal((await alex.call("add_idea", { listId: "w", name: "x".repeat(201) })).isError, true);
+    assert.equal((await alex.call("rename_list", { listId: "w", title: "x".repeat(201) })).isError, true);
+    assert.equal((await readDocument()).items.length, doc.items.length);
+  });
+});
+
+test("fill_from_url : un non-membre reçoit listMissing ; une adresse qui n'est pas un lien web est refusée", async () => {
+  const doc = apiDoc();
+  await withStore(doc, async () => {
+    assert.match((await client(doc.users[1]!).call("fill_from_url", { listId: "w", url: "https://shop.example.test/a" })).content[0]!.text, /listMissing/);
+    const invalid = await client(doc.users[0]!).call("fill_from_url", { listId: "w", url: "javascript:alert(1)" });
+    assert.equal(invalid.isError, true);
+    assert.match(invalid.content[0]!.text, /urlInvalid/);
   });
 });

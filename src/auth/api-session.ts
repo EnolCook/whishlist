@@ -1,6 +1,7 @@
 import { clone } from "../domain/access";
 import { hashSecretToken, newId, newSecretToken } from "../domain/tokens";
 import type { ApiSession, Database, User } from "../domain/types";
+import { API_KEY_PREFIX } from "./api-key-limits";
 import { SESSION_TTL_SEC } from "./session";
 
 /** Même durée qu'une session du site. */
@@ -12,8 +13,11 @@ export function issueApiSession(
   doc: Database,
   user: User,
   nowMs = Date.now(),
+  newToken: () => string = newSecretToken,
 ): { doc: Database; token: string; session: ApiSession } {
-  const token = newSecretToken();
+  // Un jeton qui commencerait par le préfixe des clés serait lu comme une clé et refusé partout.
+  let token = newToken();
+  while (token.startsWith(API_KEY_PREFIX)) token = newToken();
   const session: ApiSession = {
     id: newId(),
     userId: user.id,

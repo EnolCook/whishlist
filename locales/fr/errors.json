@@ -89,6 +89,6 @@
   "apiKeyNeedsName": "Donnez un nom à la clé.",
   "apiKeyNameTooLong": "Le nom de la clé est trop long (60 caractères au plus).",
   "apiKeyLimit": "Vous avez déjà 20 clés. Révoquez-en une pour en créer une autre.",
-  "apiKeyMissing": "Cette clé n’existe plus.",
-  "apiKeyNotAllowed": "Une clé d’API ne peut pas faire cette action de compte. Connectez-vous avec votre mot de passe."
+  "apiKeyMissing": "Cette clé n'existe plus.",
+  "apiKeyNotAllowed": "Une clé d'API ne peut pas faire cette action de compte. Connectez-vous avec votre mot de passe."
 }

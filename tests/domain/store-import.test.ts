@@ -61,6 +61,7 @@ test("import : les champs anciens reçoivent leur valeur par défaut", async () 
     delete (legacy as Partial<Doc>).apiSessions;
     delete (legacy as Partial<Doc>).passwordResets;
     delete (legacy as Partial<Doc>).emailConfirmations;
+    delete (legacy as Partial<Doc>).apiKeys;
     const user = legacy.users[0] as Partial<Doc["users"][number]>;
     delete user.sessionVersion;
     delete user.mustChangePassword;
@@ -84,6 +85,7 @@ test("import : les champs anciens reçoivent leur valeur par défaut", async () 
     assert.deepEqual(doc.apiSessions, []);
     assert.deepEqual(doc.passwordResets, []);
     assert.deepEqual(doc.emailConfirmations, []);
+    assert.deepEqual(doc.apiKeys, []);
     // Compte d'avant la validation des adresses : vérifié à sa date de création (010, FR-005b).
     assert.equal(doc.users[0].emailVerifiedAt, doc.users[0].createdAt);
     assert.equal(doc.users[0].sessionVersion, 0);

@@ -15,3 +15,13 @@ export function formatPrice(cents: number | null, locale = "fr-FR"): string | nu
     currency: "EUR",
   }).format(cents / 100);
 }
+
+/** Prix tel qu'on le saisit (formulaire, outils MCP) : « 18,50 » en français, « 18.50 » par défaut ; "" sans prix. */
+export function priceInput(cents: number | null, locale = "en-US"): string {
+  if (cents === null) return "";
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(cents / 100);
+}

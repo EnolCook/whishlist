@@ -8,10 +8,14 @@ import type { User, Wishlist } from "../../domain/types";
 import { readDocument, updateDocument } from "../../store/db";
 import { RateLimitError, takeToken } from "../rate-limit";
 
-export function bearerToken(req: NextRequest): string | null {
-  const header = req.headers.get("authorization") ?? "";
-  const match = /^Bearer\s+(\S+)$/i.exec(header.trim());
+/** Jeton d'un en-tête `Authorization: Bearer …`, ou null. */
+export function bearerFrom(header: string | null): string | null {
+  const match = /^Bearer\s+(\S+)$/i.exec((header ?? "").trim());
   return match ? match[1]! : null;
+}
+
+export function bearerToken(req: NextRequest): string | null {
+  return bearerFrom(req.headers.get("authorization"));
 }
 
 /** Requêtes par minute et par clé d'API, en plus des limites par action. */

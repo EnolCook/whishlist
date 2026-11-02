@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { currentUser, origin } from "../../../src/auth/current";
 import { findMembership } from "../../../src/domain/access";
 import { listOffrir } from "../../../src/domain/offrir";
-import { formatPrice } from "../../../src/domain/price";
+import { formatPrice, priceInput } from "../../../src/domain/price";
 import { IdeasAccordion } from "@/components/site/ideas-accordion";
 import { LinkButton } from "@/components/site/link-button";
 import { llmConfigured } from "@/src/domain/product-llm";
@@ -51,15 +51,6 @@ function parseTab(value: string | undefined): TabId {
 
 function tabHref(listId: string, tab: TabId): string {
   return tab === "idees" ? `/listes/${listId}` : `/listes/${listId}?onglet=${tab}`;
-}
-
-function euros(cents: number | null, locale: string): string {
-  if (cents === null) return "";
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    useGrouping: false,
-  }).format(cents / 100);
 }
 
 export default async function EditListPage({
@@ -118,7 +109,7 @@ export default async function EditListPage({
     url: item.url,
     imageUrl: item.imageUrl,
     priceLabel: formatPrice(item.priceCents, priceLocale),
-    price: euros(item.priceCents, priceLocale),
+    price: priceInput(item.priceCents, priceLocale),
     priority: item.priority,
     secondHandOk: item.secondHandOk,
     description: item.description,
