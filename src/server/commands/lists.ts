@@ -1,7 +1,7 @@
 import { findMembership } from "../../domain/access";
 import { idTaken, isClientId } from "../../domain/client-ids";
 import { createWishlist } from "../../domain/import";
-import { addPerson, addType } from "../../domain/items";
+import { addPerson, addType, splitLabels } from "../../domain/items";
 import { updateWishlistSettings } from "../../domain/membership";
 import type { WishlistTheme } from "../../domain/types";
 import { readDocument, updateDocument } from "../../store/db";
@@ -56,10 +56,10 @@ export async function createList(
   if (!active.ok) return active;
   const ids = [input.id, input.categoryId, input.personId].filter((id) => id !== undefined);
   if (!ids.every(isClientId)) return { ok: false, error: "idInvalid" };
-  const category = input.category.trim();
-  const person = input.person.trim();
-  if (!category) return { ok: false, error: "listNeedsCategory" };
-  if (!person) return { ok: false, error: "listNeedsPerson" };
+  const categories = splitLabels(input.category);
+  const persons = splitLabels(input.person);
+  if (categories.length === 0) return { ok: false, error: "listNeedsCategory" };
+  if (persons.length === 0) return { ok: false, error: "listNeedsPerson" };
   const actorId = active.user.id;
   // Renvoi reconnu dans la même écriture que la création : deux envois simultanés ne font qu'une liste.
   const created = await updateDocument<CommandResult<{ wishlistId: string; replayed: boolean }>>((doc) => {
@@ -72,11 +72,20 @@ export async function createList(
     const list = createWishlist(doc, { ownerId: actorId, title: input.title, importTemplate: false, id });
     if (!list.ok) return { doc, result: list };
     const wishlistId = list.wishlist.id;
-    const withType = addType(list.doc, { wishlistId, actorId, label: category, id: input.categoryId });
-    if (!withType.ok) return { doc, result: withType };
-    const withPerson = addPerson(withType.doc, { wishlistId, actorId, label: person, id: input.personId });
-    if (!withPerson.ok) return { doc, result: withPerson };
-    return { doc: withPerson.doc, result: { ok: true, wishlistId, replayed: false } };
+    // « Wilh, Nathan » crée deux « qui », comme dans les réglages. L'identifiant choisi par le
+    // client ne vaut que pour le premier : il n'en a envoyé qu'un.
+    let current = list.doc;
+    for (const [index, label] of categories.entries()) {
+      const saved = addType(current, { wishlistId, actorId, label, id: index === 0 ? input.categoryId : undefined });
+      if (!saved.ok) return { doc, result: saved };
+      current = saved.doc;
+    }
+    for (const [index, label] of persons.entries()) {
+      const saved = addPerson(current, { wishlistId, actorId, label, id: index === 0 ? input.personId : undefined });
+      if (!saved.ok) return { doc, result: saved };
+      current = saved.doc;
+    }
+    return { doc: current, result: { ok: true, wishlistId, replayed: false } };
   });
   if (!created.ok) return created;
   const view = await memberListView(ctx, created.wishlistId, actorId);

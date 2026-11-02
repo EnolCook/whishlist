@@ -165,6 +165,25 @@ export function deleteItem(
   return { ok: true, doc: next };
 }
 
+/**
+ * Une saisie → un ou plusieurs libellés. « Wilh, Nathan, Nous deux » en fait trois.
+ * Sépare sur la virgule, le point-virgule et le retour à la ligne ; ignore les blancs et les
+ * doublons (sans tenir compte de la casse), en gardant l'ordre de saisie.
+ */
+export function splitLabels(raw: string): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const part of raw.split(/[,;\n]/)) {
+    const label = part.trim();
+    if (!label) continue;
+    const key = label.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    labels.push(label);
+  }
+  return labels;
+}
+
 export function addType(
   doc: Database,
   input: { wishlistId: string; actorId: string; label: string; id?: string },
