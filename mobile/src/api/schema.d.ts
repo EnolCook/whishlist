@@ -1020,9 +1020,12 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        title: string;
-                        category: string;
-                        person: string;
+                        /** @description Nom de la liste. Vide ou absent : « Liste de <nom affiché> » / "<nom affiché>’s list" (« Ma liste » / "My list" si le nom affiché est vide), suivi d'un numéro (« 2 », « 3 »…) si une liste du compte porte déjà ce nom. */
+                        title?: string;
+                        /** @description Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut que pour la première. Vide ou absente (ou faite seulement de virgules) : « Cadeaux » / "Gifts". */
+                        category?: string;
+                        /** @description Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut que pour le premier. Vide ou absent (ou fait seulement de virgules) : le nom affiché du compte, tel quel (jamais découpé), ou « Moi » / "Me" s'il est vide. */
+                        person?: string;
                         id?: components["schemas"]["ClientId"];
                         categoryId?: components["schemas"]["ClientId"];
                         personId?: components["schemas"]["ClientId"];
@@ -1498,6 +1501,8 @@ export interface paths {
                             price: string;
                             imageUrl: string;
                             typeId: string;
+                            /** @description Depuis 1.5.0. Quelques phrases sur le produit (300 caractères au plus), vide si rien trouvé. À proposer seulement si la description de l'idée est vide. */
+                            description: string;
                             usedLlm: boolean;
                         };
                     };
@@ -2231,6 +2236,10 @@ export interface components {
             /** @description Formaté selon Accept-Language. */
             priceLabel: string | null;
             priority: string | null;
+            /** @description Depuis 1.5.0. L'idée convient aussi d'occasion. */
+            secondHandOk: boolean;
+            /** @description Depuis 1.5.0. Contexte écrit par la liste : ce qu'est le produit, pourquoi il fait envie. */
+            description: string | null;
             /** @description Réservée par ce client. */
             mine: boolean;
             /** @description Seulement si `mine`. */
@@ -2270,6 +2279,10 @@ export interface components {
             /** @description Comme saisi sur le site (« 12 */
             price?: string;
             priority?: string;
+            /** @description Depuis 1.5.0. Absent à la création : false. Absent en modification : la valeur enregistrée est gardée. */
+            secondHandOk?: boolean;
+            /** @description Depuis 1.5.0. Absente à la création : aucune. Absente en modification : celle enregistrée est gardée. Vide ou null l'efface. Plus de 2000 caractères → descriptionTooLong. */
+            description?: string | null;
         };
         ItemTransfer: {
             /** @description Liste d'arrivée (la même est permise pour une copie). */
@@ -2289,6 +2302,10 @@ export interface components {
             priceCents: number | null;
             priceLabel: string | null;
             priority: string | null;
+            /** @description Depuis 1.5.0. */
+            secondHandOk: boolean;
+            /** @description Depuis 1.5.0. */
+            description: string | null;
             archived: boolean;
             sortOrder: number;
         };
@@ -2453,9 +2470,11 @@ export interface components {
         reservationClaims: string;
     };
     requestBodies: {
+        /** @description Un libellé est unique dans sa liste, sans tenir compte de la casse ni des blancs autour : ajouter ou renommer vers un nom déjà pris est refusé (`typeExists` pour une catégorie, `personExists` pour un « qui »). Une entrée peut changer la casse de son propre nom. */
         Label: {
             content: {
                 "application/json": {
+                    /** @description À l'ajout, une saisie séparée par des virgules (ou des points-virgules, ou des retours à la ligne) crée plusieurs entrées : « Wilh, Nathan » en fait deux. Les blancs et les doublons de la saisie sont ignorés, et la réponse rend la première entrée créée. Tout est enregistré en une seule écriture : si l'une est refusée, aucune n'est créée. Au renommage, le libellé est pris tel quel — « Papa, maman » reste un seul nom. */
                     label: string;
                 };
             };

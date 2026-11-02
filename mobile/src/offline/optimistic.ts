@@ -1,5 +1,6 @@
 import type { Schemas } from "@/api/client";
 
+import { normalizeDescription } from "../../../src/domain/description";
 import { formatPrice, parsePrice } from "../../../src/domain/price";
 import type { Change, ChangePayloads } from "./outbox";
 
@@ -29,7 +30,8 @@ function priceFields(input: ChangePayloads["updateItem"], intlLocale: string) {
   return { priceCents, priceLabel: formatPrice(priceCents, intlLocale) };
 }
 
-function itemFields(input: ChangePayloads["updateItem"], intlLocale: string) {
+/** `keep` : la description affichée quand le changement n'en porte pas (file écrite avant ce champ). */
+function itemFields(input: ChangePayloads["updateItem"], intlLocale: string, keep: string | null = null) {
   return {
     name: input.name.trim(),
     typeId: input.typeId,
@@ -37,6 +39,8 @@ function itemFields(input: ChangePayloads["updateItem"], intlLocale: string) {
     url: input.url?.trim() || null,
     imageUrl: input.imageUrl?.trim() || null,
     priority: input.priority?.trim() || null,
+    secondHandOk: input.secondHandOk ?? false,
+    description: input.description === undefined ? keep : normalizeDescription(input.description),
     ...priceFields(input, intlLocale),
   };
 }
@@ -71,12 +75,16 @@ function applyTransfer(items: ViewItem[], change: Transfer, listId: string): Vie
   return [...items, { ...preview, id: change.payload.id, typeId, personId, archived: false, sortOrder, ...syncOf(change) }];
 }
 
-/** Liste créée sur le téléphone et pas encore acceptée : ce que l'on sait d'elle. */
+/**
+ * Liste créée sur le téléphone et pas encore acceptée : ce que l'on sait d'elle. Un champ laissé vide
+ * montre la valeur par défaut calculée sur le téléphone (`preview`) ; le serveur la remplace à l'envoi.
+ */
 function localList(change: Extract<Change, { kind: "createList" }>): ViewList {
   const { payload } = change;
+  const shown = (typed: string | undefined, fallback: string | undefined) => typed?.trim() || fallback || "";
   return {
     id: payload.id,
-    title: payload.title.trim(),
+    title: shown(payload.title, payload.preview?.title),
     subtitle: null,
     coverImageUrl: null,
     theme: {},
@@ -84,8 +92,8 @@ function localList(change: Extract<Change, { kind: "createList" }>): ViewList {
     readUrl: "",
     inviteUrl: "",
     hasReadPassword: false,
-    categories: [{ id: payload.categoryId, label: payload.category.trim(), sortOrder: 0 }],
-    people: [{ id: payload.personId, label: payload.person.trim() }],
+    categories: [{ id: payload.categoryId, label: shown(payload.category, payload.preview?.category), sortOrder: 0 }],
+    people: [{ id: payload.personId, label: shown(payload.person, payload.preview?.person) }],
     items: [],
     reservations: [],
     members: [],
@@ -133,7 +141,7 @@ export function viewList(
         break;
       }
       case "updateItem":
-        if (current) next = replaceAt(items, index, { ...current, ...itemFields(change.payload, intlLocale), ...syncOf(change) });
+        if (current) next = replaceAt(items, index, { ...current, ...itemFields(change.payload, intlLocale, current.description), ...syncOf(change) });
         break;
       case "patchItem":
         if (current) next = replaceAt(items, index, { ...current, ...change.payload, ...syncOf(change) });

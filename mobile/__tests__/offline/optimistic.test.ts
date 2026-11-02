@@ -11,7 +11,7 @@ const item: Schemas["MemberItem"] = {
   imageUrl: null,
   priceCents: 1990,
   priceLabel: "19,90 €",
-  priority: null,
+  priority: null, secondHandOk: false, description: null,
   archived: false,
   sortOrder: 0,
 };
@@ -93,6 +93,18 @@ test("a list created offline appears in My lists and opens without a public link
 
 test("an unknown list without a pending creation has no view", () => {
   expect(viewList(null, "missing", [], "fr-FR")).toBeNull();
+});
+
+test("description: shown from the outbox, cleared by an empty one, kept by a change queued before the field existed", () => {
+  const described = { ...list, items: [{ ...item, description: "Pour lire au lit." }] };
+  const base = { name: "Livre", typeId: "t", personId: "p" };
+  const show = (payload: NewChange["payload"]) =>
+    viewList(described, "w", [change({ kind: "updateItem", listId: "w", targetId: "gift", payload } as NewChange)], "fr-FR")?.items[0]?.description;
+  expect(show({ ...base, description: "  Relié, si possible.  " })).toBe("Relié, si possible.");
+  expect(show({ ...base, description: "" })).toBeNull();
+  expect(show(base)).toBe("Pour lire au lit.");
+  const created = viewList(list, "w", [change({ kind: "createItem", listId: "w", targetId: "n", payload: { id: "n", ...base } })], "fr-FR");
+  expect(created?.items.find((entry) => entry.id === "n")?.description).toBeNull();
 });
 
 describe("move and copy", () => {

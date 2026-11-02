@@ -1,4 +1,5 @@
 import { clone, findMembership } from "./access";
+import { MAX_DESCRIPTION, normalizeDescription } from "./description";
 import { normalizePriority } from "./priority";
 import { newId } from "./tokens";
 import type { Database, Item } from "./types";
@@ -13,6 +14,22 @@ function validUrl(url: string | null): boolean {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
+/**
+ * Même libellé dans la liste (casse et espaces autour ignorés) ; `exceptId` : l'entrée qu'on renomme.
+ * `toLowerCase` et non `toLocaleLowerCase` : le résultat ne dépend pas de la langue du serveur (i turc).
+ */
+function labelTaken(
+  entries: { id: string; wishlistId: string; label: string }[],
+  wishlistId: string,
+  label: string,
+  exceptId?: string,
+): boolean {
+  const wanted = label.trim().toLowerCase();
+  return entries.some(
+    (entry) => entry.wishlistId === wishlistId && entry.id !== exceptId && entry.label.trim().toLowerCase() === wanted,
+  );
+}
+
 export function createItem(
   doc: Database,
   input: {
@@ -25,6 +42,8 @@ export function createItem(
     imageUrl?: string | null;
     priceCents?: number | null;
     priority?: string | null;
+    secondHandOk?: boolean;
+    description?: string | null;
     id?: string;
   },
 ): { ok: true; doc: Database; item: Item } | { ok: false; error: string } {
@@ -48,6 +67,8 @@ export function createItem(
   }
   const priority = normalizePriority(input.priority);
   if (!priority.ok) return priority;
+  const description = normalizeDescription(input.description);
+  if (description && description.length > MAX_DESCRIPTION) return { ok: false, error: "descriptionTooLong" };
   const sortOrder =
     doc.items.filter((i) => i.wishlistId === input.wishlistId).reduce((max, i) => Math.max(max, i.sortOrder), 0) +
     1;
@@ -61,6 +82,8 @@ export function createItem(
     imageUrl,
     priceCents: input.priceCents ?? null,
     priority: priority.value,
+    secondHandOk: input.secondHandOk ?? false,
+    description,
     sortOrder,
     archived: false,
   };
@@ -82,6 +105,10 @@ export function updateItem(
     imageUrl?: string | null;
     priceCents?: number | null;
     priority?: string | null;
+    /** Absent : la valeur enregistrée est gardée (client qui ne connaît pas encore ce champ). */
+    secondHandOk?: boolean;
+    /** Absent : la description enregistrée est gardée (client qui ne connaît pas encore ce champ). */
+    description?: string | null;
   },
 ): { ok: true; doc: Database } | { ok: false; error: string } {
   if (!findMembership(doc, input.wishlistId, input.actorId)) {
@@ -104,6 +131,8 @@ export function updateItem(
   }
   const priority = normalizePriority(input.priority);
   if (!priority.ok) return priority;
+  const description = input.description === undefined ? undefined : normalizeDescription(input.description);
+  if (description && description.length > MAX_DESCRIPTION) return { ok: false, error: "descriptionTooLong" };
   const next = clone(doc);
   const item = next.items.find((i) => i.id === input.itemId && i.wishlistId === input.wishlistId);
   if (!item) return { ok: false, error: "itemMissing" };
@@ -114,6 +143,8 @@ export function updateItem(
   item.imageUrl = imageUrl;
   item.priceCents = input.priceCents ?? null;
   item.priority = priority.value;
+  if (input.secondHandOk !== undefined) item.secondHandOk = input.secondHandOk;
+  if (description !== undefined) item.description = description;
   return { ok: true, doc: next };
 }
 
@@ -242,6 +273,25 @@ export function deleteItem(
   return { ok: true, doc: next };
 }
 
+/**
+ * Une saisie → un ou plusieurs libellés. « Wilh, Nathan, Nous deux » en fait trois.
+ * Sépare sur la virgule, le point-virgule et le retour à la ligne ; ignore les blancs et les
+ * doublons (sans tenir compte de la casse), en gardant l'ordre de saisie.
+ */
+export function splitLabels(raw: string): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const part of raw.split(/[,;\n]/)) {
+    const label = part.trim();
+    if (!label) continue;
+    const key = label.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    labels.push(label);
+  }
+  return labels;
+}
+
 export function addType(
   doc: Database,
   input: { wishlistId: string; actorId: string; label: string; id?: string },
@@ -253,6 +303,7 @@ export function addType(
   if (!label) return { ok: false, error: "typeNeedsName" };
   const wishlist = doc.wishlists.find((w) => w.id === input.wishlistId);
   if (!wishlist) return { ok: false, error: "listMissing" };
+  if (labelTaken(doc.types, input.wishlistId, label)) return { ok: false, error: "typeExists" };
   const typeId = input.id ?? newId();
   const next = clone(doc);
   const sortOrder =
@@ -284,6 +335,7 @@ export function renameType(
   const next = clone(doc);
   const type = next.types.find((t) => t.id === input.typeId && t.wishlistId === input.wishlistId);
   if (!type) return { ok: false, error: "typeMissing" };
+  if (labelTaken(doc.types, input.wishlistId, label, input.typeId)) return { ok: false, error: "typeExists" };
   type.label = label;
   for (const view of next.views) {
     if (
@@ -369,6 +421,7 @@ export function addPerson(
   if (!label) return { ok: false, error: "personNeedsName" };
   const wishlist = doc.wishlists.find((w) => w.id === input.wishlistId);
   if (!wishlist) return { ok: false, error: "listMissing" };
+  if (labelTaken(doc.people, input.wishlistId, label)) return { ok: false, error: "personExists" };
   const personId = input.id ?? newId();
   const next = clone(doc);
   next.people.push({ id: personId, wishlistId: input.wishlistId, label });
@@ -396,6 +449,7 @@ export function renamePerson(
   const next = clone(doc);
   const person = next.people.find((p) => p.id === input.personId && p.wishlistId === input.wishlistId);
   if (!person) return { ok: false, error: "personMissing" };
+  if (labelTaken(doc.people, input.wishlistId, label, input.personId)) return { ok: false, error: "personExists" };
   person.label = label;
   for (const view of next.views) {
     if (

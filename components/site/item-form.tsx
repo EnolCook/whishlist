@@ -5,10 +5,13 @@ import { useTranslation } from "react-i18next";
 import { SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { PriorityStarPicker } from "@/components/site/priority-star-picker";
+import { MAX_DESCRIPTION } from "@/src/domain/description";
 import type { LlmImpact } from "@/src/domain/llm-impact";
 import {
   enrichFromUrlAction,
@@ -25,6 +28,8 @@ function initialDraft(input: {
     url: string | null;
     imageUrl: string | null;
     priority: string | null;
+    secondHandOk?: boolean;
+    description?: string | null;
   };
   price?: string;
   types: { id: string }[];
@@ -38,6 +43,8 @@ function initialDraft(input: {
     imageUrl: "",
     price: input.price ?? "",
     priority: input.item?.priority && /^[1-5]$/.test(input.item.priority) ? input.item.priority : "",
+    secondHandOk: input.item?.secondHandOk ?? false,
+    description: input.item?.description ?? "",
   };
 }
 
@@ -68,6 +75,8 @@ export function ItemForm({
     url: string | null;
     imageUrl: string | null;
     priority: string | null;
+    secondHandOk?: boolean;
+    description?: string | null;
   };
   price?: string;
   onglet?: string;
@@ -112,6 +121,8 @@ export function ItemForm({
         price: result.price || prev.price,
         imageUrl: result.imageUrl || prev.imageUrl,
         typeId: result.typeId || prev.typeId,
+        // Ce que la personne a écrit (pourquoi elle le veut…) n'est jamais remplacé.
+        description: prev.description.trim() ? prev.description : result.description || prev.description,
       }));
       if (result.imageUrl) setPreviewImage(result.imageUrl);
       setUsedLlm(result.usedLlm);
@@ -122,6 +133,11 @@ export function ItemForm({
   const errorCode = state?.error ?? enrichError;
   const error = errorCode ? t(`errors:${errorCode}`, { defaultValue: errorCode }) : null;
 
+  // Ce formulaire sert en pleine page (~700 px) et dans le dialogue « Modifier l'idée », que
+  // DialogContent plafonne à `sm:max-w-lg` (~455 px de grille utile). Les points de rupture sont
+  // donc ceux du conteneur `FieldGroup` (`@…/field-group:`) et non ceux de la fenêtre : un `sm:`
+  // classique se déclenche sur la largeur de l'écran et passait la grille en 4 colonnes dans le
+  // dialogue aussi, où les listes déroulantes tombaient à 61 px et 44 px.
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <FieldGroup className="gap-3">
@@ -135,7 +151,7 @@ export function ItemForm({
         ) : null}
         <Field>
           <FieldLabel htmlFor={`${id}-url`}>{t("form.url")}</FieldLabel>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <div className="flex flex-col gap-2 @lg/field-group:flex-row @lg/field-group:items-start">
             <Input
               id={`${id}-url`}
               name="url"
@@ -143,7 +159,7 @@ export function ItemForm({
               value={draft.url}
               onChange={(e) => setField("url", e.target.value)}
               placeholder="https://"
-              className="min-w-0 flex-1"
+              className="min-w-0 @lg/field-group:flex-1"
             />
             {llmEnabled ? (
               <Button
@@ -203,7 +219,21 @@ export function ItemForm({
             onChange={(e) => setField("name", e.target.value)}
           />
         </Field>
-        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_6.5rem_auto] sm:items-end">
+        <Field>
+          <FieldLabel htmlFor={`${id}-description`}>{t("form.description")}</FieldLabel>
+          <Textarea
+            id={`${id}-description`}
+            name="description"
+            rows={2}
+            maxLength={MAX_DESCRIPTION}
+            value={draft.description}
+            onChange={(e) => setField("description", e.target.value)}
+            placeholder={t("form.descriptionPlaceholder")}
+            aria-describedby={`${id}-description-hint`}
+          />
+          <FieldDescription id={`${id}-description-hint`}>{t("form.descriptionHint")}</FieldDescription>
+        </Field>
+        <div className="grid gap-3 @sm/field-group:grid-cols-2 @xl/field-group:grid-cols-[1fr_1fr_6.5rem_auto] @xl/field-group:items-start">
           <Field>
             <FieldLabel htmlFor={`${id}-type`}>{t("form.type")}</FieldLabel>
             <NativeSelect
@@ -256,9 +286,25 @@ export function ItemForm({
               value={draft.priority}
               onChange={(next) => setField("priority", next)}
             />
-            <FieldDescription>{t("form.priorityHint")}</FieldDescription>
+            {/* La piste `auto` se dimensionne sur son contenu le plus large : sans `contain`, cette
+                phrase passait devant les étoiles et prenait 379 px des 700 px de la grille.
+                `contain-inline-size` la retire de ce calcul ; elle occupe ensuite la largeur de la
+                colonne (`*:w-full` de `Field`). */}
+            <FieldDescription className="contain-inline-size">{t("form.priorityHint")}</FieldDescription>
           </Field>
         </div>
+        <Field orientation="horizontal">
+          <Checkbox
+            id={`${id}-second-hand`}
+            name="secondHandOk"
+            checked={draft.secondHandOk}
+            onCheckedChange={(checked) => setField("secondHandOk", checked)}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor={`${id}-second-hand`}>{t("form.secondHandOk")}</FieldLabel>
+            <FieldDescription>{t("form.secondHandOkHint")}</FieldDescription>
+          </FieldContent>
+        </Field>
         <Field>
           <FieldLabel htmlFor={`${id}-image`}>{t("form.image")}</FieldLabel>
           <div className="flex items-center gap-2">
@@ -288,7 +334,7 @@ export function ItemForm({
             />
           </div>
         </Field>
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+        <Button type="submit" disabled={pending} className="w-full @lg/field-group:w-auto">
           {pending ? t("common:actions.loading") : item ? t("form.save") : t("form.add")}
         </Button>
       </FieldGroup>

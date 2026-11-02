@@ -1,9 +1,10 @@
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 
-import { createList } from "@/data/lists";
-import { apiTransport, resetStore, useMyLists } from "@/data/store";
+import { createList, newListDefaults } from "@/data/lists";
+import { apiTransport, resetStore, useMemberList, useMyLists } from "@/data/store";
+import { i18n } from "@/i18n";
 import { putSnapshot } from "@/offline/snapshot";
-import { setTransport, stopSync } from "@/offline/sync";
+import { setTransport, stopSync, syncNow } from "@/offline/sync";
 
 import { fakeFetch, json } from "../helpers/fetch";
 import { freshDb } from "../helpers/memory-db";
@@ -58,7 +59,7 @@ test("createList sends id, categoryId and personId chosen by the app", async () 
     },
     "GET /lists": () => json(200, { lists: [] }),
   });
-  const result = await createList({ title: "Noël", category: "Livres", person: "Alex" });
+  const result = await createList({ title: "Noël", category: "Livres", person: "Alex" }, preview);
   expect(result).toMatchObject({ ok: true, status: "sent" });
   expect(bodies).toHaveLength(1);
   expect(bodies[0]).toMatchObject({ title: "Noël", category: "Livres", person: "Alex", id: result.listId });
@@ -67,8 +68,53 @@ test("createList sends id, categoryId and personId chosen by the app", async () 
   );
 });
 
-test("createList with an empty title: the site's message, nothing is sent", async () => {
-  const { calls } = fakeFetch({});
-  expect(await createList({ title: " ", category: "Livres", person: "Alex" })).toMatchObject({ ok: false, error: "listNeedsTitle" });
-  expect(calls).toEqual([]);
+const preview = { title: "Liste de Alex", category: "Cadeaux", person: "Alex" };
+
+test("newListDefaults: the site's defaults, numbered against the lists the phone knows", () => {
+  const fr = i18n.getFixedT("fr", "home");
+  const t = (key: string, vars?: Record<string, string>) => fr(key, vars);
+  expect(newListDefaults("Alex", [], t)).toEqual({ title: "Liste de Alex", category: "Cadeaux", person: "Alex" });
+  expect(newListDefaults("Alex", ["liste de alex", "Noël"], t).title).toBe("Liste de Alex 2");
+  // Nom affiché vide (ancien compte importé) : les libellés de repli du site.
+  expect(newListDefaults(" ", [], t)).toEqual({ title: "Ma liste", category: "Cadeaux", person: "Moi" });
+  const en = i18n.getFixedT("en", "home");
+  expect(newListDefaults("Alex", [], (key, vars) => en(key, vars))).toEqual({ title: "Alex’s list", category: "Gifts", person: "Alex" });
+});
+
+test("createList with empty fields: sent empty for the server to fill, without the local preview", async () => {
+  const bodies: unknown[] = [];
+  fakeFetch({
+    "POST /lists": async (request) => {
+      bodies.push(await request.json());
+      return json(201, {});
+    },
+    "GET /lists": () => json(200, { lists: [] }),
+  });
+  const result = await createList({ title: "", category: " ", person: "" }, preview);
+  expect(result).toMatchObject({ ok: true, status: "sent" });
+  expect(bodies).toHaveLength(1);
+  expect(bodies[0]).toMatchObject({ title: "", category: " ", person: "", id: result.listId });
+  expect(bodies[0]).not.toHaveProperty("preview");
+});
+
+test("offline, a list created with empty fields shows the defaults; once sent, the server's values replace them", async () => {
+  globalThis.fetch = jest.fn(async () => {
+    throw new TypeError("Network request failed");
+  });
+  const created = await createList({ title: "", category: "", person: "" }, preview);
+  expect(created).toMatchObject({ ok: true, status: "pending" });
+  const { result: mine } = await renderHook(() => useMyLists());
+  await waitFor(() => expect(mine.current.lists.map((list) => [list.title, list.localOnly])).toEqual([["Liste de Alex", true]]));
+  const { result: opened } = await renderHook(() => useMemberList(created.listId));
+  await waitFor(() => expect(opened.current.list?.categories.map((category) => category.label)).toEqual(["Cadeaux"]));
+  expect(opened.current.list?.people.map((person) => person.label)).toEqual(["Alex"]);
+
+  // Le serveur a numéroté autrement (une liste créée ailleurs entre-temps) : c'est son nom qui reste.
+  fakeFetch({
+    "POST /lists": () => json(201, {}),
+    "GET /lists": () => json(200, { lists: [summary(created.listId, "Liste de Alex 2")] }),
+    [`GET /lists/${created.listId}`]: () => json(404, { error: { code: "notFound", message: "" } }),
+  });
+  await act(() => syncNow());
+  await waitFor(() => expect(mine.current.lists.map((list) => [list.title, list.localOnly])).toEqual([["Liste de Alex 2", false]]));
 });

@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { ArchiveIcon } from "lucide-react-native";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -19,7 +20,7 @@ import { fixableInForm } from "./draft";
 
 /**
  * Une idée dans sa catégorie, comme l'`article` de `components/site/ideas-accordion.tsx` :
- * nom, étoiles, badges « qui » et prix, puis Modifier, Archiver et le choix de catégorie.
+ * nom, description (trois lignes au plus), étoiles, badges « qui » et prix, puis Modifier, le choix de catégorie et Archiver, en bout de rangée.
  */
 export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
   const { t } = useTranslation("list");
@@ -32,10 +33,16 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
     <View style={{ gap: tokens.space[2] }}>
       <Shadow testID={`list.item-${item.id}`} style={{ backgroundColor: palette.background, padding: tokens.space[3], gap: tokens.space[2] }}>
         <Text>{item.name}</Text>
+        {item.description ? (
+          <Text size="sm" color={tokens.colors.mutedForeground} numberOfLines={3} testID="item-card.description">
+            {item.description}
+          </Text>
+        ) : null}
         <Stars value={item.priority} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tokens.space[1] }}>
           {person ? <Badge>{person}</Badge> : null}
           {item.priceLabel ? <Badge>{item.priceLabel}</Badge> : null}
+          {item.secondHandOk ? <Badge testID="item-card.second-hand">{t("secondHandBadge")}</Badge> : null}
           {item.pending ? <PendingBadge /> : null}
         </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: tokens.space[2] }}>
@@ -47,14 +54,6 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
             onPress={edit}
             testID="item-card.edit"
           />
-          <Button
-            title={t("accordion.archive")}
-            accessibilityLabel={t("accordion.archiveAria", { name: item.name })}
-            variant="ghost"
-            size="sm"
-            onPress={() => void patchItem(list.id, item.id, { archived: true })}
-            testID="item-card.archive"
-          />
           {categories.length > 1 ? (
             <View style={{ minWidth: 140, flexGrow: 1 }}>
               <Select
@@ -65,6 +64,16 @@ export function ItemCard({ list, item }: { list: ViewList; item: ViewItem }) {
               />
             </View>
           ) : null}
+          <Button
+            title={t("accordion.archive")}
+            icon={<ArchiveIcon size={16} color={tokens.colors.black} />}
+            accessibilityLabel={t("accordion.archiveAria", { name: item.name })}
+            variant="ghost"
+            size="sm"
+            onPress={() => void patchItem(list.id, item.id, { archived: true })}
+            style={{ marginStart: "auto" }}
+            testID="item-card.archive"
+          />
         </View>
       </Shadow>
       {item.rejected ? (

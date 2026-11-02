@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.5.0"
+  version: "1.6.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -26,7 +26,10 @@ info:
       L'app finit elle-même l'action du lien : confirmation de l'adresse (`POST /auth/email-confirmation`),
       nouveau mot de passe (`POST /auth/password-reset/confirm`), aperçu d'une invitation
       (`GET /invitations/{inviteToken}`).
-    - 1.5.0 : déplacer ou copier une idée (`POST /lists/{listId}/items/{itemId}/move` et `/copy`).
+    - 1.5.0 : `secondHandOk` sur les idées (`PublicItem`, `MemberItem`, et facultatif dans `ItemInput`) ;
+      `description` sur les idées (`PublicItem`, `MemberItem`, facultative dans `ItemInput`)
+      et dans la réponse de `POST /lists/{listId}/enrich`.
+    - 1.6.0 : déplacer ou copier une idée (`POST /lists/{listId}/items/{itemId}/move` et `/copy`).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
@@ -588,11 +591,27 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, category, person]
+              description: >-
+                Aucun champ n'est obligatoire : un champ vide ou absent prend sa valeur par défaut, dans la langue
+                de la requête (`Accept-Language`).
               properties:
-                title: { type: string }
-                category: { type: string }
-                person: { type: string }
+                title:
+                  type: string
+                  description: >-
+                    Nom de la liste. Vide ou absent : « Liste de <nom affiché> » / "<nom affiché>’s list" (« Ma
+                    liste » / "My list" si le nom affiché est vide), suivi d'un numéro (« 2 », « 3 »…) si une liste
+                    du compte porte déjà ce nom.
+                category:
+                  type: string
+                  description: >-
+                    Première catégorie. Une saisie séparée par des virgules en crée plusieurs ; `categoryId` ne vaut
+                    que pour la première. Vide ou absente (ou faite seulement de virgules) : « Cadeaux » / "Gifts".
+                person:
+                  type: string
+                  description: >-
+                    Premier destinataire. Une saisie séparée par des virgules en crée plusieurs ; `personId` ne vaut
+                    que pour le premier. Vide ou absent (ou fait seulement de virgules) : le nom affiché du compte,
+                    tel quel (jamais découpé), ou « Moi » / "Me" s'il est vide.
                 id: { $ref: "#/components/schemas/ClientId" }
                 categoryId: { $ref: "#/components/schemas/ClientId" }
                 personId: { $ref: "#/components/schemas/ClientId" }
@@ -830,12 +849,15 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [name, price, imageUrl, typeId, usedLlm]
+                required: [name, price, imageUrl, typeId, description, usedLlm]
                 properties:
                   name: { type: string }
                   price: { type: string, description: Prix saisi tel quel, à renvoyer dans ItemInput.price. }
                   imageUrl: { type: string }
                   typeId: { type: string }
+                  description:
+                    type: string
+                    description: "Depuis 1.5.0. Quelques phrases sur le produit (300 caractères au plus), vide si rien trouvé. À proposer seulement si la description de l'idée est vide."
                   usedLlm: { type: boolean }
         "400": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
@@ -1127,6 +1149,10 @@ components:
 
   requestBodies:
     Label:
+      description: >-
+        Un libellé est unique dans sa liste, sans tenir compte de la casse ni des blancs autour :
+        ajouter ou renommer vers un nom déjà pris est refusé (`typeExists` pour une catégorie,
+        `personExists` pour un « qui »). Une entrée peut changer la casse de son propre nom.
       required: true
       content:
         application/json:
@@ -1134,7 +1160,15 @@ components:
             type: object
             required: [label]
             properties:
-              label: { type: string }
+              label:
+                type: string
+                description: >-
+                  À l'ajout, une saisie séparée par des virgules (ou des points-virgules, ou des
+                  retours à la ligne) crée plusieurs entrées : « Wilh, Nathan » en fait deux.
+                  Les blancs et les doublons de la saisie sont ignorés, et la réponse rend la
+                  première entrée créée. Tout est enregistré en une seule écriture : si l'une est
+                  refusée, aucune n'est créée. Au renommage, le libellé est pris tel quel —
+                  « Papa, maman » reste un seul nom.
 
   responses:
     Error:
@@ -1216,7 +1250,7 @@ components:
 
     PublicItem:
       type: object
-      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, mine, reservationId]
+      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, secondHandOk, description, mine, reservationId]
       properties:
         id: { type: string }
         name: { type: string }
@@ -1227,6 +1261,8 @@ components:
         priceCents: { type: [integer, "null"] }
         priceLabel: { type: [string, "null"], description: Formaté selon Accept-Language. }
         priority: { type: [string, "null"] }
+        secondHandOk: { type: boolean, description: "Depuis 1.5.0. L'idée convient aussi d'occasion." }
+        description: { type: [string, "null"], description: "Depuis 1.5.0. Contexte écrit par la liste : ce qu'est le produit, pourquoi il fait envie." }
         mine: { type: boolean, description: Réservée par ce client. }
         reservationId: { type: [string, "null"], description: Seulement si `mine`. }
 
@@ -1270,6 +1306,13 @@ components:
         imageUrl: { type: string }
         price: { type: string, description: Comme saisi sur le site (« 12,50 »). Invalide → priceInvalid. }
         priority: { type: string }
+        secondHandOk:
+          type: boolean
+          description: "Depuis 1.5.0. Absent à la création : false. Absent en modification : la valeur enregistrée est gardée."
+        description:
+          type: [string, "null"]
+          maxLength: 2000
+          description: "Depuis 1.5.0. Absente à la création : aucune. Absente en modification : celle enregistrée est gardée. Vide ou null l'efface. Plus de 2000 caractères → descriptionTooLong."
 
     ItemTransfer:
       type: object
@@ -1281,7 +1324,7 @@ components:
 
     MemberItem:
       type: object
-      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, archived, sortOrder]
+      required: [id, name, typeId, personId, url, imageUrl, priceCents, priceLabel, priority, secondHandOk, description, archived, sortOrder]
       properties:
         id: { type: string }
         name: { type: string }
@@ -1292,6 +1335,8 @@ components:
         priceCents: { type: [integer, "null"] }
         priceLabel: { type: [string, "null"] }
         priority: { type: [string, "null"] }
+        secondHandOk: { type: boolean, description: Depuis 1.5.0. }
+        description: { type: [string, "null"], description: Depuis 1.5.0. }
         archived: { type: boolean }
         sortOrder: { type: integer }
 

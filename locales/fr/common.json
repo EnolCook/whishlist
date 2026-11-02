@@ -1,13 +1,13 @@
 {
-  "brand": "Oh, mais fallait pas !",
+  "brand": "Oh, mais fallait pas !",
   "meta": {
-    "title": "Liste de cadeaux à partager — Oh, mais fallait pas !",
+    "title": "Liste de cadeaux à partager — Oh, mais fallait pas !",
     "description": "Créez une liste de cadeaux et partagez le lien avec vos proches. Ils choisissent une idée et la réservent, sans créer de compte."
   },
   "nav": {
     "skip": "Aller au contenu",
     "menuAria": "Navigation principale",
-    "homeAria": "Oh, mais fallait pas ! — Accueil",
+    "homeAria": "Oh, mais fallait pas ! — Accueil",
     "myLists": "Mes listes",
     "account": "Mon compte",
     "logout": "Se déconnecter",
@@ -29,7 +29,7 @@
   },
   "footer": {
     "info": "Informations",
-    "tagline": "Oh, mais fallait pas ! est un projet libre et auto-hébergeable.",
+    "tagline": "Oh, mais fallait pas ! est un projet libre et auto-hébergeable.",
     "github": "Voir le code sur GitHub",
     "support": "Soutenir le projet"
   },
@@ -46,7 +46,7 @@
   "getApp": {
     "button": "L’app sur votre téléphone",
     "title": "L’app sur votre téléphone",
-    "description": "Retrouvez vos listes et celles de vos proches dans l’app : les liens reçus par e-mail s’y ouvrent directement.",
+    "description": "Retrouvez vos listes et celles de vos proches dans l’app : les liens reçus par e-mail s’y ouvrent directement.",
     "appStore": "Télécharger dans l’App Store",
     "googlePlay": "Disponible sur Google Play",
     "trademarks": "Apple et le logo Apple sont des marques d’Apple Inc. App Store est une marque de service d’Apple Inc. Google Play et le logo Google Play sont des marques de Google LLC."

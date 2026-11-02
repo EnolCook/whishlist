@@ -5,7 +5,7 @@
     "createAccount": "Créer ma liste",
     "createHint": "Un compte est nécessaire pour créer une liste.",
     "hasAccount": "Se connecter",
-    "selfHost": "Vous souhaitez héberger Oh, mais fallait pas ! vous-même ?",
+    "selfHost": "Vous souhaitez héberger Oh, mais fallait pas ! vous-même ?",
     "github": "Voir le code sur GitHub",
     "support": "Soutenir le projet"
   },
@@ -17,16 +17,17 @@
   },
   "newList": {
     "title": "Créer une liste",
-    "description": "Donnez un nom à votre liste, ajoutez une première catégorie et indiquez pour qui sont les cadeaux. Vous pourrez compléter ces informations ensuite.",
+    "description": "Tout peut être modifié ensuite, dans les réglages de la liste.",
     "titleLabel": "Nom de la liste",
-    "titlePlaceholder": "Ex. : Noël 2026, Anniversaire d'Alex",
     "categoryLabel": "Première catégorie",
-    "categoryPlaceholder": "Ex. : Livres, Cuisine, Loisirs",
-    "categoryHint": "Les catégories servent à regrouper vos idées cadeaux.",
-    "personLabel": "Pour qui ?",
-    "personPlaceholder": "Ex. : Alex, Camille, Nous deux",
-    "personHint": "Indiquez une personne ou un groupe, par exemple « Nous deux ».",
+    "categoryHint": "Les catégories servent à regrouper vos idées cadeaux, par exemple « Livres, Cuisine, Loisirs ».",
+    "personLabel": "Pour qui ?",
+    "personHint": "Indiquez une personne ou un groupe, par exemple « Alex, Camille, Nous deux ».",
     "submit": "Créer la liste",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "defaultName": "Liste de {{name}}",
+    "defaultCategory": "Cadeaux",
+    "defaultNameNoName": "Ma liste",
+    "defaultPerson": "Moi"
   }
 }

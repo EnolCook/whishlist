@@ -91,6 +91,8 @@ export type ExportedList = {
     url: string | null;
     imageUrl: string | null;
     priority: string | null;
+    secondHandOk: boolean;
+    description: string | null;
     archived: boolean;
   }[];
   reservations: { item: string | null; fromName: string | null; note: string | null; createdAt: string; byMe: boolean }[];
@@ -176,6 +178,8 @@ export function exportAccount(
           url: item.url,
           imageUrl: item.imageUrl,
           priority: item.priority,
+          secondHandOk: item.secondHandOk,
+          description: item.description,
           archived: item.archived,
         })),
       reservations: doc.reservations

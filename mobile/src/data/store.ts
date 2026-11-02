@@ -4,7 +4,7 @@ import { AppState } from "react-native";
 import { api, ApiError, done, NetworkError, ok, type Schemas } from "@/api/client";
 import { currentLocale, intlLocale } from "@/i18n";
 import { viewList, viewLists, type ViewList, type ViewListSummary } from "@/offline/optimistic";
-import { listChanges, onOutboxChange, resetSending, type Change } from "@/offline/outbox";
+import { createListBody, listChanges, onOutboxChange, resetSending, type Change } from "@/offline/outbox";
 import { getSnapshot, listKey, listsKey, putSnapshot, removeSnapshot, type Snapshot } from "@/offline/snapshot";
 import { setTransport, syncNow, type Transport } from "@/offline/sync";
 import { onNetworkChange, getOnline } from "@/network";
@@ -93,7 +93,7 @@ async function send(change: Change): Promise<void> {
   const path = { listId: change.listId };
   switch (change.kind) {
     case "createList":
-      await ok(api.POST("/lists", { body: change.payload }));
+      await ok(api.POST("/lists", { body: createListBody(change.payload) }));
       return;
     case "createItem":
       await ok(api.POST("/lists/{listId}/items", { params: { path }, body: change.payload }));

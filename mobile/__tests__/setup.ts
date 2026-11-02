@@ -49,4 +49,4 @@ jest.mock("expo-file-system", () => {
   return { File, Paths: { cache: { list: () => [...cache.keys()].map((name) => new File(null, name)) } }, __cache: cache };
 });
 
-jest.mock("expo-sharing", () => ({ shareAsync: jest.fn(async () => undefined) }));
+jest.mock("expo-sharing", () => require("./helpers/sharing").sharingMock);

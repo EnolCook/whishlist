@@ -45,17 +45,18 @@ export function deleteItem(listId: string, itemId: string): Promise<WriteResult>
   return write({ kind: "deleteItem", listId, targetId: itemId, payload: {} });
 }
 
-export type Enriched = { name: string; price: string; imageUrl: string; typeId: string; usedLlm: boolean };
+export type Enriched = { name: string; price: string; imageUrl: string; typeId: string; description: string; usedLlm: boolean };
 
 /**
  * Préremplissage depuis un lien produit : ne crée rien, exige le réseau (FR-029b).
  * Le serveur lit toujours la page ; `capabilities.enrich` dit s'il s'aide en plus d'une IA.
  */
 export async function enrich(listId: string, url: string): Promise<Enriched> {
-  const { name, price, imageUrl, typeId, usedLlm } = await ok(
+  const { name, price, imageUrl, typeId, description, usedLlm } = await ok(
     api.POST("/lists/{listId}/enrich", { params: { path: { listId } }, body: { url } }),
   );
-  return { name, price, imageUrl, typeId, usedLlm };
+  // Un serveur antérieur à 1.5.0 n'en renvoie pas.
+  return { name, price, imageUrl, typeId, description: description ?? "", usedLlm };
 }
 
 /**

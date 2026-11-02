@@ -15,6 +15,20 @@
       "when": 1793566662563,
       "tag": "0001_email_confirmations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793638543019,
+      "tag": "0002_second_hand_ok",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793652773771,
+      "tag": "0003_item_description",
+      "breakpoints": true
     }
   ]
 }

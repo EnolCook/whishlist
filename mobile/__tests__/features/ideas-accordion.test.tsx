@@ -21,7 +21,7 @@ const item: ViewItem = {
   imageUrl: null,
   priceCents: 1990,
   priceLabel: "19,90 €",
-  priority: null,
+  priority: null, secondHandOk: false, description: null,
   archived: false,
   sortOrder: 0,
   pending: false,

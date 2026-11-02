@@ -120,6 +120,8 @@ export default async function EditListPage({
     priceLabel: formatPrice(item.priceCents, priceLocale),
     price: euros(item.priceCents, priceLocale),
     priority: item.priority,
+    secondHandOk: item.secondHandOk,
+    description: item.description,
     sortOrder: item.sortOrder,
   }));
   // Listes où l'idée peut être déplacée ou copiée : celles dont on est membre.

@@ -9,9 +9,16 @@ type ItemTransfer = components["schemas"]["ItemTransfer"];
 /** L'idée telle qu'elle était au moment du changement : de quoi l'afficher dans la liste d'arrivée avant l'envoi. Jamais envoyée. */
 type TransferPreview = { preview: components["schemas"]["MemberItem"] };
 
-/** Corps envoyé pour chaque sorte de changement, au format du contrat. */
+/**
+ * Valeurs par défaut calculées sur le téléphone à la création d'une liste (data/lists.ts), pour la vue
+ * hors ligne des champs laissés vides. Jamais envoyées : le serveur calcule les siennes, qui priment.
+ */
+export type ListPreview = { title: string; category: string; person: string };
+
+/** Corps envoyé pour chaque sorte de changement, au format du contrat (sauf `preview`, gardé sur le téléphone). */
 export type ChangePayloads = {
-  createList: CreateListBody & { id: string; categoryId: string; personId: string };
+  // Les champs restent tels que saisis, vides compris : le serveur remplit les vides (contrat, POST /lists).
+  createList: CreateListBody & { title: string; category: string; person: string; id: string; categoryId: string; personId: string; preview?: ListPreview };
   createItem: ItemInput & { id: string };
   updateItem: ItemInput;
   patchItem: PatchItemBody;
@@ -20,6 +27,12 @@ export type ChangePayloads = {
   copyItem: ItemTransfer & TransferPreview & { id: string };
 };
 export type ChangeKind = keyof ChangePayloads;
+
+/** Corps de `POST /lists` : la création telle que saisie, sans l'aperçu local. */
+export function createListBody(payload: ChangePayloads["createList"]): CreateListBody {
+  const { title, category, person, id, categoryId, personId } = payload;
+  return { title, category, person, id, categoryId, personId };
+}
 
 export type NewChange = {
   [K in ChangeKind]: { kind: K; listId: string; targetId: string; payload: ChangePayloads[K] };

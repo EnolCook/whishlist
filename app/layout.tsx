@@ -18,7 +18,7 @@ import { siteOrigin } from "@/src/site/seo";
 import "./globals.css";
 import { emailConfirmationPending } from "@/src/server/commands/context";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 /** Session et langue sont des cookies : le HTML n’est pas mis en cache. */
 export const dynamic = "force-dynamic";

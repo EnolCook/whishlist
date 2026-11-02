@@ -65,6 +65,8 @@ const FIELDS: { [K in keyof Database]: Record<string, FieldCheck> } = {
     imageUrl: "string?",
     priceCents: "number?",
     priority: "string?",
+    secondHandOk: "boolean?",
+    description: "string?",
     personId: "string",
     sortOrder: "number",
     archived: "boolean?",
@@ -163,6 +165,8 @@ export function normalizeDocument(doc: Database): Database {
   for (const item of doc.items) {
     if (item.imageUrl === undefined) item.imageUrl = null;
     if (item.archived === undefined) item.archived = false;
+    if (item.secondHandOk === undefined) item.secondHandOk = false;
+    if (item.description === undefined) item.description = null;
   }
   const typesByList = new Map<string, typeof doc.types>();
   for (const type of doc.types) {

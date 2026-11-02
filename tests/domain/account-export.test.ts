@@ -56,6 +56,8 @@ test("chaque liste dont elle est membre, avec son rôle et ses contenus par libe
       url: "https://shop.example.test/idee",
       imageUrl: null,
       priority: null,
+      secondHandOk: false,
+      description: null,
       archived: false,
     },
   ]);

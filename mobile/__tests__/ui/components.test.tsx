@@ -8,9 +8,11 @@ import { tokens } from "@/theme/tokens";
 import { Badge } from "@/ui/Badge";
 import { Button, type ButtonVariant } from "@/ui/Button";
 import { Card, CollapsibleCard } from "@/ui/Card";
+import { Checkbox } from "@/ui/Checkbox";
 import { Input } from "@/ui/Input";
 import { PillTabs } from "@/ui/PillTabs";
 import { Text } from "@/ui/Text";
+import { Textarea } from "@/ui/Textarea";
 
 function style(testID: string) {
   return StyleSheet.flatten(screen.getByTestId(testID).props.style);
@@ -278,4 +280,35 @@ describe("CollapsibleCard", () => {
     expect(style("card")).toMatchObject({ borderWidth: tokens.borderWidth, borderColor: tokens.colors.black });
     expectShadow("card");
   });
+});
+
+describe("Checkbox", () => {
+  test("20px box with the border and the shadow, white until checked", async () => {
+    await render(<Checkbox testID="check" checked={false} onChange={() => {}} label="L’occasion me va" />);
+    expect(style("check-box")).toMatchObject({ width: 20, height: 20, backgroundColor: tokens.colors.white });
+    expectShadow("check-box");
+    expect(screen.getByTestId("check").props.accessibilityState).toMatchObject({ checked: false });
+  });
+
+  test("checked: filled with the main colour, announced as checked", async () => {
+    await render(<Checkbox testID="check" checked onChange={() => {}} label="L’occasion me va" />);
+    expect(style("check-box").backgroundColor).not.toBe(tokens.colors.white);
+    expect(screen.getByTestId("check").props.accessibilityState).toMatchObject({ checked: true });
+  });
+
+  test("the whole row toggles, at least one touch target tall", async () => {
+    const onChange = jest.fn();
+    await render(<Checkbox testID="check" checked={false} onChange={onChange} label="L’occasion me va" description="Aide" />);
+    fireEvent.press(screen.getByText("L’occasion me va"));
+    expect(onChange).toHaveBeenCalledWith(true);
+    expect(StyleSheet.flatten(screen.getByTestId("check").props.style).minHeight).toBeGreaterThanOrEqual(tokens.touchTarget);
+  });
+});
+
+test("Textarea: an Input on several lines, at least 64 high, text from the top", async () => {
+  await render(<Textarea accessibilityLabel="Description" />);
+  const field = screen.getByLabelText("Description");
+  expect(field.props.multiline).toBe(true);
+  expect(field.props.textAlignVertical).toBe("top");
+  expect(StyleSheet.flatten(field.props.style)).toMatchObject({ minHeight: 64, fontSize: tokens.fontSize.base });
 });

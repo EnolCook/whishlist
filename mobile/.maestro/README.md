@@ -80,7 +80,7 @@ Un fichier par user story, dans `flows/<feature>-us<N>-<slug>.yaml` :
 appId: app.ohyoushouldnt.mobile
 name: "008 US1 — Titre de la story"
 tags:
-  - 008-us1            # exactement un tag de story ; ajouter android-only si le parcours ne peut pas tourner sur iOS
+  - 008-us1            # exactement un tag de story ; ajouter android-only si le parcours ne peut pas tourner sur iOS, ios-only s'il ne peut pas tourner sur Android
 ---
 - runFlow: ../subflows/launch-clean.yaml            # toujours en premier : app vide, trousseau iOS vidé
 - runScript: ../scripts/strings.generated.js        # textes attendus : output.t.<namespace>.<clé>

@@ -38,6 +38,8 @@ function addList(doc: Database, id: string, title: string, members: [string, Rol
     imageUrl: null,
     priceCents: 2500,
     priority: null,
+    secondHandOk: false,
+    description: null,
     personId: `${id}-person`,
     sortOrder: 0,
     archived: false,

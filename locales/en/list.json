@@ -141,6 +141,9 @@
   },
   "form": {
     "name": "Gift name",
+    "description": "Description",
+    "descriptionPlaceholder": "E.g. for my train commute, ideally the red cover.",
+    "descriptionHint": "What it is, why you want it, what you’d use it for. Shown on the shared list.",
     "type": "Category",
     "person": "Gift recipient",
     "url": "Gift link",
@@ -162,7 +165,9 @@
     "aiBody": "These fields were prefilled using a language model. Review them before saving.",
     "aiTokens": "{{count}} tokens used for this lookup",
     "aiCo2": "About {{grams}} g CO₂e — roughly equivalent to {{beef}} g of red meat",
-    "aiDisclaimer": "Indicative orders of magnitude, not a certified carbon footprint."
+    "aiDisclaimer": "Indicative orders of magnitude, not a certified carbon footprint.",
+    "secondHandOk": "Second-hand is fine",
+    "secondHandOkHint": "Gift givers will see it on the shared list."
   },
   "transfer": {
     "open": "Move or copy…",
@@ -194,5 +199,6 @@
     "archiveAria": "Archive “{{name}}”",
     "editTitle": "Edit gift idea",
     "emptyCategory": "No ideas in this category."
-  }
+  },
+  "secondHandBadge": "Second-hand OK"
 }

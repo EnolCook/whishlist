@@ -27,7 +27,7 @@
     "fix": "Corriger",
     "discard": "Abandonner",
     "savedOffline": "Enregistré sur le téléphone. Ce sera envoyé dès que le réseau sera revenu.",
-    "logoutTitle": "Se déconnecter quand même ?",
+    "logoutTitle": "Se déconnecter quand même ?",
     "logoutWarning_one": "{{count}} changement n'a pas encore été envoyé. Il sera perdu si vous vous déconnectez.",
     "logoutWarning_other": "{{count}} changements n'ont pas encore été envoyés. Ils seront perdus si vous vous déconnectez.",
     "logoutConfirm": "Se déconnecter et perdre les changements",
@@ -43,6 +43,15 @@
     "passwordNotice": "Cette liste est protégée par un mot de passe. Communiquez-le à vos proches en plus du lien.",
     "manageOnSite": "Gérer le partage sur le site",
     "pendingList": "Cette liste n'a pas encore été envoyée. Son lien sera disponible dès que le réseau sera revenu."
+  },
+  "incoming": {
+    "title": "Ajouter à une liste",
+    "hint": "Choisissez la liste où ranger cette idée.",
+    "nothingTitle": "Rien à reprendre",
+    "nothingBody": "Ce partage ne contient ni lien ni texte. Partagez plutôt le lien de la page du cadeau.",
+    "noListTitle": "Pas encore de liste",
+    "noListBody": "Créez une liste, puis partagez de nouveau le lien.",
+    "cancel": "Annuler"
   },
   "settings": {
     "offline": "Les réglages de la liste demandent une connexion. Réessayez quand le réseau sera revenu."

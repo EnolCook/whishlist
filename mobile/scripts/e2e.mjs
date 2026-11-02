@@ -16,7 +16,10 @@ const mobileRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..")
 const repoRoot = path.join(mobileRoot, "..");
 const suiteDir = path.join(mobileRoot, ".maestro");
 const dataFile = path.join(repoRoot, "tmp/e2e/wishlist.json");
-const SKIP_REASON_IOS = "le simulateur iOS ne permet pas de couper le réseau de l'app";
+const SKIP_REASON = {
+  ios: "le simulateur iOS ne permet pas de couper le réseau de l'app",
+  android: "le partage vers l'app passe par Safari et la feuille de partage d'iOS",
+};
 
 function fail(message) {
   console.error(`✗ ${message}`);
@@ -190,7 +193,8 @@ async function main() {
       // Boîte de réception de la suite : les parcours y lisent les liens de confirmation (010).
       "-e",
       `MAILDEV_URL=${maildevUrl}`,
-      ...(device.platform === "ios" ? ["--exclude-tags", "android-only"] : []),
+      "--exclude-tags",
+      flowFiles.excludedTag(device.platform),
       ...targets,
     ];
     // Le mot de passe passe par l'environnement (Maestro lit les variables MAESTRO_*), jamais en argument
@@ -210,7 +214,7 @@ async function main() {
     lang,
     startedAt,
     results,
-    skipped: skipped.map((flow) => ({ id: flow.id, name: flow.name, reason: SKIP_REASON_IOS })),
+    skipped: skipped.map((flow) => ({ id: flow.id, name: flow.name, reason: SKIP_REASON[device.platform] })),
     outputDir: path.relative(repoRoot, outputDir),
     captures: junit.capturesByFlow(pngPaths, results),
   });

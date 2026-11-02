@@ -1,10 +1,12 @@
 import { findMembership } from "../../domain/access";
 import { idTaken, isClientId } from "../../domain/client-ids";
 import { createWishlist } from "../../domain/import";
-import { addPerson, addType } from "../../domain/items";
+import { listDefaults, memberListTitles, numberedTitle } from "../../domain/list-defaults";
+import { addPerson, addType, splitLabels } from "../../domain/items";
 import { updateWishlistSettings } from "../../domain/membership";
 import type { WishlistTheme } from "../../domain/types";
 import { readDocument, updateDocument } from "../../store/db";
+import { getTranslationsFor } from "../../i18n/server";
 import { toListSummary, toMemberListView, type ListSummaryView, type MemberListView } from "../api/views";
 import { activeUser, verifiedUser, type CommandContext, type CommandResult } from "./context";
 
@@ -44,7 +46,7 @@ export async function memberListView(
 }
 
 /**
- * Une liste naît avec sa première catégorie et son premier « qui ».
+ * Une liste naît avec sa première catégorie et son premier « qui » ; un champ vide prend sa valeur par défaut.
  * Le client peut choisir leurs identifiants : un renvoi du même `id` par un membre
  * rend la liste existante (`replayed`) au lieu d'en créer une seconde.
  */
@@ -56,11 +58,14 @@ export async function createList(
   if (!active.ok) return active;
   const ids = [input.id, input.categoryId, input.personId].filter((id) => id !== undefined);
   if (!ids.every(isClientId)) return { ok: false, error: "idInvalid" };
-  const category = input.category.trim();
-  const person = input.person.trim();
-  if (!category) return { ok: false, error: "listNeedsCategory" };
-  if (!person) return { ok: false, error: "listNeedsPerson" };
   const actorId = active.user.id;
+  // Champs non bloquants : laissés vides, ils prennent des valeurs par défaut, dans la langue de la
+  // requête (langue de l'URL sur le site, `Accept-Language` pour l'API).
+  // Une saisie à virgules en crée plusieurs ; le nom du compte, valeur par défaut, n'est jamais découpé.
+  const defaults = listDefaults(active.user.displayName, await getTranslationsFor(ctx.locale, "home"));
+  const typed = { categories: splitLabels(input.category), persons: splitLabels(input.person) };
+  const categories = typed.categories.length > 0 ? typed.categories : [defaults.category];
+  const persons = typed.persons.length > 0 ? typed.persons : [defaults.person];
   // Renvoi reconnu dans la même écriture que la création : deux envois simultanés ne font qu'une liste.
   const created = await updateDocument<CommandResult<{ wishlistId: string; replayed: boolean }>>((doc) => {
     const { id } = input;
@@ -69,14 +74,26 @@ export async function createList(
       return { doc, result: replayed ? { ok: true, wishlistId: id, replayed } : { ok: false, error: "idConflict" } };
     }
     if (ids.some((taken) => idTaken(doc, taken))) return { doc, result: { ok: false, error: "idConflict" } };
-    const list = createWishlist(doc, { ownerId: actorId, title: input.title, importTemplate: false, id });
+    const title =
+      input.title.trim() ||
+      numberedTitle(defaults.titleBase, memberListTitles(doc.memberships, doc.wishlists, actorId));
+    const list = createWishlist(doc, { ownerId: actorId, title, importTemplate: false, id });
     if (!list.ok) return { doc, result: list };
     const wishlistId = list.wishlist.id;
-    const withType = addType(list.doc, { wishlistId, actorId, label: category, id: input.categoryId });
-    if (!withType.ok) return { doc, result: withType };
-    const withPerson = addPerson(withType.doc, { wishlistId, actorId, label: person, id: input.personId });
-    if (!withPerson.ok) return { doc, result: withPerson };
-    return { doc: withPerson.doc, result: { ok: true, wishlistId, replayed: false } };
+    // « Wilh, Nathan » crée deux « qui », comme dans les réglages. L'identifiant choisi par le
+    // client ne vaut que pour le premier : il n'en a envoyé qu'un.
+    let current = list.doc;
+    for (const [index, label] of categories.entries()) {
+      const saved = addType(current, { wishlistId, actorId, label, id: index === 0 ? input.categoryId : undefined });
+      if (!saved.ok) return { doc, result: saved };
+      current = saved.doc;
+    }
+    for (const [index, label] of persons.entries()) {
+      const saved = addPerson(current, { wishlistId, actorId, label, id: index === 0 ? input.personId : undefined });
+      if (!saved.ok) return { doc, result: saved };
+      current = saved.doc;
+    }
+    return { doc: current, result: { ok: true, wishlistId, replayed: false } };
   });
   if (!created.ok) return created;
   const view = await memberListView(ctx, created.wishlistId, actorId);

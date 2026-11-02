@@ -1,4 +1,5 @@
 import { stripHtmlForLlm } from "./fetch-page";
+import type { Locale } from "../i18n/config";
 import { emptyUsage, type LlmUsage } from "./llm-impact";
 import { mergeHints, resolveTypeId, type ProductHints } from "./product-from-url";
 
@@ -39,6 +40,7 @@ function hintsFromLlmJson(
     price: value.price === null || value.price === undefined ? null : String(value.price),
     imageUrl: typeof value.imageUrl === "string" ? value.imageUrl : null,
     typeId: resolveTypeId(types, typeLabel),
+    description: typeof value.description === "string" ? value.description : null,
   };
 }
 
@@ -47,12 +49,13 @@ function buildPrompt(
   html: string,
   hints: ProductHints,
   types: { id: string; label: string }[],
+  locale: Locale,
 ): string {
   const labels = types.map((type) => type.label);
   return `Tu extrais les infos produit d'une page e-commerce pour une wishlist.
 URL: ${pageUrl}
 Indices déjà trouvés (peuvent être incomplets ou faux):
-${JSON.stringify({ name: hints.name, price: hints.price, imageUrl: hints.imageUrl })}
+${JSON.stringify({ name: hints.name, price: hints.price, imageUrl: hints.imageUrl, description: hints.description })}
 
 Types / catégories disponibles (tu DOIS choisir exactement un de ces labels pour typeLabel) :
 ${JSON.stringify(labels)}
@@ -61,11 +64,12 @@ Texte de la page (tronqué):
 ${stripHtmlForLlm(html)}
 
 Réponds UNIQUEMENT en JSON compact avec exactement ces clés:
-{"name": string|null, "price": string|null, "imageUrl": string|null, "typeLabel": string|null}
+{"name": string|null, "price": string|null, "imageUrl": string|null, "typeLabel": string|null, "description": string|null}
 - name: nom court du produit (pas le titre SEO du site)
 - price: montant numérique en euros, point décimal (ex "29.99"), sans symbole
 - imageUrl: URL absolue http(s) de la meilleure image produit, ou null
 - typeLabel: EXACTEMENT un des labels de la liste ci-dessus (même orthographe), celui qui colle le mieux au produit. Si vraiment aucun ne va, utilise "Divers" s'il existe, sinon null.
+- description: 1 ou 2 phrases factuelles qui disent ce qu'est le produit et à quoi il sert, pour quelqu'un qui ne le connaît pas, en ${locale === "en" ? "anglais" : "français"}, 300 caractères au plus. Ni prix, ni promotion, ni livraison, ni avis.
 Si une info est introuvable, mets null.`;
 }
 
@@ -146,11 +150,12 @@ export async function refineProductWithLlm(
   html: string,
   hints: ProductHints,
   types: { id: string; label: string }[] = [],
+  locale: Locale = "fr",
 ): Promise<{ hints: ProductHints; usage: LlmUsage }> {
   const gemini = process.env.GEMINI_API_KEY?.trim();
   const openai = process.env.OPENAI_API_KEY?.trim();
   if (!gemini && !openai) return { hints, usage: emptyUsage() };
-  const prompt = buildPrompt(pageUrl, html, hints, types);
+  const prompt = buildPrompt(pageUrl, html, hints, types, locale);
   try {
     const result = gemini ? await callGemini(gemini, prompt) : await callOpenAi(openai!, prompt);
     if (!result.json) return { hints, usage: result.usage };

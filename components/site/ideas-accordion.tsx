@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon } from "lucide-react";
+import { ArchiveIcon, ChevronDownIcon, ChevronUpIcon, GripVerticalIcon } from "lucide-react";
 import { parsePriority } from "@/src/domain/priority";
 import { isLocale } from "@/src/i18n/config";
 import { withLocale } from "@/src/i18n/locale-path";
@@ -47,6 +47,8 @@ export type AccordionIdea = {
   priceLabel: string | null;
   price: string;
   priority: string | null;
+  secondHandOk: boolean;
+  description: string | null;
   sortOrder: number;
 };
 
@@ -336,10 +338,16 @@ export function IdeasAccordion({
                         </span>
                         <div className="flex min-w-0 flex-1 flex-col gap-2">
                           <p className="text-balance font-medium">{item.name}</p>
+                          {item.description ? (
+                            <p className="line-clamp-3 break-words whitespace-pre-line text-muted-foreground">
+                              {item.description}
+                            </p>
+                          ) : null}
                           <PriorityStars value={item.priority} />
                           <div className="flex flex-wrap gap-1">
                             <Badge variant="outline">{item.personLabel}</Badge>
                             {item.priceLabel ? <Badge variant="outline">{item.priceLabel}</Badge> : null}
+                            {item.secondHandOk ? <Badge variant="outline">{t("secondHandBadge")}</Badge> : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <Button
@@ -350,15 +358,6 @@ export function IdeasAccordion({
                               onClick={() => setEditingId(item.id)}
                             >
                               {t("accordion.edit")}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              aria-label={t("accordion.archiveAria", { name: item.name })}
-                              onClick={() => onArchive(item.id)}
-                            >
-                              {t("accordion.archive")}
                             </Button>
                             {typeOrder.length > 1 ? (
                               <NativeSelect
@@ -375,6 +374,17 @@ export function IdeasAccordion({
                                 ))}
                               </NativeSelect>
                             ) : null}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="ms-auto"
+                              aria-label={t("accordion.archiveAria", { name: item.name })}
+                              onClick={() => onArchive(item.id)}
+                            >
+                              <ArchiveIcon aria-hidden />
+                              {t("accordion.archive")}
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -388,7 +398,12 @@ export function IdeasAccordion({
       </Accordion>
 
       <Dialog open={editingItem !== null} onOpenChange={(open) => !open && setEditingId(null)}>
-        <DialogContent>
+        {/* Sur deux rangées le formulaire dépasse les 40rem du dialogue par défaut : un ascenseur
+            apparaissait et coupait le bouton de suppression. Ce plafond ignore la hauteur réellement
+            disponible — ici on lui laisse la fenêtre (`cn` est un tailwind-merge, la classe remplace
+            bien `max-h-[min(90vh,40rem)]`). En `dvh` et non en `vh` : sur mobile `vh` vaut la hauteur
+            barre d'adresse rétractée, et 90vh peut donc dépasser quand la barre est affichée. */}
+        <DialogContent className="max-h-[90dvh]">
           {editingItem ? (
             <>
               <DialogHeader>

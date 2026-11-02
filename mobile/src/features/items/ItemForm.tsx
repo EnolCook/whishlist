@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
+
+import { MAX_DESCRIPTION } from "../../../../src/domain/description";
 
 import { useCapabilities } from "@/data/capabilities";
 import { enrich, type ItemInput } from "@/data/items";
@@ -11,6 +13,7 @@ import type { ViewList } from "@/offline/optimistic";
 import { tokens } from "@/theme/tokens";
 import { Alert } from "@/ui/Alert";
 import { Button } from "@/ui/Button";
+import { Checkbox } from "@/ui/Checkbox";
 import { Field } from "@/ui/Field";
 import { Input } from "@/ui/Input";
 import { NetworkNote } from "@/ui/NetworkNote";
@@ -18,6 +21,7 @@ import { Select } from "@/ui/Select";
 import { Shadow } from "@/ui/Shadow";
 import { StarPicker } from "@/ui/Stars";
 import { Text } from "@/ui/Text";
+import { Textarea } from "@/ui/Textarea";
 
 export type Draft = Required<ItemInput>;
 
@@ -31,6 +35,8 @@ export function emptyDraft(list: ViewList): Draft {
     imageUrl: "",
     price: "",
     priority: "",
+    secondHandOk: false,
+    description: "",
   };
 }
 
@@ -46,6 +52,7 @@ export function ItemForm({
   busy,
   submitLabel,
   onSubmit,
+  autoFill = false,
 }: {
   list: ViewList;
   initial: Draft;
@@ -54,6 +61,8 @@ export function ItemForm({
   busy: boolean;
   submitLabel: string;
   onSubmit: (draft: Draft) => void;
+  /** Lien reçu par un partage : remplir depuis le lien dès que c'est possible (une fois). */
+  autoFill?: boolean;
 }) {
   const { t } = useTranslation(["list", "common"]);
   const online = useOnline();
@@ -79,6 +88,8 @@ export function ItemForm({
         price: found.price || current.price,
         imageUrl: found.imageUrl || current.imageUrl,
         typeId: found.typeId || current.typeId,
+        // Ce que la personne a écrit (pourquoi elle le veut…) n'est jamais remplacé.
+        description: current.description?.trim() ? current.description : found.description || current.description,
       }));
       setUsedLlm(found.usedLlm);
     } catch (caught) {
@@ -92,6 +103,14 @@ export function ItemForm({
   const people = list.people.map((p) => ({ value: p.id, label: p.label }));
   // Préremplissage : exige le serveur, et une liste qui existe déjà sur le serveur.
   const canEnrich = online && !list.localOnly && draft.url.trim() !== "" && !enriching;
+  const autoFilled = useRef(false);
+  useEffect(() => {
+    if (!autoFill || autoFilled.current || !canEnrich) return;
+    autoFilled.current = true;
+    void fill();
+    // `fill` lit le brouillon courant : seul le premier moment où c'est possible compte.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFill, canEnrich]);
 
   return (
     <View style={{ gap: tokens.space[4] }}>
@@ -125,6 +144,16 @@ export function ItemForm({
       <Field label={t("form.name")}>
         <Input testID="item-form.name" accessibilityLabel={t("form.name")} value={draft.name} onChangeText={(value) => set("name", value)} />
       </Field>
+      <Field label={t("form.description")} description={t("form.descriptionHint")}>
+        <Textarea
+          testID="item-form.description"
+          accessibilityLabel={t("form.description")}
+          value={draft.description ?? ""}
+          onChangeText={(value) => set("description", value)}
+          placeholder={t("form.descriptionPlaceholder")}
+          maxLength={MAX_DESCRIPTION}
+        />
+      </Field>
       <Field label={t("form.type")}>
         <Select label={t("form.type")} value={draft.typeId} options={categories} onChange={(value) => set("typeId", value)} />
       </Field>
@@ -144,6 +173,13 @@ export function ItemForm({
       <Field label={t("form.priority")} description={t("form.priorityHint")}>
         <StarPicker value={draft.priority} onChange={(value) => set("priority", value)} />
       </Field>
+      <Checkbox
+        testID="item-form.second-hand"
+        checked={draft.secondHandOk}
+        onChange={(value) => set("secondHandOk", value)}
+        label={t("form.secondHandOk")}
+        description={t("form.secondHandOkHint")}
+      />
       <Field label={t("form.image")}>
         <View style={{ flexDirection: "row", gap: tokens.space[2], alignItems: "center" }}>
           <Shadow style={{ width: 48, height: 48, overflow: "hidden" }}>

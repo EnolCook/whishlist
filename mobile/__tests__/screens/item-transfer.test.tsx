@@ -28,6 +28,8 @@ const gift: Schemas["MemberItem"] = {
   priceCents: 3900,
   priceLabel: "39,00 €",
   priority: null,
+  secondHandOk: false,
+  description: null,
   archived: false,
   sortOrder: 0,
 };

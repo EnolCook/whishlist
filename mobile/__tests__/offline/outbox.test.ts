@@ -155,7 +155,7 @@ describe("dependencies", () => {
   });
 });
 
-const preview = { id: "a", name: "Puzzle", typeId: "t", personId: "p", url: null, imageUrl: null, priceCents: null, priceLabel: null, priority: null, archived: false, sortOrder: 0 };
+const preview = { id: "a", name: "Puzzle", typeId: "t", personId: "p", url: null, imageUrl: null, priceCents: null, priceLabel: null, priority: null, secondHandOk: false, description: null, archived: false, sortOrder: 0 };
 const moveItem = (id: string): NewChange => ({
   kind: "moveItem",
   listId: "w",
