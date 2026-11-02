@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { AppState } from "react-native";
 
 import { redirectSystemPath } from "../../app/+native-intent";
 import Share from "../../app/(app)/share";
@@ -12,7 +13,7 @@ import { setTransport, stopSync } from "@/offline/sync";
 
 import { fakeFetch, json } from "../helpers/fetch";
 import { freshDb } from "../helpers/memory-db";
-import { setSharedPayloads } from "../helpers/sharing";
+import { setSharedPayloads, sharingMock } from "../helpers/sharing";
 
 let mockParams: Record<string, string> = {};
 jest.mock("expo-router", () => ({
@@ -43,6 +44,23 @@ describe("sharedIdea", () => {
     expect(sharedIdea([{ shareType: "text", value: "  Un puzzle de 1000 pièces  ", mimeType: "text/plain" }])).toEqual({ url: "", name: "Un puzzle de 1000 pièces" });
     expect(sharedIdea([{ shareType: "image", value: "file:///tmp/a.jpg", mimeType: "image/jpeg" }])).toBeNull();
     expect(sharedIdea([])).toBeNull();
+  });
+
+  test("the scheme is lower-cased, as the server only accepts http:// and https://", () => {
+    expect(sharedIdea([{ shareType: "url", value: "HTTPS://Shop.example.test/Lampe", mimeType: "text/plain" }])?.url).toBe(
+      "https://Shop.example.test/Lampe",
+    );
+    expect(sharedIdea([{ shareType: "text", value: "Lampe Http://shop.example.test/a", mimeType: "text/plain" }])?.url).toBe(
+      "http://shop.example.test/a",
+    );
+  });
+
+  test("a link longer than 2048 characters is ignored; one of exactly 2048 is kept", () => {
+    const long = `https://shop.example.test/${"a".repeat(2049 - "https://shop.example.test/".length)}`;
+    expect(sharedIdea([{ shareType: "text", value: `Lampe ${long}`, mimeType: "text/plain" }])).toEqual({ url: "", name: "Lampe" });
+    expect(sharedIdea([{ shareType: "url", value: long, mimeType: "text/plain" }])).toBeNull();
+    const max = long.slice(0, 2048);
+    expect(sharedIdea([{ shareType: "url", value: max, mimeType: "text/plain" }])?.url).toBe(max);
   });
 });
 
@@ -88,11 +106,15 @@ beforeEach(async () => {
   setTransport(apiTransport);
   await i18n.changeLanguage("fr");
   jest.mocked(router.replace).mockClear();
+  sharingMock.clearSharedPayloads.mockClear();
   mockParams = {};
 });
 
 afterEach(() => {
   stopSync();
+  // Jamais de requête vers l'adresse partagée depuis l'appareil (la résolution d'expo-sharing en fait une).
+  expect(sharingMock.getResolvedSharedPayloadsAsync).not.toHaveBeenCalled();
+  expect(sharingMock.useIncomingShare).not.toHaveBeenCalled();
   setSharedPayloads([]);
 });
 
@@ -109,8 +131,11 @@ describe("Ajouter à une liste", () => {
     await fireEvent.press(screen.getByTestId("incoming.list-w2"));
     expect(router.replace).toHaveBeenCalledWith({
       pathname: "/lists/[listId]/items/new",
-      params: { listId: "w2", url: "https://shop.example.test/lampe", name: "Lampe de chevet", fill: "1" },
+      params: { listId: "w2", url: "https://shop.example.test/lampe", name: "Lampe de chevet", fill: "1", from: "share" },
     });
+    // Le partage est servi : effacé côté natif, il ne revient pas au prochain passage au premier plan.
+    expect(sharingMock.clearSharedPayloads).toHaveBeenCalled();
+    expect(sharingMock.getSharedPayloads()).toEqual([]);
     await waitFor(() => expect(screen.queryByTestId("incoming.url")).toBeNull());
   });
 
@@ -134,5 +159,19 @@ describe("Ajouter à une liste", () => {
     setSharedPayloads(lampShare);
     await render(<Share />);
     expect(await screen.findByTestId("incoming.no-list")).toBeOnTheScreen();
+    jest.mocked(router.replace).mockClear();
+    await fireEvent.press(screen.getByTestId("incoming.cancel"));
+    expect(router.replace).toHaveBeenCalledWith("/");
+    expect(sharingMock.getSharedPayloads()).toEqual([]);
+  });
+
+  test("a new share while the screen is open: read again when the app comes back to the foreground", async () => {
+    fakeFetch({ "GET /lists": () => json(200, { lists: [summary("w", "Idées cadeaux"), summary("w2", "Noël")] }) });
+    await render(<Share />);
+    expect(await screen.findByTestId("incoming.nothing")).toBeOnTheScreen();
+    setSharedPayloads(lampShare);
+    const listeners = jest.mocked(AppState.addEventListener).mock.calls.map(([, listener]) => listener);
+    await act(async () => listeners.forEach((listener) => listener("active")));
+    expect(await screen.findByTestId("incoming.url")).toHaveTextContent("https://shop.example.test/lampe");
   });
 });

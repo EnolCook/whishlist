@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useIncomingShare } from "expo-sharing";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -7,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useMyLists } from "@/data/store";
 import { clearPendingLink } from "@/links/pending";
 import { sharedIdea } from "@/features/incoming/sharedIdea";
+import { useSharedPayloads } from "@/features/incoming/useSharedPayloads";
 import { tokens } from "@/theme/tokens";
 import { Button } from "@/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/Card";
@@ -24,8 +24,8 @@ import { Text } from "@/ui/Text";
  */
 export default function ShareScreen() {
   const { t } = useTranslation(["mobile", "list"]);
-  const { sharedPayloads, clearSharedPayloads } = useIncomingShare();
-  const idea = sharedIdea(sharedPayloads);
+  const { payloads, clear: clearSharedPayloads } = useSharedPayloads();
+  const idea = sharedIdea(payloads);
   const { lists, loaded } = useMyLists();
 
   // Arrivé ici (après la connexion s'il le fallait) : le lien en attente est servi.
@@ -36,7 +36,7 @@ export default function ShareScreen() {
     clearSharedPayloads();
     router.replace({
       pathname: "/lists/[listId]/items/new",
-      params: { listId, url: idea.url, name: idea.name, fill: idea.url ? "1" : "" },
+      params: { listId, url: idea.url, name: idea.name, fill: idea.url ? "1" : "", from: "share" },
     });
   }
 
@@ -63,6 +63,7 @@ export default function ShareScreen() {
       ) : lists.length === 0 ? (
         <Empty testID="incoming.no-list" title={t("incoming.noListTitle")} description={t("incoming.noListBody")} media={<GiftMark size={64} />}>
           <Button title={t("list:mine.newList")} onPress={() => router.replace("/lists/new")} testID="incoming.new-list" />
+          <Button title={t("incoming.cancel")} variant="link" onPress={cancel} testID="incoming.cancel" />
         </Empty>
       ) : (
         <View style={{ gap: tokens.space[3] }}>

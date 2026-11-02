@@ -11,13 +11,14 @@ import { Screen } from "@/ui/Screen";
 
 /**
  * Ajouter une idée (FR-013) ; marche hors ligne, l'idée passe « en attente » (FR-026).
- * Depuis un partage : `url` et `name` pré-remplissent le formulaire, `fill` lance « Remplir depuis le lien ».
+ * Depuis un partage (`from=share`) : `url` et `name` pré-remplissent le formulaire, `fill` lance « Remplir depuis le
+ * lien », et l'idée enregistrée ouvre la liste (l'écran d'avant était « Ajouter à une liste », ou rien à froid).
  */
 export default function NewItem() {
   const { t } = useTranslation("list");
   const { list, listId } = useList();
-  const save = useItemSave(listId);
-  const shared = useLocalSearchParams<{ url?: string; name?: string; fill?: string }>();
+  const shared = useLocalSearchParams<{ url?: string; name?: string; fill?: string; from?: string }>();
+  const save = useItemSave(listId, { toList: shared.from === "share" });
   if (!list) return <LiveGiftMark />;
   return (
     <Screen testID="item-form.screen">

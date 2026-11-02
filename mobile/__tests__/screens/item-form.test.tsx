@@ -1,5 +1,6 @@
 import NetInfo, { NetInfoStateType } from "@react-native-community/netinfo";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { router } from "expo-router";
 
 import NewItem from "../../app/(app)/lists/[listId]/items/new";
 import type { Schemas } from "@/api/client";
@@ -15,7 +16,7 @@ import { freshDb } from "../helpers/memory-db";
 
 let mockParams: Record<string, string> = {};
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) },
   useLocalSearchParams: () => mockParams,
 }));
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
@@ -56,6 +57,9 @@ async function renderForm() {
 
 beforeEach(async () => {
   mockParams = {};
+  jest.mocked(router.back).mockClear();
+  jest.mocked(router.replace).mockClear();
+  jest.mocked(router.canGoBack).mockReturnValue(true);
   await freshDb();
   resetStore();
   setTransport(apiTransport);
@@ -108,6 +112,54 @@ test("opened from a share with only text: the name is pre-filled, nothing is fet
   await renderForm();
   expect(screen.getByLabelText("Nom du cadeau").props.value).toBe("Un puzzle de 1000 pièces");
   expect(enrich).not.toHaveBeenCalled();
+});
+
+function created() {
+  const posts: unknown[] = [];
+  routes({
+    "GET /capabilities": () => json(200, { apiVersion: "1.2.0", enrich: false, mail: false }),
+    "POST /lists/w/items": async (request) => {
+      posts.push(await request.json());
+      return json(201, {});
+    },
+  });
+  return posts;
+}
+
+async function addIdea(name: string) {
+  await fireEvent.changeText(screen.getByLabelText("Nom du cadeau"), name);
+  await fireEvent.press(screen.getByRole("button", { name: "Ajouter l'idée" }));
+}
+
+test("saved from the list: back to the screen behind, as before", async () => {
+  const posts = created();
+  await renderForm();
+  await addIdea("Puzzle");
+  await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(posts).toHaveLength(1);
+});
+
+test("saved with nothing behind (app opened on the form): the list replaces the form", async () => {
+  jest.mocked(router.canGoBack).mockReturnValue(false);
+  created();
+  await renderForm();
+  await addIdea("Puzzle");
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/lists/w"));
+  expect(router.back).not.toHaveBeenCalled();
+});
+
+test("saved from a share: always the list, even with a screen behind; a second tap creates nothing", async () => {
+  const posts = created();
+  mockParams = { url: "", name: "Lampe de chevet", fill: "", from: "share" };
+  await renderForm();
+  await fireEvent.press(screen.getByRole("button", { name: "Ajouter l'idée" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Ajouter l'idée" }));
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/lists/w"));
+  await fireEvent.press(screen.getByRole("button", { name: "Ajouter l'idée" }));
+  expect(router.back).not.toHaveBeenCalled();
+  expect(router.replace).toHaveBeenCalledTimes(1);
+  expect(posts).toHaveLength(1);
 });
 
 test("the pre-fill button is disabled offline, with the explanation", async () => {

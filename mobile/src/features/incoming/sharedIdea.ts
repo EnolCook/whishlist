@@ -9,9 +9,17 @@ const URL_TAIL = /[).,;:!?»”'"]+$/;
 /** Séparateurs laissés autour du nom une fois le lien retiré (« Lampe – https://… », « "Lampe" | Boutique »). */
 const EDGES = /^[\s\-–—|:,;"'«“”»]+|[\s\-–—|:,;"'«“”»]+$/g;
 const MAX_NAME = 200;
+/** Au-delà, ce n'est plus l'adresse d'une page de cadeau (un lien de suivi, des données collées) : on l'ignore. */
+const MAX_URL = 2048;
+
+/** Le serveur n'accepte que `http://` et `https://` en minuscules : « HTTPS://… » est ramené à cette forme. */
+function normalizeScheme(url: string): string {
+  return url.replace(/^https?/i, (scheme) => scheme.toLowerCase());
+}
 
 /**
- * Lit les contenus partagés : le premier lien http(s) (d'un partage d'URL ou trouvé dans un texte),
+ * Lit les contenus partagés : le premier lien http(s) (d'un partage d'URL ou trouvé dans un texte, schéma en
+ * minuscules, ignoré au-delà de 2048 caractères),
  * et le reste du texte, nettoyé, comme nom proposé. Rend null s'il n'y a ni lien ni texte (image seule…).
  */
 export function sharedIdea(payloads: readonly SharePayload[]): SharedIdea | null {
@@ -23,7 +31,8 @@ export function sharedIdea(payloads: readonly SharePayload[]): SharedIdea | null
     if (!value) continue;
     const found = url ? null : URL_PATTERN.exec(value);
     if (found) {
-      url = found[0].replace(URL_TAIL, "");
+      const candidate = normalizeScheme(found[0].replace(URL_TAIL, ""));
+      if (candidate.length <= MAX_URL) url = candidate;
       texts.push(value.replace(found[0], " "));
     } else {
       texts.push(value);
