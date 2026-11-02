@@ -1,5 +1,6 @@
 # 005 US2 : mes listes (Alex voit la liste de démo) ; avec un compte neuf, nouvelle liste ouverte puis présente
-# dans « Mes listes », titre vide refusé sans rien créer. Voir specs/005-mobile-list-app/spec.md.
+# dans « Mes listes » ; une liste créée sans rien remplir prend les valeurs par défaut du site (nom d'après le
+# nom du compte). Voir specs/005-mobile-list-app/spec.md.
 appId: app.ohyoushouldnt.mobile
 name: "005 US2 — Voir ses listes et en créer une"
 tags:
@@ -37,26 +38,31 @@ tags:
     element:
       text: Noël ${output.unique}
 
-# Titre vide : refusé avec le message du site, on reste sur le formulaire, et rien n'est créé.
-- runFlow: ../subflows/fill-new-list.yaml
+# Rien de rempli : comme sur le site, chaque champ prend sa valeur par défaut et la liste s'ouvre.
+- tapOn:
+    id: lists.new
+- extendedWaitUntil:
+    visible:
+      id: new-list.screen
+    timeout: 10000
 - runFlow: ../subflows/submit-new-list.yaml
 - extendedWaitUntil:
     visible:
-      id: new-list.error
-    timeout: 10000
-- assertVisible: ${output.t.errors.listNeedsTitle}
-- assertVisible:
-    id: new-list.screen
+      id: list.screen
+    timeout: 20000
+# Nom par défaut d'après le nom du compte (« E2E <unique> », register.yaml), en français ou en anglais :
+# un texte à variable, absent de output.t, donc vérifié par motif.
+- assertVisible: "(Liste de E2E ${output.unique}|E2E ${output.unique}’s list)"
 - tapOn:
     id: back-link.back
 - extendedWaitUntil:
     visible:
       id: lists.screen
     timeout: 10000
-# Toujours une seule liste : « Noël ».
+# Deux listes : « Noël » et la liste par défaut.
 - assertVisible:
     id: lists\.card-.*(?<!-shadow)
-    index: 0
+    index: 1
 - assertNotVisible:
     id: lists\.card-.*(?<!-shadow)
-    index: 1
+    index: 2

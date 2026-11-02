@@ -6,16 +6,28 @@ type ItemInput = components["schemas"]["ItemInput"];
 type CreateListBody = paths["/lists"]["post"]["requestBody"]["content"]["application/json"];
 type PatchItemBody = paths["/lists/{listId}/items/{itemId}"]["patch"]["requestBody"]["content"]["application/json"];
 
-/** Corps envoyé pour chaque sorte de changement, au format du contrat. */
+/**
+ * Valeurs par défaut calculées sur le téléphone à la création d'une liste (data/lists.ts), pour la vue
+ * hors ligne des champs laissés vides. Jamais envoyées : le serveur calcule les siennes, qui priment.
+ */
+export type ListPreview = { title: string; category: string; person: string };
+
+/** Corps envoyé pour chaque sorte de changement, au format du contrat (sauf `preview`, gardé sur le téléphone). */
 export type ChangePayloads = {
-  // Le serveur remplit une catégorie ou un « qui » absents, mais l'app les demande toujours (data/lists.ts).
-  createList: CreateListBody & { title: string; category: string; person: string; id: string; categoryId: string; personId: string };
+  // Les champs restent tels que saisis, vides compris : le serveur remplit les vides (contrat, POST /lists).
+  createList: CreateListBody & { title: string; category: string; person: string; id: string; categoryId: string; personId: string; preview?: ListPreview };
   createItem: ItemInput & { id: string };
   updateItem: ItemInput;
   patchItem: PatchItemBody;
   deleteItem: Record<string, never>;
 };
 export type ChangeKind = keyof ChangePayloads;
+
+/** Corps de `POST /lists` : la création telle que saisie, sans l'aperçu local. */
+export function createListBody(payload: ChangePayloads["createList"]): CreateListBody {
+  const { title, category, person, id, categoryId, personId } = payload;
+  return { title, category, person, id, categoryId, personId };
+}
 
 export type NewChange = {
   [K in ChangeKind]: { kind: K; listId: string; targetId: string; payload: ChangePayloads[K] };

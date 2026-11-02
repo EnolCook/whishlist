@@ -45,12 +45,16 @@ function replaceAt<T>(items: T[], index: number, value: T): T[] {
   return items.map((item, i) => (i === index ? value : item));
 }
 
-/** Liste créée sur le téléphone et pas encore acceptée : ce que l'on sait d'elle. */
+/**
+ * Liste créée sur le téléphone et pas encore acceptée : ce que l'on sait d'elle. Un champ laissé vide
+ * montre la valeur par défaut calculée sur le téléphone (`preview`) ; le serveur la remplace à l'envoi.
+ */
 function localList(change: Extract<Change, { kind: "createList" }>): ViewList {
   const { payload } = change;
+  const shown = (typed: string | undefined, fallback: string | undefined) => typed?.trim() || fallback || "";
   return {
     id: payload.id,
-    title: payload.title.trim(),
+    title: shown(payload.title, payload.preview?.title),
     subtitle: null,
     coverImageUrl: null,
     theme: {},
@@ -58,8 +62,8 @@ function localList(change: Extract<Change, { kind: "createList" }>): ViewList {
     readUrl: "",
     inviteUrl: "",
     hasReadPassword: false,
-    categories: [{ id: payload.categoryId, label: payload.category.trim(), sortOrder: 0 }],
-    people: [{ id: payload.personId, label: payload.person.trim() }],
+    categories: [{ id: payload.categoryId, label: shown(payload.category, payload.preview?.category), sortOrder: 0 }],
+    people: [{ id: payload.personId, label: shown(payload.person, payload.preview?.person) }],
     items: [],
     reservations: [],
     members: [],
