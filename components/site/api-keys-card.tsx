@@ -1,0 +1,126 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
+import { ConfirmForm } from "@/components/site/confirm-form";
+import { CopyLinkField } from "@/components/site/copy-link-field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { MAX_API_KEY_NAME } from "@/src/auth/api-key-limits";
+import { createApiKeyAction, revokeApiKeyFormAction } from "@/src/server/actions";
+
+export type ApiKeyRow = { id: string; name: string; hint: string; created: string; lastUsed: string | null };
+
+/**
+ * Page Compte, « Clés d'API et assistants IA » : créer une clé (affichée une seule fois), voir et révoquer les
+ * siennes, et l'adresse du serveur MCP à donner à un assistant.
+ */
+export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUrl: string; notice: string | null }) {
+  const { t } = useTranslation(["auth", "errors"]);
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function create() {
+    if (!name.trim() || pending) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await createApiKeyAction({ name });
+      if (!result.ok) {
+        setError(t(`errors:${result.error}`, { defaultValue: result.error }));
+        return;
+      }
+      setToken(result.token);
+      setName("");
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {notice ? (
+        <Alert>
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
+      ) : null}
+      {token ? (
+        <div className="flex flex-col gap-2 rounded-base border-2 border-border bg-secondary-background p-3 shadow-shadow">
+          <CopyLinkField id="api-key-token" label={t("apiKeys.tokenLabel")} value={token} copyLabel={t("apiKeys.copy")} />
+          <p className="text-sm font-medium text-pretty">{t("apiKeys.copyNow")}</p>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-end gap-2">
+        <Field className="min-w-0 flex-1 basis-48">
+          <FieldLabel htmlFor="api-key-name">{t("apiKeys.name")}</FieldLabel>
+          <Input
+            id="api-key-name"
+            value={name}
+            maxLength={MAX_API_KEY_NAME}
+            placeholder={t("apiKeys.namePlaceholder")}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                create();
+              }
+            }}
+          />
+        </Field>
+        <Button type="button" onClick={create} disabled={pending || !name.trim()}>
+          {t("apiKeys.create")}
+        </Button>
+      </div>
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {keys.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("apiKeys.empty")}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {keys.map((key) => (
+            <li
+              key={key.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-base border-2 border-border bg-secondary-background p-3 shadow-shadow"
+            >
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <p className="font-bold break-words">
+                  {key.name} <span className="font-mono text-sm font-normal text-muted-foreground">…{key.hint}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("apiKeys.createdOn", { date: key.created })} ·{" "}
+                  {key.lastUsed ? t("apiKeys.lastUsed", { date: key.lastUsed }) : t("apiKeys.neverUsed")}
+                </p>
+              </div>
+              <ConfirmForm
+                title={t("apiKeys.revokeTitle")}
+                description={t("apiKeys.revokeBody", { name: key.name })}
+                confirmLabel={t("apiKeys.revokeConfirm")}
+                cancelLabel={t("apiKeys.revokeKeep")}
+                action={revokeApiKeyFormAction}
+                fields={{ keyId: key.id }}
+                triggerLabel={t("apiKeys.revoke")}
+                triggerVariant="outline"
+                triggerSize="sm"
+                confirmVariant="destructive"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-col gap-2 border-t-2 border-border pt-4">
+        <p className="font-bold">{t("apiKeys.mcpTitle")}</p>
+        <CopyLinkField id="mcp-url" label={t("apiKeys.mcpUrl")} value={mcpUrl} hint={t("apiKeys.mcpHint")} copyLabel={t("apiKeys.copy")} />
+      </div>
+    </div>
+  );
+}

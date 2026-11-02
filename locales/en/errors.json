@@ -85,5 +85,10 @@
   "idInvalid": "Invalid identifier.",
   "idConflict": "This identifier is already in use.",
   "subscriptionLinkInvalid": "Enter a valid shared wish list link.",
-  "alreadyMember": "You’re already a member of this list."
+  "alreadyMember": "You’re already a member of this list.",
+  "apiKeyNeedsName": "Give the key a name.",
+  "apiKeyNameTooLong": "The key name is too long (60 characters at most).",
+  "apiKeyLimit": "You already have 20 keys. Revoke one to create another.",
+  "apiKeyMissing": "This key no longer exists.",
+  "apiKeyNotAllowed": "An API key can’t do this account action. Sign in with your password."
 }

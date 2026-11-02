@@ -234,6 +234,17 @@ L’app expose les mêmes parcours que le site sous `/api/v1`, en JSON, pour l�
 - Un client peut choisir l’identifiant de ce qu’il crée (`id` sur `POST /lists` et `POST /lists/{id}/items`, version 1.1.0) : un renvoi ne crée pas de doublon.
 - Vérification à la main : [`specs/004-mobile-api/quickstart.md`](specs/004-mobile-api/quickstart.md).
 
+### Clés d’API et assistants IA (MCP)
+
+- Une **clé d’API** se crée sur la page **Mon compte** (section « Clés d’API et assistants IA »). Elle s’affiche une seule fois, commence par `oys_`, et s’envoie comme un jeton : `Authorization: Bearer oys_…`. Elle agit pour le compte jusqu’à sa révocation, 120 requêtes par minute au plus, mais ne peut ni se déconnecter, ni changer le mot de passe, ni exporter ou supprimer le compte (`403 apiKeyNotAllowed`).
+- **Serveur MCP** : `POST /api/mcp` (transport Streamable HTTP, sans état), avec la même clé. Outils :
+  - listes : `list_lists`, `get_list`, `create_list`, `rename_list`, `delete_list` ;
+  - idées : `add_idea`, `update_idea`, `archive_idea`, `delete_idea`, `fill_from_url` ;
+  - catégories et « qui » : `add_category`, `rename_category`, `delete_category`, `add_person`, `rename_person`, `delete_person`.
+
+  Mêmes règles que le site : une idée réservée ne se supprime pas, seul le propriétaire supprime une liste, une catégorie ou un « qui » encore utilisé reste. Les outils `delete_*` se déclarent destructifs (`destructiveHint`), pour que l’assistant demande confirmation. Une idée dit seulement si elle est réservée, jamais par qui.
+- Exemple avec Claude Code : `claude mcp add --transport http ohyoushouldnt https://<votre-instance>/api/mcp --header "Authorization: Bearer oys_…"`.
+
 ---
 
 ## App mobile

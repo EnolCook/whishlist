@@ -206,6 +206,22 @@ export const apiSessions = sqliteTable(
   (table) => [index("api_sessions_user_id").on(table.userId)],
 );
 
+export const apiKeys = sqliteTable(
+  "api_keys",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    hint: text("hint").notNull(),
+    createdAt: text("created_at").notNull(),
+    lastUsedAt: text("last_used_at"),
+  },
+  (table) => [index("api_keys_user_id").on(table.userId)],
+);
+
 /** Clés techniques : `legacy_import` = `imported:<ISO>` ou `none`. */
 export const meta = sqliteTable("meta", {
   key: text("key").primaryKey(),

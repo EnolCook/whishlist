@@ -5,6 +5,7 @@ const STATUS_BY_CODE: Record<string, number> = {
 
   mustChangePassword: 403,
   emailNotVerified: 403,
+  apiKeyNotAllowed: 403,
   originNotAllowed: 403,
   accessDenied: 403,
   ownerRegenerateInvite: 403,

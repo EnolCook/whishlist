@@ -5,6 +5,7 @@ import { origin as siteOrigin } from "../../auth/current";
 import { normalizeAppOrigin } from "../../auth/origin";
 import { clientIp, isRateLimitError } from "../rate-limit";
 import { apiStatusFor, publicErrorCode } from "./errors";
+import { usesApiKey } from "./auth";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -81,6 +82,11 @@ export async function apiError(
   const publicCode = publicErrorCode(code);
   const message = await translateErrorFor(locale, publicCode);
   return apiJson({ error: { code: publicCode, message }, ...extra }, apiStatusFor(publicCode), cors);
+}
+
+/** Actions de compte (mot de passe, suppression, export, déconnexion) : jamais avec une clé d'API. */
+export async function refuseApiKey(api: ApiRequestContext): Promise<NextResponse | null> {
+  return usesApiKey(api.req) ? apiError("apiKeyNotAllowed", api.locale, api.cors) : null;
 }
 
 export type JsonBody = Record<string, unknown>;

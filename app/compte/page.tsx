@@ -1,3 +1,4 @@
+import { listApiKeys } from "../../src/auth/api-keys";
 import { origin } from "../../src/auth/current";
 import { requireUser } from "../../src/auth/guard";
 import { listMyOffers } from "../../src/domain/offrir";
@@ -10,6 +11,7 @@ import {
   updateDisplayNameAction,
 } from "../../src/server/actions";
 import { getDocument } from "../../src/store/db";
+import { ApiKeysCard } from "@/components/site/api-keys-card";
 import { DeleteAccountDialog } from "@/components/site/delete-account-dialog";
 import { DevLinkAlert } from "@/components/site/dev-link-alert";
 import { LinkButton } from "@/components/site/link-button";
@@ -33,9 +35,9 @@ export default async function ComptePage({
 }: {
   /**
    * `e` / `ok` : profil et mot de passe ; `email` / `ee` / `lien` : changement d'adresse ; `x` : export ;
-   * `d` : suppression du compte.
+   * `d` : suppression du compte ; `k` : clés d'API.
    */
-  searchParams: Promise<{ e?: string; ok?: string; x?: string; d?: string; email?: string; ee?: string; lien?: string }>;
+  searchParams: Promise<{ e?: string; ok?: string; x?: string; d?: string; email?: string; ee?: string; lien?: string; k?: string }>;
 }) {
   const user = await requireUser({ allowMustChangePassword: true });
   const query = await searchParams;
@@ -83,6 +85,18 @@ export default async function ComptePage({
           : query.email === "cancelled"
             ? t("account.emailChange.cancelled")
             : null;
+  const dateFormat = new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "medium" });
+  const apiKeys = forced
+    ? []
+    : listApiKeys(doc, user.id).map((key) => ({
+        id: key.id,
+        name: key.name,
+        hint: key.hint,
+        created: dateFormat.format(new Date(key.createdAt)),
+        lastUsed: key.lastUsedAt ? dateFormat.format(new Date(key.lastUsedAt)) : null,
+      }));
+  const apiKeyNotice = !query.k ? null : query.k === "revoked" ? t("apiKeys.revoked") : await translateError(query.k);
+  const mcpUrl = `${siteOrigin}/api/mcp`;
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-col gap-6">
@@ -250,6 +264,18 @@ export default async function ComptePage({
                 </div>
               ))
             )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {!forced ? (
+        <Card id="cles">
+          <CardHeader>
+            <CardTitle>{t("apiKeys.title")}</CardTitle>
+            <CardDescription>{t("apiKeys.hint")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ApiKeysCard keys={apiKeys} mcpUrl={mcpUrl} notice={apiKeyNotice} />
           </CardContent>
         </Card>
       ) : null}

@@ -14,6 +14,7 @@ import { mailConfigured } from "./mail";
 import { isRateLimitError } from "./rate-limit";
 import { actionContext } from "./action-context";
 import { deleteOwnAccount } from "./commands/account";
+import { createMyApiKey, revokeMyApiKey } from "./commands/api-keys";
 import {
   changeOwnPassword,
   checkCredentials,
@@ -159,6 +160,27 @@ export async function updateDisplayNameAction(formData: FormData) {
   const result = await updateOwnDisplayName(await actionContext(), { displayName });
   if (!result.ok) return localeRedirect(`/compte?e=${result.error}`);
   return localeRedirect("/compte?ok=name");
+}
+
+/** Page Compte : nouvelle clé d'API ; le jeton est rendu une fois, pour être copié. */
+export async function createApiKeyAction(input: {
+  name: string;
+}): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
+  await memberId();
+  try {
+    const result = await createMyApiKey(await actionContext(), input);
+    return result.ok ? { ok: true, token: result.token } : { ok: false, error: result.error };
+  } catch (error) {
+    if (isRateLimitError(error)) return { ok: false, error: "rateLimited" };
+    throw error;
+  }
+}
+
+/** Révoquer une clé (dialogue de confirmation de la page Compte). */
+export async function revokeApiKeyFormAction(formData: FormData) {
+  await memberId();
+  const result = await revokeMyApiKey(await actionContext(), { keyId: String(formData.get("keyId") ?? "") });
+  return localeRedirect(result.ok ? "/compte?k=revoked#cles" : `/compte?k=${result.error}#cles`);
 }
 
 export async function changePasswordAction(formData: FormData) {

@@ -14,7 +14,7 @@ export class LegacyImportError extends Error {
 }
 
 const REQUIRED = ["users", "wishlists", "memberships", "types", "people", "views", "items", "reservations"] as const;
-const OPTIONAL = ["subscriptions", "passwordResets", "apiSessions", "emailConfirmations"] as const;
+const OPTIONAL = ["subscriptions", "passwordResets", "apiSessions", "emailConfirmations", "apiKeys"] as const;
 
 /**
  * Forme attendue de chaque champ dans l'ancien fichier, avant normalisation.
@@ -104,6 +104,15 @@ const FIELDS: { [K in keyof Database]: Record<string, FieldCheck> } = {
     expiresAt: "string",
     createdAt: "string",
   },
+  apiKeys: {
+    id: "string",
+    userId: "string",
+    name: "string",
+    tokenHash: "string",
+    hint: "string",
+    createdAt: "string",
+    lastUsedAt: "string?",
+  },
 };
 
 function fieldOk(value: unknown, check: FieldCheck): boolean {
@@ -157,6 +166,7 @@ export function normalizeDocument(doc: Database): Database {
   if (!doc.passwordResets) doc.passwordResets = [];
   if (!doc.apiSessions) doc.apiSessions = [];
   if (!doc.emailConfirmations) doc.emailConfirmations = [];
+  if (!doc.apiKeys) doc.apiKeys = [];
   for (const subscription of doc.subscriptions) {
     if (subscription.readPasswordHash === undefined) subscription.readPasswordHash = null;
   }
@@ -236,6 +246,7 @@ export function checkDocument(doc: Database): string[] {
   idDoubled("passwordResets", doc.passwordResets);
   idDoubled("apiSessions", doc.apiSessions);
   idDoubled("emailConfirmations", doc.emailConfirmations);
+  idDoubled("apiKeys", doc.apiKeys);
   const membership = (m: Database["memberships"][number]) => `${m.wishlistId}/${m.userId}`;
   doubled("memberships", "adhésion en double", sameId(duplicates(doc.memberships, membership, membership)));
   const subscription = (s: Database["subscriptions"][number]) => `${s.wishlistId}/${s.userId}`;
@@ -246,6 +257,7 @@ export function checkDocument(doc: Database): string[] {
   doubled("wishlists", "inviteToken en double", duplicates(doc.wishlists, (w) => w.inviteToken, byId));
   doubled("passwordResets", "tokenHash en double", duplicates(doc.passwordResets, (r) => r.tokenHash, byId));
   doubled("apiSessions", "tokenHash en double", duplicates(doc.apiSessions, (s) => s.tokenHash, byId));
+  doubled("apiKeys", "tokenHash en double", duplicates(doc.apiKeys, (k) => k.tokenHash, byId));
   doubled(
     "emailConfirmations",
     "tokenHash en double",
@@ -307,6 +319,7 @@ export function checkDocument(doc: Database): string[] {
   ofUser("passwordResets", doc.passwordResets);
   ofUser("apiSessions", doc.apiSessions);
   ofUser("emailConfirmations", doc.emailConfirmations);
+  ofUser("apiKeys", doc.apiKeys);
   return problems;
 }
 

@@ -138,6 +138,21 @@ export interface ApiSession {
   expiresAt: string;
 }
 
+/**
+ * Clé d'API créée par la personne (assistant IA, script). Elle agit pour son compte, sauf les actions de
+ * compte. Seul son hachage est gardé ; `hint` (4 derniers caractères) aide à la reconnaître dans la liste.
+ */
+export interface ApiKey {
+  id: string;
+  userId: string;
+  name: string;
+  tokenHash: string;
+  hint: string;
+  createdAt: string;
+  /** Mis à jour au plus une fois par heure, pour ne pas écrire à chaque requête. */
+  lastUsedAt: string | null;
+}
+
 export interface Database {
   users: User[];
   wishlists: Wishlist[];
@@ -151,6 +166,7 @@ export interface Database {
   passwordResets: PasswordReset[];
   apiSessions: ApiSession[];
   emailConfirmations: EmailConfirmation[];
+  apiKeys: ApiKey[];
 }
 
 export interface SeedFile {
@@ -194,5 +210,6 @@ export function emptyDatabase(): Database {
     passwordResets: [],
     apiSessions: [],
     emailConfirmations: [],
+    apiKeys: [],
   };
 }

@@ -74,6 +74,7 @@ export function deleteAccount(
   }
   next.subscriptions = next.subscriptions.filter((s) => s.userId !== userId);
   next.apiSessions = next.apiSessions.filter((s) => s.userId !== userId);
+  next.apiKeys = next.apiKeys.filter((k) => k.userId !== userId);
   next.passwordResets = next.passwordResets.filter((r) => r.userId !== userId);
   next.emailConfirmations = next.emailConfirmations.filter((c) => c.userId !== userId);
   next.users = next.users.filter((u) => u.id !== userId);

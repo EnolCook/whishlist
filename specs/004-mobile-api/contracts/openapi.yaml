@@ -36,6 +36,10 @@ info:
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
+    - Clé d'API (`oys_…`, créée sur la page Compte du site, jusqu'à sa révocation) → le même en-tête
+      `Authorization: Bearer`. Elle agit pour le compte, 120 requêtes par minute au plus, sauf sur
+      `/auth/logout`, `/me/password`, `/me/deletion` et `/me/export` (`403 apiKeyNotAllowed`). La même clé
+      ouvre le serveur MCP du site (`/api/mcp`, hors de ce contrat).
     - `unlockToken` (liste protégée) → `X-Read-Unlock`, 14 jours.
     - `claim` (réservation sans compte) → `X-Reservation-Claims`, séparés par des virgules, 90 jours.
 servers:
@@ -1191,7 +1195,7 @@ components:
     bearer:
       type: http
       scheme: bearer
-      description: Jeton opaque rendu par /auth/login, /auth/register ou /me/password.
+      description: Jeton opaque rendu par /auth/login, /auth/register ou /me/password, ou clé d'API `oys_…` (page Compte du site).
 
   parameters:
     readToken: { name: readToken, in: path, required: true, schema: { type: string } }
