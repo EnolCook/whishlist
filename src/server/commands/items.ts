@@ -3,8 +3,10 @@ import { idTaken, isClientId } from "../../domain/client-ids";
 import { fetchPageHtml } from "../../domain/fetch-page";
 import {
   cancelReservation,
+  copyItem as copyItemRule,
   createItem,
   deleteItem as deleteItemRule,
+  moveItem as moveItemRule,
   setItemArchived as setItemArchivedRule,
   setItemType as setItemTypeRule,
   updateItem,
@@ -192,6 +194,56 @@ export function patchItem(
     rules.push((doc, actorId) => setItemArchivedRule(doc, { wishlistId, itemId, archived, actorId }));
   }
   return mutateItem(ctx, wishlistId, itemId, rules);
+}
+
+export type TransferFields = {
+  wishlistId: string;
+  itemId: string;
+  targetWishlistId: string;
+  typeId: string;
+  personId: string;
+};
+
+/** Change une idée de liste. Renvoyé après réussite (file hors ligne) : rend l'idée déjà arrivée. */
+export async function moveItem(ctx: CommandContext, input: TransferFields): Promise<CommandResult<{ item: Item }>> {
+  const active = activeUser(ctx);
+  if (!active.ok) return active;
+  const actorId = active.user.id;
+  return updateDocument<CommandResult<{ item: Item }>>((doc) => {
+    const arrived = itemIn(doc, input.targetWishlistId, input.itemId);
+    if (
+      arrived &&
+      input.targetWishlistId !== input.wishlistId &&
+      findMembership(doc, input.targetWishlistId, actorId) &&
+      arrived.typeId === input.typeId &&
+      arrived.personId === input.personId
+    ) {
+      return { doc, result: { ok: true, item: arrived } };
+    }
+    const moved = moveItemRule(doc, { ...input, actorId });
+    if (!moved.ok) return { doc, result: moved };
+    return { doc: moved.doc, result: { ok: true, item: itemIn(moved.doc, input.targetWishlistId, input.itemId)! } };
+  });
+}
+
+/** Copie une idée. `clientId` : comme à la création, un renvoi rend la copie déjà faite. */
+export async function copyItem(
+  ctx: CommandContext,
+  input: TransferFields & { clientId?: string },
+): Promise<CommandResult<{ item: Item; replayed: boolean }>> {
+  const active = activeUser(ctx);
+  if (!active.ok) return active;
+  const actorId = active.user.id;
+  if (input.clientId !== undefined && !isClientId(input.clientId)) return { ok: false, error: "idInvalid" };
+  return updateDocument<CommandResult<{ item: Item; replayed: boolean }>>((doc) => {
+    if (input.clientId && findMembership(doc, input.targetWishlistId, actorId)) {
+      const again = replayedItem(doc, input.targetWishlistId, input.clientId);
+      if (again) return { doc, result: again };
+    }
+    const copied = copyItemRule(doc, { ...input, actorId, id: input.clientId });
+    if (!copied.ok) return { doc, result: copied };
+    return { doc: copied.doc, result: { ok: true, item: copied.item, replayed: false } };
+  });
 }
 
 export async function deleteItem(

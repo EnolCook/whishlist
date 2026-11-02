@@ -169,6 +169,24 @@
     "secondHandOk": "Second-hand is fine",
     "secondHandOkHint": "Gift givers will see it on the shared list."
   },
+  "transfer": {
+    "open": "Move or copy…",
+    "title": "Move or copy the idea",
+    "mode": "What should happen to the idea?",
+    "move": "Move",
+    "moveHint": "It leaves this list.",
+    "copy": "Copy",
+    "copyHint": "It stays here and a copy is added.",
+    "target": "To the list",
+    "thisList": "{{title}} (this list)",
+    "submitMove": "Move the idea",
+    "submitCopy": "Copy the idea",
+    "onlyList": "You don’t have another list: the idea can only be copied into this one.",
+    "moved": "“{{name}}” is now on the list “{{list}}”.",
+    "copied": "“{{name}}” was copied to the list “{{list}}”.",
+    "copiedHere": "“{{name}}” was copied just below.",
+    "openList": "Open the list"
+  },
   "accordion": {
     "hint": "Open a category to see its ideas. The arrows reorder categories. The menu moves an idea.",
     "moveAria": "Move “{{name}}” to a category",

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.5.0"
+  version: "1.6.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -29,6 +29,7 @@ info:
     - 1.5.0 : `secondHandOk` sur les idées (`PublicItem`, `MemberItem`, et facultatif dans `ItemInput`) ;
       `description` sur les idées (`PublicItem`, `MemberItem`, facultative dans `ItemInput`)
       et dans la réponse de `POST /lists/{listId}/enrich`.
+    - 1.6.0 : déplacer ou copier une idée (`POST /lists/{listId}/items/{itemId}/move` et `/copy`).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
@@ -764,6 +765,68 @@ paths:
         "204": { description: Supprimée }
         "404": { $ref: "#/components/responses/Error" }
 
+  /lists/{listId}/items/{itemId}/move:
+    parameters:
+      - $ref: "#/components/parameters/listId"
+      - $ref: "#/components/parameters/itemId"
+    post:
+      tags: [items]
+      summary: Déplacer une idée vers une autre liste (depuis 1.5.0)
+      description: |
+        Il faut être membre des deux listes. L'idée garde son identifiant ; `typeId` et `personId`
+        sont ceux de la liste d'arrivée. Une idée réservée ne change pas de liste
+        (`itemReservedCannotMove`) : la personne qui a réservé ne peut annuler que depuis le lien de
+        la liste d'origine. Un renvoi après réussite (même liste d'arrivée, même catégorie, même
+        « qui ») rend l'idée déjà déplacée.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ItemTransfer" }
+      responses:
+        "200":
+          description: L'idée, dans la liste d'arrivée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberItem" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /lists/{listId}/items/{itemId}/copy:
+    parameters:
+      - $ref: "#/components/parameters/listId"
+      - $ref: "#/components/parameters/itemId"
+    post:
+      tags: [items]
+      summary: Copier une idée, dans la même liste ou une autre (depuis 1.5.0)
+      description: |
+        Il faut être membre des deux listes. Tous les champs de l'idée sont copiés, pas sa
+        réservation. Dans la même liste, la copie se place juste après l'original. `id` : comme à
+        la création, identifiant choisi par le client ; un renvoi répond `200` sans rien créer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/ItemTransfer" }
+                - type: object
+                  properties:
+                    id: { type: string, description: Identifiant de la copie choisi par le client. }
+      responses:
+        "201":
+          description: Copie créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberItem" }
+        "200":
+          description: Renvoi d'une copie déjà reçue (même `id`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberItem" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
   /lists/{listId}/enrich:
     parameters:
       - $ref: "#/components/parameters/listId"
@@ -1250,6 +1313,14 @@ components:
           type: [string, "null"]
           maxLength: 2000
           description: "Depuis 1.5.0. Absente à la création : aucune. Absente en modification : celle enregistrée est gardée. Vide ou null l'efface. Plus de 2000 caractères → descriptionTooLong."
+
+    ItemTransfer:
+      type: object
+      required: [targetListId, typeId, personId]
+      properties:
+        targetListId: { type: string, description: Liste d'arrivée (la même est permise pour une copie). }
+        typeId: { type: string, description: Catégorie de la liste d'arrivée. }
+        personId: { type: string, description: « Qui » de la liste d'arrivée. }
 
     MemberItem:
       type: object

@@ -46,6 +46,13 @@ function EditItem({ listId, item }: { listId: string; item: ViewItem }) {
             submitLabel={t("form.save")}
             onSubmit={(draft) => void save.submit(draft)}
           />
+          <Button
+            testID="item-form.transfer"
+            title={t("transfer.open")}
+            variant="neutral"
+            fullWidth
+            onPress={() => router.push({ pathname: "/lists/[listId]/items/transfer", params: { listId, itemId: item.id } })}
+          />
           <Button testID="item-form.delete" title={t("form.delete")} variant="destructive" fullWidth onPress={() => setConfirmDelete(true)} />
         </CardContent>
       </Card>

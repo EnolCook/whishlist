@@ -9,6 +9,7 @@
   "descriptionTooLong": "La description ne peut pas dépasser 2 000 caractères.",
   "itemMissing": "Cette idée n'existe pas.",
   "itemHasReservation": "Cette idée a une réservation. Annulez-la d'abord.",
+  "itemReservedCannotMove": "Cette idée est réservée : elle reste dans sa liste, sinon la personne qui l’a réservée ne la retrouverait plus. Vous pouvez la copier.",
   "typeNeedsName": "Indiquez un nom de catégorie.",
   "typeExists": "Cette catégorie existe déjà dans cette liste.",
   "personExists": "Ce « qui » existe déjà dans cette liste.",

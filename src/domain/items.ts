@@ -179,6 +179,83 @@ export function setItemArchived(
   return { ok: true, doc: next };
 }
 
+type TransferInput = {
+  wishlistId: string;
+  actorId: string;
+  itemId: string;
+  /** Liste d'arrivée (peut être la même pour une copie). */
+  targetWishlistId: string;
+  /** Catégorie et « pour qui » de la liste d'arrivée. */
+  typeId: string;
+  personId: string;
+};
+
+/** Droits sur les deux listes, idée de départ, catégorie et « pour qui » pris dans la liste d'arrivée. */
+function checkTransfer(doc: Database, input: TransferInput): { ok: true; item: Item } | { ok: false; error: string } {
+  if (!findMembership(doc, input.wishlistId, input.actorId)) return { ok: false, error: "notMember" };
+  if (!findMembership(doc, input.targetWishlistId, input.actorId)) return { ok: false, error: "notMember" };
+  const item = doc.items.find((i) => i.id === input.itemId && i.wishlistId === input.wishlistId);
+  if (!item) return { ok: false, error: "itemMissing" };
+  if (!doc.types.some((t) => t.id === input.typeId && t.wishlistId === input.targetWishlistId)) {
+    return { ok: false, error: "typeNotInList" };
+  }
+  if (!doc.people.some((p) => p.id === input.personId && p.wishlistId === input.targetWishlistId)) {
+    return { ok: false, error: "personNotInList" };
+  }
+  return { ok: true, item };
+}
+
+function lastSortOrder(doc: Database, wishlistId: string): number {
+  return doc.items.filter((i) => i.wishlistId === wishlistId).reduce((max, i) => Math.max(max, i.sortOrder), 0);
+}
+
+/**
+ * Change l'idée de liste (elle garde son identifiant). Refusé si elle est réservée : la personne qui a
+ * réservé ne peut annuler que depuis le lien de la liste d'origine, elle perdrait sa réservation.
+ */
+export function moveItem(doc: Database, input: TransferInput): { ok: true; doc: Database } | { ok: false; error: string } {
+  const checked = checkTransfer(doc, input);
+  if (!checked.ok) return checked;
+  if (doc.reservations.some((r) => r.itemId === input.itemId)) return { ok: false, error: "itemReservedCannotMove" };
+  const next = clone(doc);
+  const item = next.items.find((i) => i.id === input.itemId)!;
+  if (input.targetWishlistId !== input.wishlistId) item.sortOrder = lastSortOrder(next, input.targetWishlistId) + 1;
+  item.wishlistId = input.targetWishlistId;
+  item.typeId = input.typeId;
+  item.personId = input.personId;
+  return { ok: true, doc: next };
+}
+
+/**
+ * Copie de l'idée, sans sa réservation. Tous les champs suivent (l'idée est clonée, un champ ajouté plus
+ * tard suit aussi). Dans la même liste, la copie se place juste après l'original.
+ */
+export function copyItem(
+  doc: Database,
+  input: TransferInput & { id?: string },
+): { ok: true; doc: Database; item: Item } | { ok: false; error: string } {
+  const checked = checkTransfer(doc, input);
+  if (!checked.ok) return checked;
+  const next = clone(doc);
+  const sameList = input.targetWishlistId === input.wishlistId;
+  if (sameList) {
+    for (const other of next.items) {
+      if (other.wishlistId === input.wishlistId && other.sortOrder > checked.item.sortOrder) other.sortOrder += 1;
+    }
+  }
+  const item: Item = {
+    ...structuredClone(checked.item),
+    id: input.id ?? newId(),
+    wishlistId: input.targetWishlistId,
+    typeId: input.typeId,
+    personId: input.personId,
+    sortOrder: sameList ? checked.item.sortOrder + 1 : lastSortOrder(next, input.targetWishlistId) + 1,
+    archived: false,
+  };
+  next.items.push(item);
+  return { ok: true, doc: next, item };
+}
+
 export function deleteItem(
   doc: Database,
   input: { wishlistId: string; actorId: string; itemId: string },

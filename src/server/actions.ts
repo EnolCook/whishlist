@@ -42,11 +42,14 @@ import {
 } from "./commands/sharing";
 import {
   cancelReservationAsMember,
+  copyItem,
   deleteItem,
   enrichFromUrl,
+  moveItem,
   saveItem,
   setItemArchived,
   setItemType,
+  type TransferFields,
 } from "./commands/items";
 import { cancelOwn, reserve, unlockPublicList } from "./commands/public-list";
 import type { LlmImpact } from "../domain/llm-impact";
@@ -443,6 +446,17 @@ export async function setItemArchivedAction(input: {
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   await memberId();
   const result = await setItemArchived(await actionContext(), input);
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true };
+}
+
+/** Déplacer ou copier une idée depuis le dialogue « Modifier l'idée ». */
+export async function transferItemAction(
+  input: TransferFields & { mode: "move" | "copy" },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await memberId();
+  const { mode, ...fields } = input;
+  const result = mode === "move" ? await moveItem(await actionContext(), fields) : await copyItem(await actionContext(), fields);
   if (!result.ok) return { ok: false, error: result.error };
   return { ok: true };
 }

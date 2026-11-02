@@ -155,3 +155,10 @@ test("SC-008: 20 changes with random drops all arrive, without duplicates", asyn
   expect(server.items.size).toBe(20);
   expect([...server.items.keys()].sort()).toEqual(Array.from({ length: 20 }, (_, i) => `idea-${String(i).padStart(2, "0")}`));
 });
+
+test("after a move or a copy, both lists are reloaded", async () => {
+  const preview = { id: "a", name: "Idée a", typeId: "t", personId: "p", url: null, imageUrl: null, priceCents: null, priceLabel: null, priority: null, secondHandOk: false, description: null, archived: false, sortOrder: 0 };
+  await enqueue({ kind: "moveItem", listId: "w", targetId: "a", payload: { targetListId: "w2", typeId: "t2", personId: "p2", preview } });
+  await syncNow();
+  expect(server.refreshed).toEqual([["w", "w2"]]);
+});

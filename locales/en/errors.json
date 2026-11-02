@@ -9,6 +9,7 @@
   "descriptionTooLong": "The description can’t be longer than 2,000 characters.",
   "itemMissing": "This idea doesn’t exist.",
   "itemHasReservation": "This idea has a reservation. Cancel it first.",
+  "itemReservedCannotMove": "This idea is reserved, so it stays on its list: otherwise the person who reserved it couldn’t find it anymore. You can copy it instead.",
   "typeNeedsName": "Enter a category name.",
   "typeExists": "This category is already on this list.",
   "personExists": "This recipient is already on this list.",

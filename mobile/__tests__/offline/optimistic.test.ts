@@ -106,3 +106,39 @@ test("description: shown from the outbox, cleared by an empty one, kept by a cha
   const created = viewList(list, "w", [change({ kind: "createItem", listId: "w", targetId: "n", payload: { id: "n", ...base } })], "fr-FR");
   expect(created?.items.find((entry) => entry.id === "n")?.description).toBeNull();
 });
+
+describe("move and copy", () => {
+  const christmas: Schemas["MemberList"] = {
+    ...list,
+    id: "w2",
+    title: "Noël",
+    categories: [{ id: "t2", label: "Divers", sortOrder: 0 }],
+    people: [{ id: "p2", label: "Alex" }],
+    items: [],
+  };
+  const transfer = { targetListId: "w2", typeId: "t2", personId: "p2", preview: item };
+  const move = (state: Change["state"] = "pending") =>
+    change({ kind: "moveItem", listId: "w", targetId: "gift", payload: transfer }, state);
+
+  test("a queued move hides the idea in its list and shows it, pending, in the target list", () => {
+    const changes = [move()];
+    expect(viewList(list, "w", changes, "fr-FR")?.items.map((entry) => entry.id)).toEqual(["gift2"]);
+    const arrived = viewList(christmas, "w2", changes, "fr-FR")?.items;
+    expect(arrived).toEqual([expect.objectContaining({ id: "gift", name: "Livre", typeId: "t2", personId: "p2", pending: true })]);
+  });
+
+  test("a refused move leaves the idea in its list, with the reason, and nothing in the target", () => {
+    const refused = move("rejected");
+    expect(viewList(list, "w", [refused], "fr-FR")?.items[0]).toMatchObject({ id: "gift", rejected: { seq: refused.seq, kind: "moveItem" } });
+    expect(viewList(christmas, "w2", [refused], "fr-FR")?.items).toEqual([]);
+  });
+
+  test("a queued copy appears in the target list; in the same list, right after the original", () => {
+    const other = change({ kind: "copyItem", listId: "w", targetId: "copy1", payload: { ...transfer, id: "copy1" } });
+    expect(viewList(christmas, "w2", [other], "fr-FR")?.items.map((entry) => entry.id)).toEqual(["copy1"]);
+    expect(viewList(list, "w", [other], "fr-FR")?.items.map((entry) => entry.id)).toEqual(["gift", "gift2"]);
+    const here = change({ kind: "copyItem", listId: "w", targetId: "copy2", payload: { targetListId: "w", typeId: "t", personId: "p", preview: item, id: "copy2" } });
+    const shown = viewList(list, "w", [here], "fr-FR")?.items.sort((a, b) => a.sortOrder - b.sortOrder).map((entry) => entry.id);
+    expect(shown).toEqual(["gift", "copy2", "gift2"]);
+  });
+});

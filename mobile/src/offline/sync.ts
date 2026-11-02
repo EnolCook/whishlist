@@ -10,6 +10,11 @@ export interface Transport {
   refresh(listIds: string[]): Promise<void>;
 }
 
+/** Listes à relire après un changement : la sienne, et la liste d'arrivée d'un déplacement ou d'une copie. */
+function listsOf(change: Change): string[] {
+  return change.kind === "moveItem" || change.kind === "copyItem" ? [change.listId, change.payload.targetListId] : [change.listId];
+}
+
 /** Attente avant un nouvel essai : 1 s, 2 s, 4 s… plafonnée à 1 minute (R6). */
 export function retryDelay(attempts: number): number {
   return Math.min(60_000, 1000 * 2 ** Math.max(0, attempts - 1));
@@ -48,7 +53,7 @@ async function run(send: Transport): Promise<boolean> {
       try {
         await send.send(change);
         await markSent(change.seq);
-        touched.add(change.listId);
+        for (const id of listsOf(change)) touched.add(id);
       } catch (error) {
         // Une idée déjà supprimée : le renvoi d'une suppression est un succès (contrat api-v1-additions).
         if (change.kind === "deleteItem" && error instanceof ApiError && error.code === "itemMissing") {
@@ -64,7 +69,7 @@ async function run(send: Transport): Promise<boolean> {
         }
         // Refus métier : signalé, et les autres changements continuent (FR-029a).
         await reject(change.seq, error instanceof ApiError ? error.code : "serverError");
-        touched.add(change.listId);
+        for (const id of listsOf(change)) touched.add(id);
       }
     }
   } finally {

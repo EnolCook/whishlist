@@ -5,6 +5,9 @@ import { getDb, type Db } from "./db";
 type ItemInput = components["schemas"]["ItemInput"];
 type CreateListBody = paths["/lists"]["post"]["requestBody"]["content"]["application/json"];
 type PatchItemBody = paths["/lists/{listId}/items/{itemId}"]["patch"]["requestBody"]["content"]["application/json"];
+type ItemTransfer = components["schemas"]["ItemTransfer"];
+/** L'idée telle qu'elle était au moment du changement : de quoi l'afficher dans la liste d'arrivée avant l'envoi. Jamais envoyée. */
+type TransferPreview = { preview: components["schemas"]["MemberItem"] };
 
 /**
  * Valeurs par défaut calculées sur le téléphone à la création d'une liste (data/lists.ts), pour la vue
@@ -20,6 +23,8 @@ export type ChangePayloads = {
   updateItem: ItemInput;
   patchItem: PatchItemBody;
   deleteItem: Record<string, never>;
+  moveItem: ItemTransfer & TransferPreview;
+  copyItem: ItemTransfer & TransferPreview & { id: string };
 };
 export type ChangeKind = keyof ChangePayloads;
 
@@ -110,7 +115,9 @@ export async function enqueue(change: NewChange): Promise<number | null> {
     const created = sameItem.find((row) => row.kind === "createItem");
 
     if (change.kind === "deleteItem") {
-      for (const row of sameItem) await db.run("DELETE FROM outbox WHERE seq = ?", [row.seq]);
+      // Un déplacement en attente reste : la suppression vise l'idée dans sa liste d'arrivée.
+      const dropped = created ? sameItem : sameItem.filter((row) => row.kind !== "moveItem");
+      for (const row of dropped) await db.run("DELETE FROM outbox WHERE seq = ?", [row.seq]);
       // Une idée jamais envoyée : rien à supprimer sur le serveur.
       if (!created) seq = await insert(db, change, "pending", null);
       return;
