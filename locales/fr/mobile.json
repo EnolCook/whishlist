@@ -27,7 +27,7 @@
     "fix": "Corriger",
     "discard": "Abandonner",
     "savedOffline": "Enregistré sur le téléphone. Ce sera envoyé dès que le réseau sera revenu.",
-    "logoutTitle": "Se déconnecter quand même ?",
+    "logoutTitle": "Se déconnecter quand même ?",
     "logoutWarning_one": "{{count}} changement n'a pas encore été envoyé. Il sera perdu si vous vous déconnectez.",
     "logoutWarning_other": "{{count}} changements n'ont pas encore été envoyés. Ils seront perdus si vous vous déconnectez.",
     "logoutConfirm": "Se déconnecter et perdre les changements",

@@ -1,24 +1,24 @@
 {
   "reset": {
-    "subject": "Réinitialisez votre mot de passe — Oh, mais fallait pas !",
+    "subject": "Réinitialisez votre mot de passe — Oh, mais fallait pas !",
     "intro": "Vous avez demandé à réinitialiser votre mot de passe. Utilisez le bouton ci-dessous pour en choisir un nouveau. Ce lien est valable 1 heure.",
-    "openLink": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
+    "openLink": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
     "cta": "Choisir un nouveau mot de passe",
     "ignore": "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail."
   },
   "already": {
-    "subject": "Cette adresse a déjà un compte — Oh, mais fallait pas !",
+    "subject": "Cette adresse a déjà un compte — Oh, mais fallait pas !",
     "intro": "Quelqu’un a essayé de créer un compte avec cette adresse. Si c’était vous, connectez-vous. Sinon, ignorez cet e-mail.",
-    "openLink": "Page de connexion :",
+    "openLink": "Page de connexion :",
     "cta": "Se connecter",
     "ignore": "Si vous n’êtes pas à l’origine de cette tentative, vous pouvez ignorer cet e-mail. Votre mot de passe n’a pas changé."
   },
   "invite": {
-    "subject": "Invitation à rejoindre une liste sur Oh, mais fallait pas !",
-    "intro": "Vous avez reçu une invitation à rejoindre « {{listTitle}} » pour participer à sa gestion. Connectez-vous ou créez un compte pour continuer.",
-    "openLink": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
+    "subject": "Invitation à rejoindre une liste sur Oh, mais fallait pas !",
+    "intro": "Vous avez reçu une invitation à rejoindre « {{listTitle}} » pour participer à sa gestion. Connectez-vous ou créez un compte pour continuer.",
+    "openLink": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
     "cta": "Rejoindre la liste",
-    "ctaHint": "un compte Oh, mais fallait pas ! est nécessaire",
+    "ctaHint": "un compte Oh, mais fallait pas ! est nécessaire",
     "ignore": "Si vous n'attendiez pas ce message, ignorez-le."
   },
   "verify": {
