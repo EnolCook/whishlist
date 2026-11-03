@@ -7,7 +7,7 @@ import { revokeApiKey } from "../../src/domain/api-keys";
 import { mcpAccess } from "../../src/server/mcp/gate";
 import { buildMcpServer } from "../../src/server/mcp/server";
 import { readDocument } from "../../src/store/db";
-import { apiDoc, ctx, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
+import { apiDoc, apiDocWithSecondList, ctx, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
 
 before(ensurePasswordHash);
 
@@ -46,6 +46,7 @@ test("outils proposés : listes, idées, catégories et « qui », remplir depui
       "add_idea",
       "add_person",
       "archive_idea",
+      "copy_idea",
       "create_list",
       "delete_category",
       "delete_idea",
@@ -54,6 +55,7 @@ test("outils proposés : listes, idées, catégories et « qui », remplir depui
       "fill_from_url",
       "get_list",
       "list_lists",
+      "move_idea",
       "rename_category",
       "rename_list",
       "rename_person",
@@ -171,6 +173,60 @@ test("delete_idea : supprime ; une idée réservée est refusée, comme sur le s
     assert.match(reserved.content[0]!.text, /itemHasReservation/);
     assert.deepEqual((await readDocument()).items.map((item) => item.id).sort(), ["gift2", "taken"]);
     assert.match((await client(doc.users[1]!).call("delete_idea", { listId: "w", ideaId: "gift2" })).content[0]!.text, /listMissing/);
+  });
+});
+
+/** Alex devient membre de la liste de Camille, qui a aussi une catégorie « jeux ». */
+function transferDoc() {
+  const doc = apiDocWithSecondList();
+  doc.memberships.push({ wishlistId: "w-camille", userId: "alex", role: "member", joinedAt: "2026-01-06T00:00:00.000Z" });
+  doc.types.push({ id: "t-camille-jeux", wishlistId: "w-camille", label: "jeux", sortOrder: 1 });
+  return doc;
+}
+
+test("move_idea : catégorie de même nom, sinon la première ; « qui » donné par nom ; nom inconnu → la liste des noms", async () => {
+  const doc = transferDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    assert.deepEqual(json(await alex.call("move_idea", { listId: "w", ideaId: "gift", targetListId: "w-camille" })), {
+      moved: { id: "gift", name: "Idée gift", list: "Les idées de Camille", category: "jeux", for: "Camille" },
+    });
+    const moved = (await readDocument()).items.find((item) => item.id === "gift")!;
+    assert.deepEqual([moved.wishlistId, moved.typeId, moved.personId], ["w-camille", "t-camille-jeux", "p-camille"]);
+    const named = json(await alex.call("move_idea", { listId: "w", ideaId: "gift2", targetListId: "w-camille", category: "LIVRES", for: "camille" }));
+    assert.equal(named.moved.category, "Livres");
+    const unknown = await alex.call("move_idea", { listId: "w-camille", ideaId: "gift", targetListId: "w", category: "Maison" });
+    assert.match(unknown.content[0]!.text, /Unknown category "Maison"\. The list's categories: Jeux\./);
+  });
+});
+
+test("move_idea : une idée réservée ne part pas ; il faut être membre des deux listes", async () => {
+  const doc = transferDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    assert.match((await alex.call("move_idea", { listId: "w", ideaId: "taken", targetListId: "w-camille" })).content[0]!.text, /itemReservedCannotMove/);
+    const camille = client(doc.users[1]!);
+    assert.match((await camille.call("move_idea", { listId: "w", ideaId: "gift", targetListId: "w-camille" })).content[0]!.text, /listMissing/);
+    assert.match((await camille.call("move_idea", { listId: "w-camille", ideaId: "camille-book", targetListId: "w" })).content[0]!.text, /listMissing/);
+    const items = (await readDocument()).items;
+    assert.deepEqual(["gift", "taken"].map((id) => items.find((item) => item.id === id)!.wishlistId), ["w", "w"]);
+  });
+});
+
+test("copy_idea : copie sans réservation ni archivage, vers une autre liste ou la même ; non-membre refusé", async () => {
+  const doc = transferDoc();
+  await withStore(doc, async () => {
+    const alex = client(doc.users[0]!);
+    const copied = json(await alex.call("copy_idea", { listId: "w", ideaId: "taken", targetListId: "w-camille" })).copied;
+    assert.deepEqual({ ...copied, id: undefined }, { id: undefined, name: "Idée taken", list: "Les idées de Camille", category: "jeux", for: "Camille" });
+    const after = await readDocument();
+    const copy = after.items.find((item) => item.id === copied.id)!;
+    assert.deepEqual([copy.wishlistId, copy.archived, copy.priceCents], ["w-camille", false, 1990]);
+    assert.equal(after.reservations.some((reservation) => reservation.itemId === copied.id), false);
+    assert.equal(after.items.find((item) => item.id === "taken")!.wishlistId, "w", "l'original reste");
+    const same = json(await alex.call("copy_idea", { listId: "w", ideaId: "gift", targetListId: "w" })).copied;
+    assert.deepEqual([same.list, same.category, same.for], ["Liste d'Alex", "Jeux", "Alex"]);
+    assert.match((await client(doc.users[1]!).call("copy_idea", { listId: "w", ideaId: "gift", targetListId: "w-camille" })).content[0]!.text, /listMissing/);
   });
 });
 

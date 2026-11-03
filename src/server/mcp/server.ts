@@ -6,7 +6,7 @@ import { translateErrorFor } from "../../i18n/server";
 import { publicErrorCode } from "../api/errors";
 import { isRateLimitError } from "../rate-limit";
 import type { CommandContext } from "../commands/context";
-import { deleteItem, enrichFromUrl, patchItem, saveItem } from "../commands/items";
+import { copyItem, deleteItem, enrichFromUrl, moveItem, patchItem, saveItem, type TransferFields } from "../commands/items";
 import { manageLabel } from "../commands/labels";
 import { createList, listMine, readMemberList, updateSettings } from "../commands/lists";
 import { deleteList } from "../commands/sharing";
@@ -254,6 +254,93 @@ export function buildMcpServer(ctx: CommandContext): McpServer {
         const result = await deleteItem(ctx, { wishlistId: list.id, itemId: idea.id });
         if (!result.ok) return refused(result.error);
         return ok({ deleted: { id: idea.id, name: idea.name } });
+      }),
+  );
+
+  const transferFields = {
+    listId: ID,
+    ideaId: ID,
+    targetListId: ID.describe("The list the idea goes to (can be the same list for a copy)."),
+    category: z
+      .string()
+      .max(200)
+      .optional()
+      .describe("Category name (or id) in the target list. Defaults to the one with the same name, else the target list's first."),
+    for: z
+      .string()
+      .max(200)
+      .optional()
+      .describe("Who the gift is for, a person's name (or id) in the target list. Defaults to the same name, else the first."),
+  };
+  type TransferInput = { listId: string; ideaId: string; targetListId: string; category?: string; for?: string };
+
+  /** Catégorie et « qui » dans la liste d'arrivée : donnés par nom, sinon même nom qu'au départ, sinon le premier (comme le site). */
+  async function transferTarget(
+    input: TransferInput,
+  ): Promise<
+    | { refused: string }
+    | { failed: string }
+    | { fields: TransferFields; type: Labelled; person: Labelled; target: { title: string } }
+  > {
+    const source = await listOf(input.listId);
+    if (typeof source === "string") return { refused: source };
+    const idea = source.items.find((item) => item.id === input.ideaId);
+    if (!idea) return { refused: "itemMissing" };
+    const target = input.targetListId === source.id ? source : await listOf(input.targetListId);
+    if (typeof target === "string") return { refused: target };
+    const pick = (options: Labelled[], wanted: string | undefined, current: string | undefined, what: string) => {
+      if (wanted?.trim()) return find(options, wanted, what);
+      const same = current ? options.find((option) => option.label.trim().toLowerCase() === current.trim().toLowerCase()) : undefined;
+      return same ?? options[0] ?? `The target list has no ${what} yet.`;
+    };
+    const currentType = source.categories.find((entry) => entry.id === idea.typeId)?.label;
+    const currentPerson = source.people.find((entry) => entry.id === idea.personId)?.label;
+    const type = pick(target.categories, input.category, currentType, "category");
+    if (typeof type === "string") return { failed: type };
+    const person = pick(target.people, input.for, currentPerson, "person");
+    if (typeof person === "string") return { failed: person };
+    return { fields: { wishlistId: source.id, itemId: idea.id, targetWishlistId: target.id, typeId: type.id, personId: person.id }, type, person, target };
+  }
+
+  server.registerTool(
+    "move_idea",
+    {
+      description:
+        "Move an idea to another wish list the user is a member of. An idea a giver has reserved cannot be moved (the giver would lose the reservation).",
+      inputSchema: z.object(transferFields),
+      annotations: WRITE,
+    },
+    (input) =>
+      run(async () => {
+        const found = await transferTarget(input);
+        if ("refused" in found) return refused(found.refused);
+        if ("failed" in found) return fail(found.failed);
+        const result = await moveItem(ctx, found.fields);
+        if (!result.ok) return refused(result.error);
+        return ok({
+          moved: { id: result.item.id, name: result.item.name, list: found.target.title, category: found.type.label, for: found.person.label },
+        });
+      }),
+  );
+
+  server.registerTool(
+    "copy_idea",
+    {
+      description:
+        "Copy an idea to a wish list the user is a member of (or within the same list). The copy has every field of the idea but no reservation, and is not archived.",
+      inputSchema: z.object(transferFields),
+      annotations: WRITE,
+    },
+    (input) =>
+      run(async () => {
+        const found = await transferTarget(input);
+        if ("refused" in found) return refused(found.refused);
+        if ("failed" in found) return fail(found.failed);
+        const result = await copyItem(ctx, found.fields);
+        if (!result.ok) return refused(result.error);
+        return ok({
+          copied: { id: result.item.id, name: result.item.name, list: found.target.title, category: found.type.label, for: found.person.label },
+        });
       }),
   );
 
