@@ -4,7 +4,9 @@ import { getDb } from "./db";
 export type Snapshot<T> = { body: T; fetchedAt: string };
 
 export const listsKey = "lists";
+export const subscriptionsKey = "subscriptions";
 export const listKey = (listId: string) => `list:${listId}`;
+export const publicListKey = (readToken: string) => `publicList:${readToken}`;
 
 export async function getSnapshot<T>(key: string): Promise<Snapshot<T> | null> {
   const db = await getDb();

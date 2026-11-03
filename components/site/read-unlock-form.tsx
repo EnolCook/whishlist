@@ -15,6 +15,7 @@ export function ReadUnlockForm({
   passwordHint,
   submit,
   error,
+  subscribe,
 }: {
   readToken: string;
   title: string;
@@ -24,6 +25,7 @@ export function ReadUnlockForm({
   passwordHint: string;
   submit: string;
   error: string | null;
+  subscribe?: boolean;
 }) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-4">
@@ -38,6 +40,7 @@ export function ReadUnlockForm({
           <form action={unlockPublicListAction}>
             <FieldGroup>
               <input type="hidden" name="readToken" value={readToken} />
+              {subscribe ? <input type="hidden" name="subscribe" value="1" /> : null}
               {error ? (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>

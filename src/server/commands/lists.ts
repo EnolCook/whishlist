@@ -4,13 +4,23 @@ import { createWishlist } from "../../domain/import";
 import { listDefaults, memberListTitles, numberedTitle } from "../../domain/list-defaults";
 import { addPerson, addType, splitLabels } from "../../domain/items";
 import { updateWishlistSettings } from "../../domain/membership";
+import { followedListsOf } from "../../domain/subscription";
 import type { WishlistTheme } from "../../domain/types";
 import { readDocument, updateDocument } from "../../store/db";
 import { getTranslationsFor } from "../../i18n/server";
-import { toListSummary, toMemberListView, type ListSummaryView, type MemberListView } from "../api/views";
+import {
+  toListSummary,
+  toMemberListView,
+  toSubscribedListSummary,
+  type ListSummaryView,
+  type MemberListView,
+  type SubscribedListSummaryView,
+} from "../api/views";
 import { activeUser, verifiedUser, type CommandContext, type CommandResult } from "./context";
 
-export async function listMine(ctx: CommandContext): Promise<CommandResult<{ lists: ListSummaryView[] }>> {
+export async function listMine(
+  ctx: CommandContext,
+): Promise<CommandResult<{ lists: ListSummaryView[]; subscriptions: SubscribedListSummaryView[] }>> {
   const active = activeUser(ctx);
   if (!active.ok) return active;
   const doc = await readDocument();
@@ -20,7 +30,10 @@ export async function listMine(ctx: CommandContext): Promise<CommandResult<{ lis
       const wishlist = doc.wishlists.find((entry) => entry.id === membership.wishlistId);
       return wishlist ? [toListSummary(doc, wishlist, membership.role, ctx.locale, ctx.origin)] : [];
     });
-  return { ok: true, lists };
+  const subscriptions = followedListsOf(doc, active.user.id).map(({ wishlist, subscription }) =>
+    toSubscribedListSummary(doc, wishlist, subscription, ctx.locale, ctx.origin),
+  );
+  return { ok: true, lists, subscriptions };
 }
 
 export async function readMemberList(

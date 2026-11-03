@@ -43,6 +43,14 @@ export interface Membership {
   joinedAt: string;
 }
 
+export interface Subscription {
+  wishlistId: string;
+  userId: string;
+  /** Empreinte du mot de passe de lecture au moment où l'abonnement a été créé ou déverrouillé. */
+  readPasswordHash: string | null;
+  createdAt: string;
+}
+
 export interface WishType {
   id: string;
   wishlistId: string;
@@ -134,6 +142,7 @@ export interface Database {
   users: User[];
   wishlists: Wishlist[];
   memberships: Membership[];
+  subscriptions: Subscription[];
   types: WishType[];
   people: Person[];
   views: View[];
@@ -176,6 +185,7 @@ export function emptyDatabase(): Database {
     users: [],
     wishlists: [],
     memberships: [],
+    subscriptions: [],
     types: [],
     people: [],
     views: [],

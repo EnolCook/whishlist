@@ -16,16 +16,21 @@ import {
   mineReservationIdsFor,
   toPublicItem,
 } from "../../../src/domain/read";
+import { viewerRelation } from "../../../src/domain/subscription";
 import { resolveTheme, themeToCssVars } from "../../../src/domain/theme";
+import { subscribeAction, unsubscribeAction } from "../../../src/server/actions";
 import { getDocument } from "../../../src/store/db";
+import { ConfirmForm } from "@/components/site/confirm-form";
 import { LinkButton } from "@/components/site/link-button";
 import { PublicItemCard } from "@/components/site/public-item-card";
 import { ReadUnlockForm } from "@/components/site/read-unlock-form";
 import { WishlistCover } from "@/components/site/wishlist-cover";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { intlLocale } from "@/src/i18n/config";
-import { getLocale, getTranslations } from "@/src/i18n/server";
+import { getLocale, getTranslations, translateError } from "@/src/i18n/server";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import type { CSSProperties } from "react";
@@ -36,6 +41,7 @@ function unlockErrorMessage(
 ): string | null {
   if (e === "bad" || e === "badPassword") return t("unlock.badPassword");
   if (e === "rate" || e === "rateLimited") return t("unlock.rateLimited");
+  if (e === "readPasswordRequired") return t("unlock.passwordRequiredToFollow");
   return null;
 }
 
@@ -71,7 +77,7 @@ export default async function ReadPage({
   searchParams,
 }: {
   params: Promise<{ readToken: string }>;
-  searchParams: Promise<{ qui?: string; budget?: string; ok?: string; e?: string }>;
+  searchParams: Promise<{ qui?: string; budget?: string; ok?: string; followed?: string; subscribe?: string; e?: string }>;
 }) {
   const { readToken } = await params;
   const query = await searchParams;
@@ -103,10 +109,14 @@ export default async function ReadPage({
         passwordHint={t("unlock.passwordHint")}
         submit={t("unlock.submit")}
         error={unlockErrorMessage(query.e, t)}
+        subscribe={query.subscribe === "1"}
       />
     );
   }
+  const pageError = query.e ? await translateError(query.e) : null;
   const mineIds = mineReservationIdsFor(doc, list.id, user?.id ?? null, claimedIds);
+  const activeAccount = user && !user.mustChangePassword ? user : null;
+  const { isMember, subscribed: isSubscribed } = viewerRelation(doc, list.id, activeAccount?.id ?? null);
   const types = doc.types.filter((type) => type.wishlistId === list.id);
   const people = doc.people.filter((person) => person.wishlistId === list.id);
   const qui = people.some((person) => person.id === query.qui) ? query.qui! : null;
@@ -213,13 +223,59 @@ export default async function ReadPage({
           </LinkButton>
         ))}
       </nav>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <LinkButton href={`/l/${readToken}/reserver`}>{t("reserveIdea")}</LinkButton>
+        {!isMember ? (
+          activeAccount ? (
+            isSubscribed ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{t("subscription.following")}</Badge>
+                <ConfirmForm
+                  title={t("subscription.unfollowTitle")}
+                  description={t("subscription.unfollowBody")}
+                  confirmLabel={t("subscription.unfollowConfirm")}
+                  cancelLabel={t("subscription.unfollowKeep")}
+                  action={unsubscribeAction}
+                  fields={{ readToken, returnTo: "list" }}
+                  triggerLabel={t("subscription.unfollow")}
+                  triggerVariant="outline"
+                  triggerSize="sm"
+                  confirmVariant="destructive"
+                />
+              </div>
+            ) : (
+              <form action={subscribeAction}>
+                <input type="hidden" name="readToken" value={readToken} />
+                <Button type="submit" variant="neutral">
+                  {t("subscription.follow")}
+                </Button>
+              </form>
+            )
+          ) : (
+            <LinkButton
+              href={`/connexion?next=${encodeURIComponent(`/l/${readToken}`)}`}
+              variant="neutral"
+            >
+              {t("subscription.follow")}
+            </LinkButton>
+          )
+        ) : null}
       </div>
       {query.ok ? (
         <Alert>
           <AlertTitle>{t("reservedTitle")}</AlertTitle>
           <AlertDescription>{t("reservedBody")}</AlertDescription>
+        </Alert>
+      ) : null}
+      {query.followed ? (
+        <Alert>
+          <AlertTitle>{t("subscription.followedTitle")}</AlertTitle>
+          <AlertDescription>{t("subscription.followedBody")}</AlertDescription>
+        </Alert>
+      ) : null}
+      {pageError ? (
+        <Alert variant="destructive">
+          <AlertDescription>{pageError}</AlertDescription>
         </Alert>
       ) : null}
       <h2 className="text-lg font-medium">{heading}</h2>

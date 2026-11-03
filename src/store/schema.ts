@@ -49,6 +49,24 @@ export const memberships = sqliteTable(
   ],
 );
 
+export const subscriptions = sqliteTable(
+  "subscriptions",
+  {
+    wishlistId: text("wishlist_id")
+      .notNull()
+      .references(() => wishlists.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    readPasswordHash: text("read_password_hash"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.wishlistId, table.userId] }),
+    index("subscriptions_user_id").on(table.userId),
+  ],
+);
+
 export const types = sqliteTable(
   "types",
   {

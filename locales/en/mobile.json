@@ -75,5 +75,22 @@
     "confirming": "Confirming your email address…",
     "passwordSaved": "Your password is saved. Sign in with your new password.",
     "inviteChecking": "Opening the invitation…"
+  },
+  "shared": {
+    "followButton": "Follow a list",
+    "followTitle": "Follow a list",
+    "followDescription": "Paste a wish list link shared by a friend or family member to keep it in your followed lists.",
+    "linkLabel": "List link",
+    "linkPlaceholder": "https://…/l/…",
+    "passwordLabel": "List password",
+    "passwordHint": "This list is password-protected. Ask the person who shared the link with you.",
+    "submitFollow": "Follow this list",
+    "scanButton": "Scan a QR code",
+    "scanHint": "Point the camera at the QR code on the list's “Share” screen.",
+    "scanStop": "Stop scanning",
+    "scanInvalid": "This QR code isn't a wish list link.",
+    "cameraDenied": "The app can't use the camera. Allow it in your phone's settings, or paste the list link.",
+    "openSettings": "Open settings",
+    "cameraUsage": "The camera is used to scan the QR code of a list you want to follow."
   }
 }

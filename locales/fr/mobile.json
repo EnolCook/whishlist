@@ -75,5 +75,22 @@
     "confirming": "Confirmation de votre adresse…",
     "passwordSaved": "Votre mot de passe est enregistré. Connectez-vous avec votre nouveau mot de passe.",
     "inviteChecking": "Ouverture de l'invitation…"
+  },
+  "shared": {
+    "followButton": "Suivre une liste",
+    "followTitle": "Suivre une liste",
+    "followDescription": "Collez le lien d'une liste partagée par un proche pour la retrouver dans vos listes suivies.",
+    "linkLabel": "Lien de la liste",
+    "linkPlaceholder": "https://…/l/…",
+    "passwordLabel": "Mot de passe de la liste",
+    "passwordHint": "Cette liste est protégée par un mot de passe. Demandez-le à la personne qui vous a partagé le lien.",
+    "submitFollow": "Suivre cette liste",
+    "scanButton": "Scanner un QR code",
+    "scanHint": "Visez le QR code affiché par l'écran « Partager » de la liste.",
+    "scanStop": "Arrêter le scan",
+    "scanInvalid": "Ce QR code n'est pas le lien d'une liste.",
+    "cameraDenied": "L'app n'a pas accès à l'appareil photo. Autorisez-le dans les réglages du téléphone, ou collez le lien de la liste.",
+    "openSettings": "Ouvrir les réglages",
+    "cameraUsage": "L'appareil photo sert à scanner le QR code d'une liste à suivre."
   }
 }

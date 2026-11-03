@@ -5,16 +5,26 @@ import { api, ApiError, done, NetworkError, ok, type Schemas } from "@/api/clien
 import { currentLocale, intlLocale } from "@/i18n";
 import { viewList, viewLists, type ViewList, type ViewListSummary } from "@/offline/optimistic";
 import { createListBody, listChanges, onOutboxChange, resetSending, type Change } from "@/offline/outbox";
-import { getSnapshot, listKey, listsKey, putSnapshot, removeSnapshot, type Snapshot } from "@/offline/snapshot";
+import {
+  getSnapshot,
+  listKey,
+  listsKey,
+  putSnapshot,
+  removeSnapshot,
+  subscriptionsKey,
+  type Snapshot,
+} from "@/offline/snapshot";
 import { setTransport, syncNow, type Transport } from "@/offline/sync";
 import { onNetworkChange, getOnline } from "@/network";
 
 type ListsBody = Schemas["ListSummary"][];
+type SubscriptionsBody = Schemas["SubscribedListSummary"][];
 type ListBody = Schemas["MemberList"];
 
 /** Ce que les écrans lisent : copies du serveur et file de changements (en mémoire, rechargées de SQLite). */
 type State = {
   lists: Snapshot<ListsBody> | null;
+  subscriptions: Snapshot<SubscriptionsBody> | null;
   list: Record<string, Snapshot<ListBody> | null>;
   /** Listes supprimées côté serveur ou dont la personne n'est plus membre (404). */
   missing: Record<string, true>;
@@ -23,7 +33,14 @@ type State = {
   changesLoaded: boolean;
 };
 
-const empty: State = { lists: null, list: {}, missing: {}, changes: [], changesLoaded: false };
+const empty: State = {
+  lists: null,
+  subscriptions: null,
+  list: {},
+  missing: {},
+  changes: [],
+  changesLoaded: false,
+};
 let state: State = empty;
 const listeners = new Set<() => void>();
 
@@ -51,18 +68,24 @@ async function ensureChanges() {
 }
 
 async function loadLists() {
-  update({ lists: await getSnapshot<ListsBody>(listsKey) });
+  const [lists, subscriptions] = await Promise.all([
+    getSnapshot<ListsBody>(listsKey),
+    getSnapshot<SubscriptionsBody>(subscriptionsKey),
+  ]);
+  update({ lists, subscriptions });
 }
 
 async function loadList(listId: string) {
   update({ list: { ...state.list, [listId]: await getSnapshot<ListBody>(listKey(listId)) } });
 }
 
-/** Relit « Mes listes » sur le serveur ; sans réseau, garde la copie. */
+/** Relit « Mes listes » et les listes suivies sur le serveur ; sans réseau, garde la copie. */
 export async function refreshLists(): Promise<void> {
   try {
-    const { lists } = await ok(api.GET("/lists"));
-    await putSnapshot(listsKey, lists);
+    const body = await ok(api.GET("/lists"));
+    const fetchedAt = new Date().toISOString();
+    await putSnapshot(listsKey, body.lists, fetchedAt);
+    await putSnapshot(subscriptionsKey, body.subscriptions ?? [], fetchedAt);
     await loadLists();
   } catch (error) {
     if (!(error instanceof NetworkError || error instanceof ApiError)) throw error;
@@ -179,6 +202,7 @@ function useRefreshing(refresh: () => Promise<void>) {
 
 export function useMyLists(): {
   lists: ViewListSummary[];
+  subscriptions: SubscriptionsBody;
   loaded: boolean;
   fetchedAt: string | null;
   refreshing: boolean;
@@ -188,12 +212,31 @@ export function useMyLists(): {
   const store = useStore();
   const refresh = useCallback(async () => {
     await ensureChanges();
-    if (!state.lists) await loadLists();
+    if (!state.lists || !state.subscriptions) await loadLists();
     await refreshLists();
   }, []);
   const refreshing = useRefreshing(refresh);
   const lists = useMemo(() => viewLists(store.lists?.body ?? null, store.changes), [store.lists, store.changes]);
-  return { lists, loaded: store.lists !== null || lists.length > 0, fetchedAt: store.lists?.fetchedAt ?? null, ...refreshing };
+  const subscriptions = store.subscriptions?.body ?? [];
+  return {
+    lists,
+    subscriptions,
+    loaded: store.lists !== null || lists.length > 0 || subscriptions.length > 0,
+    fetchedAt: store.lists?.fetchedAt ?? store.subscriptions?.fetchedAt ?? null,
+    ...refreshing,
+  };
+}
+
+/**
+ * La liste de ce lien est dans « Listes suivies » (copie locale de `GET /lists`). Sert quand la liste
+ * elle-même ne se lit pas (mot de passe changé) : on peut quand même ne plus la suivre.
+ */
+export function useIsFollowed(readToken: string): boolean {
+  const store = useStore();
+  useEffect(() => {
+    if (!state.subscriptions) void loadLists();
+  }, []);
+  return store.subscriptions?.body.some((subscription) => subscription.readToken === readToken) ?? false;
 }
 
 export function useMemberList(listId: string): {

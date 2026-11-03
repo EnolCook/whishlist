@@ -130,5 +130,19 @@ export function accountDoc(): Database {
       createdAt: "2026-04-01T00:00:00.000Z",
     });
   }
+  doc.subscriptions.push(
+    {
+      wishlistId: "other",
+      userId: "lou",
+      readPasswordHash: null,
+      createdAt: "2026-04-04T00:00:00.000Z",
+    },
+    {
+      wishlistId: "solo",
+      userId: "camille",
+      readPasswordHash: null,
+      createdAt: "2026-04-02T00:00:00.000Z",
+    },
+  );
   return doc;
 }

@@ -3,6 +3,7 @@ import type { Locale } from "../i18n/config";
 import { clone } from "./access";
 import { pendingEmailChange } from "./email-confirmation";
 import { leaveWishlist, pickHeir, wipeWishlist } from "./membership";
+import { followedListsOf } from "./subscription";
 import type { Database, Role, WishlistTheme } from "./types";
 
 export type AccountDeletionPreview = {
@@ -12,6 +13,8 @@ export type AccountDeletionPreview = {
   transferredLists: { id: string; title: string; newOwnerName: string | null }[];
   /** Ses réservations sur des listes qui restent : gardées, sans lien au compte. */
   reservationsKept: number;
+  /** Listes publiques qu'elle suit sans en être membre : elle ne les suivra plus. */
+  followedLists: { id: string; title: string }[];
 };
 
 function isAlone(doc: Database, wishlistId: string): boolean {
@@ -19,7 +22,12 @@ function isAlone(doc: Database, wishlistId: string): boolean {
 }
 
 export function previewAccountDeletion(doc: Database, userId: string): AccountDeletionPreview {
-  const preview: AccountDeletionPreview = { deletedLists: [], transferredLists: [], reservationsKept: 0 };
+  const preview: AccountDeletionPreview = {
+    deletedLists: [],
+    transferredLists: [],
+    reservationsKept: 0,
+    followedLists: [],
+  };
   const wiped = new Set<string>();
   for (const membership of doc.memberships.filter((m) => m.userId === userId)) {
     const wishlist = doc.wishlists.find((w) => w.id === membership.wishlistId);
@@ -36,6 +44,7 @@ export function previewAccountDeletion(doc: Database, userId: string): AccountDe
   preview.reservationsKept = doc.reservations.filter(
     (r) => r.userId === userId && !wiped.has(r.wishlistId),
   ).length;
+  preview.followedLists = followedListsOf(doc, userId).map(({ wishlist }) => ({ id: wishlist.id, title: wishlist.title }));
   return preview;
 }
 
@@ -63,6 +72,7 @@ export function deleteAccount(
   for (const reservation of next.reservations) {
     if (reservation.userId === userId) reservation.userId = null;
   }
+  next.subscriptions = next.subscriptions.filter((s) => s.userId !== userId);
   next.apiSessions = next.apiSessions.filter((s) => s.userId !== userId);
   next.passwordResets = next.passwordResets.filter((r) => r.userId !== userId);
   next.emailConfirmations = next.emailConfirmations.filter((c) => c.userId !== userId);
@@ -98,6 +108,13 @@ export type ExportedList = {
   reservations: { item: string | null; fromName: string | null; note: string | null; createdAt: string; byMe: boolean }[];
 };
 
+export type ExportedSubscription = {
+  title: string;
+  subtitle: string | null;
+  publicUrl: string;
+  subscribedAt: string;
+};
+
 export type AccountExport = {
   format: "ohyoushouldnt-export";
   version: 1;
@@ -110,6 +127,7 @@ export type AccountExport = {
     pendingEmail: string | null;
   };
   lists: ExportedList[];
+  subscriptions: ExportedSubscription[];
   myReservations: {
     listTitle: string;
     item: string | null;
@@ -204,6 +222,13 @@ export function exportAccount(
       createdAt: r.createdAt,
     }));
 
+  const subscriptions: ExportedSubscription[] = followedListsOf(doc, userId).map(({ wishlist, subscription }) => ({
+    title: wishlist.title,
+    subtitle: wishlist.subtitle,
+    publicUrl: `${site.origin}${withLocale(site.locale, `/l/${wishlist.readToken}`)}`,
+    subscribedAt: subscription.createdAt,
+  }));
+
   return {
     format: "ohyoushouldnt-export",
     version: 1,
@@ -216,6 +241,7 @@ export function exportAccount(
       pendingEmail: pendingEmailChange(doc, user.id, now),
     },
     lists,
+    subscriptions,
     myReservations,
   };
 }

@@ -57,6 +57,7 @@ test("import : tout le fichier est repris tel quel, puis marqué importé", asyn
 test("import : les champs anciens reçoivent leur valeur par défaut", async () => {
   await withTempDataPath(async (dataPath) => {
     const legacy = JSON.parse(JSON.stringify(apiDoc())) as Record<string, unknown> & Doc;
+    delete (legacy as Partial<Doc>).subscriptions;
     delete (legacy as Partial<Doc>).apiSessions;
     delete (legacy as Partial<Doc>).passwordResets;
     delete (legacy as Partial<Doc>).emailConfirmations;
@@ -79,6 +80,7 @@ test("import : les champs anciens reçoivent leur valeur par défaut", async () 
     await writeFile(dataPath, JSON.stringify(legacy), "utf8");
 
     const doc = await readDocument();
+    assert.deepEqual(doc.subscriptions, []);
     assert.deepEqual(doc.apiSessions, []);
     assert.deepEqual(doc.passwordResets, []);
     assert.deepEqual(doc.emailConfirmations, []);
@@ -204,6 +206,26 @@ test("refus : chaque contrôle d'intégrité nomme la collection et l'identifian
       "vue vers un libellé absent",
       (d) => d.views.push({ id: "v", wishlistId: "w", label: "V", kind: "types", typeIds: ["t-9"], personId: null, pinned: false }),
       /^views: v → typeIds absent \(t-9\)/m,
+    ],
+    [
+      "abonnement en double",
+      (d) =>
+        d.subscriptions.push(
+          { wishlistId: "w", userId: "camille", readPasswordHash: null, createdAt: "2026-01-01T00:00:00.000Z" },
+          { wishlistId: "w", userId: "camille", readPasswordHash: null, createdAt: "2026-01-02T00:00:00.000Z" },
+        ),
+      /^subscriptions: abonnement en double \(w\/camille\)/m,
+    ],
+    [
+      "abonnement vers une liste absente",
+      (d) =>
+        d.subscriptions.push({
+          wishlistId: "w-9",
+          userId: "camille",
+          readPasswordHash: null,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        }),
+      /^subscriptions: w-9\/camille → wishlistId absent \(w-9\)/m,
     ],
   ];
   for (const [label, breakDoc, expected] of cases) {

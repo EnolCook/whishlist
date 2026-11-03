@@ -92,7 +92,9 @@ function ReserveForm({
       if (error instanceof ApiError && error.status === 409) reload();
       throw error;
     }
-    router.replace(`/guest/${readToken}` as Href);
+    // Retour à la vue de la liste déjà ouverte (elle se relit au retour), sans l'empiler une seconde fois.
+    if (router.canGoBack()) router.back();
+    else router.replace(`/guest/${readToken}` as Href);
   });
 
   const unavailable = Boolean(itemId) && !picked;

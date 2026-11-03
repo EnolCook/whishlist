@@ -37,6 +37,12 @@ export const COLLECTIONS: { [K in CollectionName]: Collection<K> } = {
     where: (row) =>
       and(eq(schema.memberships.wishlistId, row.wishlistId), eq(schema.memberships.userId, row.userId)) ?? sql`0`,
   },
+  subscriptions: {
+    table: schema.subscriptions,
+    key: (row) => `${row.wishlistId}/${row.userId}`,
+    where: (row) =>
+      and(eq(schema.subscriptions.wishlistId, row.wishlistId), eq(schema.subscriptions.userId, row.userId)) ?? sql`0`,
+  },
   types: byId(schema.types),
   people: byId(schema.people),
   views: byId(schema.views),
@@ -52,6 +58,7 @@ export const COLLECTION_NAMES: CollectionName[] = [
   "users",
   "wishlists",
   "memberships",
+  "subscriptions",
   "types",
   "people",
   "views",
@@ -79,6 +86,7 @@ export function readAll(db: StoreDb): Database {
     users: db.select().from(schema.users).orderBy(byRowid).all(),
     wishlists: db.select().from(schema.wishlists).orderBy(byRowid).all(),
     memberships: db.select().from(schema.memberships).orderBy(byRowid).all(),
+    subscriptions: db.select().from(schema.subscriptions).orderBy(byRowid).all(),
     types: db.select().from(schema.types).orderBy(byRowid).all(),
     people: db.select().from(schema.people).orderBy(byRowid).all(),
     views: db.select().from(schema.views).orderBy(byRowid).all(),

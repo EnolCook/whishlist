@@ -36,7 +36,7 @@ function Titles({ titles }: { titles: string[] }) {
 /** Confirmation de la suppression du compte : ce qui part, ce qui reste, puis le mot de passe. */
 export function DeleteAccountDialog({ preview }: { preview: AccountDeletionPreview }) {
   const { t } = useTranslation("auth");
-  const { deletedLists, transferredLists, reservationsKept } = preview;
+  const { deletedLists, transferredLists, reservationsKept, followedLists } = preview;
   const keptNothing = transferredLists.length === 0 && reservationsKept === 0;
 
   return (
@@ -57,6 +57,12 @@ export function DeleteAccountDialog({ preview }: { preview: AccountDeletionPrevi
               <>
                 <p>{t("account.deleteRemovedLists", { count: deletedLists.length })}</p>
                 <Titles titles={deletedLists.map((list) => list.title)} />
+              </>
+            ) : null}
+            {followedLists.length > 0 ? (
+              <>
+                <p>{t("account.deleteRemovedFollowed", { count: followedLists.length })}</p>
+                <Titles titles={followedLists.map((list) => list.title)} />
               </>
             ) : null}
           </section>

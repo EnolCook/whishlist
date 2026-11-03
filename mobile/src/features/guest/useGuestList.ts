@@ -1,22 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { ApiError, type Schemas } from "@/api/client";
+import { ApiError, NetworkError, type Schemas } from "@/api/client";
 import { errorText } from "@/features/errors";
 import { appPathForUrl } from "@/links/routes";
-import { getSnapshot, listsKey } from "@/offline/snapshot";
+import { getSnapshot, listsKey, publicListKey, putSnapshot, removeSnapshot } from "@/offline/snapshot";
 
 import { readGuestList } from "./api";
 
 export type GuestState =
   | { status: "loading" }
   | { status: "locked" }
-  | { status: "ready"; list: Schemas["PublicList"] }
+  /** `fetchedAt` : copie hors ligne d'une liste suivie, lue quand le serveur ne répond pas ; `null` en ligne. */
+  | { status: "ready"; list: Schemas["PublicList"]; fetchedAt: string | null }
   | { status: "missing" }
   | { status: "failed"; message: string };
 
 /**
  * Liste vue en invité, relue à l'ouverture (dès que `enabled`) et par `reload` (011, data-model « Écran invité »).
- * Rien n'est gardé hors ligne : une copie des idées libres pousserait à réserver une idée déjà prise.
+ * Seule une liste suivie (`subscribed`, 012) garde une copie hors ligne, pour la consulter sans réseau.
+ * Une liste ouverte par un lien n'en garde pas : une copie des idées libres pousserait à réserver une idée
+ * déjà prise. La réservation reste toujours en ligne.
  */
 export function useGuestList(readToken: string, enabled = true): { state: GuestState; reload: () => void } {
   const [state, setState] = useState<GuestState>({ status: "loading" });
@@ -24,11 +27,24 @@ export function useGuestList(readToken: string, enabled = true): { state: GuestS
   useEffect(() => {
     if (!enabled) return;
     let active = true;
+    const key = publicListKey(readToken);
     void (async () => {
       try {
         const list = await readGuestList(readToken);
-        if (active) setState({ status: "ready", list });
+        if (list.subscribed) await putSnapshot(key, list);
+        else await removeSnapshot(key);
+        if (active) setState({ status: "ready", list, fetchedAt: null });
       } catch (error) {
+        if (error instanceof NetworkError) {
+          const copy = await getSnapshot<Schemas["PublicList"]>(key);
+          if (!active) return;
+          if (copy) setState({ status: "ready", list: copy.body, fetchedAt: copy.fetchedAt });
+          else setState({ status: "failed", message: errorText(error) });
+          return;
+        }
+        if (error instanceof ApiError && (error.code === "readPasswordRequired" || error.status === 404)) {
+          await removeSnapshot(key);
+        }
         if (!active) return;
         if (error instanceof ApiError && error.code === "readPasswordRequired") setState({ status: "locked" });
         else if (error instanceof ApiError && error.status === 404) setState({ status: "missing" });

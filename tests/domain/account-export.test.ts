@@ -78,6 +78,17 @@ test("myReservations : seulement ses réservations sur des listes dont elle n'es
   ]);
 });
 
+test("subscriptions : seulement les listes suivies par ce compte, jamais qui suit ses propres listes", () => {
+  assert.deepEqual(exported().subscriptions, [
+    {
+      title: "Liste de Camille",
+      subtitle: null,
+      publicUrl: "https://ohyoushouldnt.example.test/l/read-other",
+      subscribedAt: "2026-04-04T00:00:00.000Z",
+    },
+  ]);
+});
+
 test("readPasswordProtected dit si un mot de passe de lecture existe", () => {
   const data = exported();
   assert.deepEqual(

@@ -14,7 +14,7 @@ export class LegacyImportError extends Error {
 }
 
 const REQUIRED = ["users", "wishlists", "memberships", "types", "people", "views", "items", "reservations"] as const;
-const OPTIONAL = ["passwordResets", "apiSessions", "emailConfirmations"] as const;
+const OPTIONAL = ["subscriptions", "passwordResets", "apiSessions", "emailConfirmations"] as const;
 
 /**
  * Forme attendue de chaque champ dans l'ancien fichier, avant normalisation.
@@ -45,6 +45,12 @@ const FIELDS: { [K in keyof Database]: Record<string, FieldCheck> } = {
     createdAt: "string",
   },
   memberships: { wishlistId: "string", userId: "string", role: ["owner", "member"], joinedAt: "string" },
+  subscriptions: {
+    wishlistId: "string",
+    userId: "string",
+    readPasswordHash: "string?",
+    createdAt: "string",
+  },
   types: { id: "string", wishlistId: "string", label: "string", sortOrder: "number?" },
   people: { id: "string", wishlistId: "string", label: "string" },
   views: {
@@ -132,7 +138,7 @@ function checkFields(raw: Record<string, unknown>): string[] {
       const values = new Map(Object.entries(row));
       const id = values.get("id");
       const label =
-        name === "memberships"
+        name === "memberships" || name === "subscriptions"
           ? `${String(values.get("wishlistId"))}/${String(values.get("userId"))}`
           : typeof id === "string"
             ? id
@@ -147,9 +153,13 @@ function checkFields(raw: Record<string, unknown>): string[] {
 
 /** Complète les champs ajoutés au fil des versions (ex-lecture du fichier JSON). */
 export function normalizeDocument(doc: Database): Database {
+  if (!doc.subscriptions) doc.subscriptions = [];
   if (!doc.passwordResets) doc.passwordResets = [];
   if (!doc.apiSessions) doc.apiSessions = [];
   if (!doc.emailConfirmations) doc.emailConfirmations = [];
+  for (const subscription of doc.subscriptions) {
+    if (subscription.readPasswordHash === undefined) subscription.readPasswordHash = null;
+  }
   for (const user of doc.users) {
     // Comptes d'avant la validation des adresses : vérifiés d'office (010, FR-005b).
     if (user.emailVerifiedAt === undefined) user.emailVerifiedAt = user.createdAt;
@@ -228,6 +238,8 @@ export function checkDocument(doc: Database): string[] {
   idDoubled("emailConfirmations", doc.emailConfirmations);
   const membership = (m: Database["memberships"][number]) => `${m.wishlistId}/${m.userId}`;
   doubled("memberships", "adhésion en double", sameId(duplicates(doc.memberships, membership, membership)));
+  const subscription = (s: Database["subscriptions"][number]) => `${s.wishlistId}/${s.userId}`;
+  doubled("subscriptions", "abonnement en double", sameId(duplicates(doc.subscriptions ?? [], subscription, subscription)));
 
   doubled("users", "e-mail en double", duplicates(doc.users, (u) => u.email, byId));
   doubled("wishlists", "readToken en double", duplicates(doc.wishlists, (w) => w.readToken, byId));
@@ -262,6 +274,10 @@ export function checkDocument(doc: Database): string[] {
   for (const m of doc.memberships) {
     if (!lists.has(m.wishlistId)) missing("memberships", membership(m), "wishlistId", m.wishlistId);
     if (!users.has(m.userId)) missing("memberships", membership(m), "userId", m.userId);
+  }
+  for (const s of doc.subscriptions ?? []) {
+    if (!lists.has(s.wishlistId)) missing("subscriptions", subscription(s), "wishlistId", s.wishlistId);
+    if (!users.has(s.userId)) missing("subscriptions", subscription(s), "userId", s.userId);
   }
   const inList = (name: string, rows: { id: string; wishlistId: string }[]) => {
     for (const row of rows) if (!lists.has(row.wishlistId)) missing(name, row.id, "wishlistId", row.wishlistId);

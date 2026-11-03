@@ -110,6 +110,13 @@ export default function DeleteAccount() {
                   <Titles titles={preview.deletedLists.map((list) => list.title)} />
                 </View>
               ) : null}
+              {/* `followedLists` n'existe pas avant l'API 1.7.0. */}
+              {preview.followedLists && preview.followedLists.length > 0 ? (
+                <View style={{ gap: tokens.space[1] }}>
+                  <Text size="sm">{t("auth:account.deleteRemovedFollowed", { count: preview.followedLists.length })}</Text>
+                  <Titles titles={preview.followedLists.map((list) => list.title)} />
+                </View>
+              ) : null}
             </CardContent>
           </Card>
           <Card>

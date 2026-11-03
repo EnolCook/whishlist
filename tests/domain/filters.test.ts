@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import {
+  filterAndSortPublicItems,
   applyBudget,
   applyPerson,
   applyView,
@@ -113,4 +114,27 @@ test("groupement par catégorie selon sortOrder", () => {
     groups.reduce((sum, group) => sum + group.items.length, 0),
     items.length,
   );
+});
+
+test("filterAndSortPublicItems : priorité d'abord, ordre du propriétaire à priorité égale, puis filtres", () => {
+  // Ordre rendu par l'API (sortOrder du propriétaire), volontairement pas alphabétique.
+  const items = [
+    { id: "a", name: "Zèbre", personId: "p1", priceCents: 1500, priority: "3" },
+    { id: "b", name: "Abeille", personId: "p2", priceCents: 4000, priority: "5" },
+    { id: "c", name: "Arbre", personId: "p1", priceCents: null, priority: "3" },
+    { id: "d", name: "Banane", personId: "p1", priceCents: 1000, priority: null },
+  ];
+  assert.deepEqual(
+    filterAndSortPublicItems(items, null, null).map((item) => item.id),
+    ["b", "a", "c", "d"],
+  );
+  assert.deepEqual(
+    filterAndSortPublicItems(items, "p1", null).map((item) => item.id),
+    ["a", "c", "d"],
+  );
+  assert.deepEqual(
+    filterAndSortPublicItems(items, null, "under-20").map((item) => item.id),
+    ["a", "d"],
+  );
+  assert.deepEqual(filterAndSortPublicItems(items, null, "none").map((item) => item.id), ["c"]);
 });

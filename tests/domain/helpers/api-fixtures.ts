@@ -86,6 +86,69 @@ export function apiDoc(): Database {
   return data;
 }
 
+/**
+ * Ajoute à `apiDoc()` une seconde liste `w-camille` (lien de lecture `rt-camille-1234`)
+ * appartenant à Camille (`camille`), dont Alex (`alex`) n'est pas membre.
+ */
+export function apiDocWithSecondList(): Database {
+  const data = apiDoc();
+  data.wishlists[0]!.readToken = "rt-alex-1234";
+  data.wishlists[0]!.inviteToken = "it-alex-1234";
+  data.wishlists.push({
+    id: "w-camille",
+    title: "Les idées de Camille",
+    subtitle: "Pour mon anniversaire",
+    coverImageUrl: null,
+    theme: { ...DEFAULT_WISHLIST_THEME },
+    readToken: "rt-camille-1234",
+    inviteToken: "it-camille-1234",
+    readPasswordHash: null,
+    fromTemplate: false,
+    createdAt: "2026-01-05T00:00:00.000Z",
+  });
+  data.memberships.push({
+    wishlistId: "w-camille",
+    userId: "camille",
+    role: "owner",
+    joinedAt: "2026-01-05T00:00:00.000Z",
+  });
+  data.types.push({ id: "t-camille", wishlistId: "w-camille", label: "Livres", sortOrder: 0 });
+  data.people.push({ id: "p-camille", wishlistId: "w-camille", label: "Camille" });
+  data.items.push(
+    {
+      id: "camille-book",
+      wishlistId: "w-camille",
+      name: "Roman illustré",
+      typeId: "t-camille",
+      url: "https://shop.example.test/roman",
+      imageUrl: null,
+      priceCents: 2400,
+      priority: "4",
+      personId: "p-camille",
+      sortOrder: 0,
+      archived: false,
+      secondHandOk: false,
+      description: null,
+    },
+    {
+      id: "camille-lamp",
+      wishlistId: "w-camille",
+      name: "Lampe de bureau",
+      typeId: "t-camille",
+      url: null,
+      imageUrl: null,
+      priceCents: 4500,
+      priority: "5",
+      personId: "p-camille",
+      sortOrder: 1,
+      archived: false,
+      secondHandOk: false,
+      description: null,
+    },
+  );
+  return data;
+}
+
 export function ctx(current: User | null = null, ip = "203.0.113.1"): CommandContext {
   return { user: current, ip, locale: "fr", origin: "https://ohyoushouldnt.example.test" };
 }

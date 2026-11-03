@@ -21,6 +21,7 @@ const preview = {
   deletedLists: ["Un", "Deux", "Trois", "Quatre", "Cinq", "Six", "Sept"].map((title, index) => ({ id: `d${index}`, title })),
   transferredLists: [{ id: "w", title: "Nos envies toute l'année", newOwnerName: "Camille" }],
   reservationsKept: 1,
+  followedLists: [{ id: "f", title: "Les envies de Sacha" }],
 };
 
 beforeEach(async () => {
@@ -46,6 +47,8 @@ test("the preview shows the counts and at most 5 titles per group", async () => 
   expect(screen.getByText("• et 2 de plus")).toBeOnTheScreen();
   expect(screen.getByText("• Nos envies toute l'année → Camille en devient propriétaire")).toBeOnTheScreen();
   expect(screen.getByText(/^1 cadeau que vous avez réservé reste réservé/)).toBeOnTheScreen();
+  expect(screen.getByText("Vous ne suivrez plus 1 liste :")).toBeOnTheScreen();
+  expect(screen.getByText("• Les envies de Sacha")).toBeOnTheScreen();
 });
 
 test("with changes never sent, the FR-016 warning shows", async () => {

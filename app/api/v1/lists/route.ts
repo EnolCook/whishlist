@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const GET = withApi(async (api) => {
   const result = await listMine(await commandContext(api));
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
-  return apiJson({ lists: result.lists }, 200, api.cors);
+  return apiJson({ lists: result.lists, subscriptions: result.subscriptions }, 200, api.cors);
 });
 
 export const POST = withApi(async (api) => {

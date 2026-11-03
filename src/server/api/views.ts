@@ -1,8 +1,9 @@
 import { mustConfirmEmail } from "../../domain/email-confirmation";
-import { listItems, listPublicVisibleItems, sortItems } from "../../domain/read";
+import { listPublicVisibleItems, mineReservationIdsFor, sortItems } from "../../domain/read";
 import { formatPrice } from "../../domain/price";
 import { hasReadPassword } from "../../domain/read-password";
-import type { Database, Item, Role, User, WishlistTheme, Wishlist } from "../../domain/types";
+import { isSubscriptionUnlocked, viewerRelation } from "../../domain/subscription";
+import type { Database, Item, Role, Subscription, User, WishlistTheme, Wishlist } from "../../domain/types";
 import { intlLocale, type Locale } from "../../i18n/config";
 import { withLocale } from "../../i18n/locale-path";
 import { emailVerificationRequired } from "../mail";
@@ -33,6 +34,8 @@ export type PublicListView = {
   subtitle: string | null;
   coverImageUrl: string | null;
   theme: WishlistTheme;
+  subscribed: boolean;
+  isMember: boolean;
   categories: CategoryView[];
   people: LabelView[];
   items: PublicItemView[];
@@ -73,6 +76,7 @@ export function toPublicListView(
   wishlist: Wishlist,
   locale: Locale,
   mineIds: ReadonlySet<string>,
+  viewerId: string | null = null,
 ): PublicListView {
   const reservationByItem = new Map(
     doc.reservations.filter((r) => r.wishlistId === wishlist.id).map((r) => [r.itemId, r.id]),
@@ -82,11 +86,14 @@ export function toPublicListView(
     const mine = Boolean(reservationId && mineIds.has(reservationId));
     return { ...itemBase(item, locale), mine, reservationId: mine ? reservationId : null };
   });
+  const { isMember, subscribed } = viewerRelation(doc, wishlist.id, viewerId);
   return {
     title: wishlist.title,
     subtitle: wishlist.subtitle,
     coverImageUrl: wishlist.coverImageUrl,
     theme: wishlist.theme,
+    subscribed,
+    isMember,
     categories: categoriesOf(doc, wishlist.id),
     people: peopleOf(doc, wishlist.id),
     items,
@@ -116,6 +123,19 @@ export type ListSummaryView = {
   role: Role;
   itemCount: number;
   readUrl: string;
+};
+
+export type SubscribedListSummaryView = {
+  id: string;
+  readToken: string;
+  title: string;
+  subtitle: string | null;
+  coverImageUrl: string | null;
+  theme: WishlistTheme;
+  itemCount: number;
+  readUrl: string;
+  subscribedAt: string;
+  locked: boolean;
 };
 
 export type MemberItemView = Omit<PublicItemView, "mine" | "reservationId"> & { archived: boolean; sortOrder: number };
@@ -175,8 +195,31 @@ export function toListSummary(
     coverImageUrl: wishlist.coverImageUrl,
     theme: wishlist.theme,
     role,
-    itemCount: listItems(doc, wishlist.id).length,
+    itemCount: doc.items.filter((item) => item.wishlistId === wishlist.id && !item.archived).length,
     readUrl: siteUrl(origin, locale, `/l/${wishlist.readToken}`),
+  };
+}
+
+export function toSubscribedListSummary(
+  doc: Database,
+  wishlist: Wishlist,
+  subscription: Subscription,
+  locale: Locale,
+  origin: string,
+): SubscribedListSummaryView {
+  const locked = !isSubscriptionUnlocked(wishlist, subscription);
+  const mineIds = locked ? new Set<string>() : mineReservationIdsFor(doc, wishlist.id, subscription.userId, new Set());
+  return {
+    id: wishlist.id,
+    readToken: wishlist.readToken,
+    title: wishlist.title,
+    subtitle: wishlist.subtitle,
+    coverImageUrl: wishlist.coverImageUrl,
+    theme: wishlist.theme,
+    itemCount: locked ? 0 : listPublicVisibleItems(doc, wishlist.id, mineIds).length,
+    readUrl: siteUrl(origin, locale, `/l/${wishlist.readToken}`),
+    subscribedAt: subscription.createdAt,
+    locked,
   };
 }
 

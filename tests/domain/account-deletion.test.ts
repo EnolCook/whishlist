@@ -17,7 +17,7 @@ function owners(doc: Database, wishlistId: string): string[] {
 test("une liste dont elle est la seule membre disparaît avec tout son contenu", () => {
   const doc = deleted();
   assert.equal(doc.wishlists.some((w) => w.id === "solo"), false);
-  for (const key of ["memberships", "types", "people", "views", "items", "reservations"] as const) {
+  for (const key of ["memberships", "subscriptions", "types", "people", "views", "items", "reservations"] as const) {
     assert.equal(
       (doc[key] as { wishlistId: string }[]).some((entry) => entry.wishlistId === "solo"),
       false,
@@ -98,6 +98,8 @@ test("l'aperçu annonce ce que fait la suppression", () => {
       { id: "alexs", title: "Envies d'Alex", newOwnerName: null },
     ],
     reservationsKept: 2,
+    // Seules les listes suivies sans en être membre sont annoncées.
+    followedLists: [{ id: "other", title: "Liste de Camille" }],
   });
   const after = deleted(doc);
   assert.equal(after.reservations.filter((r) => ["r-alexs", "r-other"].includes(r.id)).length, 2);

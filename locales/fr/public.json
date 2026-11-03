@@ -8,7 +8,8 @@
     "passwordHint": "Demandez-le à la personne qui vous a partagé le lien.",
     "submit": "Accéder à la liste",
     "badPassword": "Le mot de passe est incorrect.",
-    "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes."
+    "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes.",
+    "passwordRequiredToFollow": "Saisissez de nouveau le mot de passe de la liste pour la suivre."
   },
   "clickCategory": "Sélectionnez une catégorie pour y descendre.",
   "categoriesNav": "Catégories",
@@ -81,5 +82,16 @@
     "join": "Rejoindre la liste",
     "alreadyMember": "Vous faites déjà partie de cette liste."
   },
-  "secondHandBadge": "Occasion OK"
+  "secondHandBadge": "Occasion OK",
+  "subscription": {
+    "follow": "Suivre cette liste",
+    "following": "Liste suivie",
+    "unfollow": "Ne plus suivre",
+    "unfollowTitle": "Ne plus suivre cette liste ?",
+    "unfollowBody": "Elle sera retirée de vos listes suivies. Vos réservations sur cette liste resteront actives.",
+    "unfollowConfirm": "Ne plus suivre",
+    "unfollowKeep": "Continuer à suivre",
+    "followedTitle": "Liste ajoutée à vos listes suivies",
+    "followedBody": "Vous la retrouverez à tout moment dans « Mes listes »."
+  }
 }

@@ -11,6 +11,7 @@ export class ApiError extends Error {
     readonly code: string,
     readonly status: number,
     message: string,
+    readonly title: string | null = null,
   ) {
     super(message);
     this.name = "ApiError";
@@ -75,7 +76,7 @@ async function send(request: Request): Promise<Response> {
 
 export const api = createClient<paths>({ baseUrl: apiBaseUrl(), fetch: send });
 
-function isErrorBody(value: unknown): value is Schemas["Error"] {
+function isErrorBody(value: unknown): value is Schemas["Error"] & { title?: unknown } {
   if (typeof value !== "object" || value === null || !("error" in value)) return false;
   const error = value.error;
   return typeof error === "object" && error !== null && "code" in error && typeof error.code === "string";
@@ -85,7 +86,10 @@ function isErrorBody(value: unknown): value is Schemas["Error"] {
 export async function apiErrorFrom(response: Response, body: unknown): Promise<ApiError> {
   let parsed = body;
   if (parsed === undefined) parsed = await response.json().catch(() => undefined);
-  if (isErrorBody(parsed)) return new ApiError(parsed.error.code, response.status, parsed.error.message);
+  if (isErrorBody(parsed)) {
+    const title = typeof parsed.title === "string" ? parsed.title : null;
+    return new ApiError(parsed.error.code, response.status, parsed.error.message, title);
+  }
   return new ApiError(response.status >= 500 ? "serverError" : "unexpected", response.status, response.statusText);
 }
 

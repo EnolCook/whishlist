@@ -19,6 +19,8 @@ export const publicList = (items = [publicItem("i1", "t1"), publicItem("i2", "t2
   subtitle: null,
   coverImageUrl: null,
   theme: { preset: "default" },
+  subscribed: false,
+  isMember: false,
   categories: [
     { id: "t1", label: "Jeux", sortOrder: 0 },
     { id: "t2", label: "Livres", sortOrder: 1 },

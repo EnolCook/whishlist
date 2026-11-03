@@ -1,5 +1,5 @@
 import NetInfo, { NetInfoStateType } from "@react-native-community/netinfo";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import GuestReserve from "../../app/guest/[readToken]/reserve";
@@ -15,7 +15,7 @@ import { publicList } from "../helpers/public-list";
 
 const params: { readToken: string; itemId?: string; typeId?: string } = { readToken: "rt", itemId: "i1" };
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) },
   useLocalSearchParams: () => params,
 }));
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
@@ -27,6 +27,8 @@ beforeEach(async () => {
   await i18n.changeLanguage("fr");
   params.itemId = "i1";
   jest.mocked(router.replace).mockClear();
+  jest.mocked(router.back).mockClear();
+  jest.mocked(router.canGoBack).mockReturnValue(true);
 });
 
 async function fillAndSubmit() {
@@ -50,7 +52,20 @@ test("réservation sans compte : nom et message envoyés, claim gardé, retour �
   await screen.findByTestId("guest-reserve.screen");
   expect(body).toEqual({ itemId: "i1", fromName: "Sam", note: "Joyeux anniversaire" });
   expect(await claimsFor("rt")).toEqual(["claim-1"]);
-  expect(router.replace).toHaveBeenCalledWith("/guest/rt");
+  // Retour à la vue de la liste déjà ouverte, sans l'empiler une seconde fois.
+  expect(router.back).toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+test("formulaire ouvert directement (lien /l/<t>/reserver) : la vue de la liste le remplace", async () => {
+  jest.mocked(router.canGoBack).mockReturnValue(false);
+  fakeFetch({
+    "GET /public/lists/rt": () => json(200, publicList()),
+    "POST /public/lists/rt/reservations": () => json(201, { reservationId: "r1", claim: "claim-1" }),
+  });
+  await render(<GuestReserve />);
+  await fillAndSubmit();
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/guest/rt"));
 });
 
 test("connectée, sans être membre (US4-2) : la réservation part avec la session, liée au compte", async () => {
@@ -67,7 +82,7 @@ test("connectée, sans être membre (US4-2) : la réservation part avec la sessi
   await fillAndSubmit();
   await screen.findByTestId("guest-reserve.screen");
   expect(authorization).toBe("Bearer secret-token");
-  expect(router.replace).toHaveBeenCalledWith("/guest/rt");
+  expect(router.back).toHaveBeenCalled();
 });
 
 test("idée prise entre-temps : le refus du serveur, et la liste relue ne la propose plus", async () => {

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.6.0"
+  version: "1.7.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -30,6 +30,9 @@ info:
       `description` sur les idées (`PublicItem`, `MemberItem`, facultative dans `ItemInput`)
       et dans la réponse de `POST /lists/{listId}/enrich`.
     - 1.6.0 : déplacer ou copier une idée (`POST /lists/{listId}/items/{itemId}/move` et `/copy`).
+    - 1.7.0 : abonnements aux listes publiques (`POST /subscriptions`, `DELETE /subscriptions/{readToken}`,
+      `subscriptions` dans `GET /lists`, `subscribed` et `isMember` dans `PublicList`,
+      `followedLists` dans `AccountDeletionPreview`).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
@@ -71,7 +74,7 @@ paths:
                 type: object
                 required: [apiVersion, enrich, mail, analytics]
                 properties:
-                  apiVersion: { type: string, example: "1.3.0" }
+                  apiVersion: { type: string, example: "1.7.0" }
                   enrich:
                     type: boolean
                     description: Préremplissage depuis un lien avec IA (sinon seulement les métadonnées de la page).
@@ -567,7 +570,7 @@ paths:
   /lists:
     get:
       tags: [lists]
-      summary: Mes listes
+      summary: Mes listes et listes suivies
       responses:
         "200":
           description: OK
@@ -575,11 +578,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [lists]
+                required: [lists, subscriptions]
                 properties:
                   lists:
                     type: array
                     items: { $ref: "#/components/schemas/ListSummary" }
+                  subscriptions:
+                    type: array
+                    items: { $ref: "#/components/schemas/SubscribedListSummary" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
     post:
@@ -1122,6 +1128,64 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
         "404": { $ref: "#/components/responses/Error" }
 
+  # ---------- Abonnements ----------
+
+  /subscriptions:
+    post:
+      tags: [lists]
+      summary: S'abonner à une liste publique par son lien ou son jeton
+      parameters:
+        - $ref: "#/components/parameters/readUnlock"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [urlOrToken]
+              properties:
+                urlOrToken: { type: string }
+                password: { type: string }
+      responses:
+        "201":
+          description: Abonné
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubscribedListSummary" }
+        "200":
+          description: Déjà abonné
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubscribedListSummary" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "423":
+          description: Mot de passe de lecture nécessaire (`readPasswordRequired`). Le corps contient aussi `title` et `readToken`.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Error"
+                  - type: object
+                    properties:
+                      title: { type: string }
+                      readToken: { type: string }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /subscriptions/{readToken}:
+    parameters:
+      - $ref: "#/components/parameters/readToken"
+    delete:
+      tags: [lists]
+      summary: Se désabonner d'une liste suivie
+      responses:
+        "204": { description: Désabonné }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     bearer:
@@ -1268,15 +1332,32 @@ components:
 
     PublicList:
       type: object
-      required: [title, subtitle, coverImageUrl, theme, categories, people, items]
+      required: [title, subtitle, coverImageUrl, theme, subscribed, isMember, categories, people, items]
       properties:
         title: { type: string }
         subtitle: { type: [string, "null"] }
         coverImageUrl: { type: [string, "null"] }
         theme: { $ref: "#/components/schemas/Theme" }
+        subscribed: { type: boolean, description: Depuis 1.7.0. }
+        isMember: { type: boolean, description: Depuis 1.7.0. }
         categories: { type: array, items: { $ref: "#/components/schemas/Category" } }
         people: { type: array, items: { $ref: "#/components/schemas/Label" } }
         items: { type: array, items: { $ref: "#/components/schemas/PublicItem" } }
+
+    SubscribedListSummary:
+      type: object
+      required: [id, readToken, title, subtitle, coverImageUrl, theme, itemCount, readUrl, subscribedAt, locked]
+      properties:
+        id: { type: string }
+        readToken: { type: string }
+        title: { type: string }
+        subtitle: { type: [string, "null"] }
+        coverImageUrl: { type: [string, "null"] }
+        theme: { $ref: "#/components/schemas/Theme" }
+        itemCount: { type: integer }
+        readUrl: { type: string }
+        subscribedAt: { type: string, format: date-time }
+        locked: { type: boolean }
 
     ListSummary:
       type: object
@@ -1402,11 +1483,20 @@ components:
               title: { type: string }
               newOwnerName: { type: [string, "null"], description: Nouveau propriétaire, si le compte l'était. }
         reservationsKept: { type: integer, minimum: 0 }
+        followedLists:
+          type: array
+          description: Depuis 1.7.0. Listes publiques suivies sans en être membre, qui ne seront plus suivies.
+          items:
+            type: object
+            required: [id, title]
+            properties:
+              id: { type: string }
+              title: { type: string }
 
     AccountExport:
       type: object
       additionalProperties: false
-      required: [format, version, exportedAt, account, lists, myReservations]
+      required: [format, version, exportedAt, account, lists, subscriptions, myReservations]
       properties:
         format: { const: ohyoushouldnt-export }
         version: { const: 1 }
@@ -1429,6 +1519,18 @@ components:
         lists:
           type: array
           items: { $ref: "#/components/schemas/ExportedList" }
+        subscriptions:
+          type: array
+          description: Listes publiques suivies par ce compte. Depuis 1.7.0.
+          items:
+            type: object
+            additionalProperties: false
+            required: [title, subtitle, publicUrl, subscribedAt]
+            properties:
+              title: { type: string }
+              subtitle: { type: [string, "null"] }
+              publicUrl: { type: string }
+              subscribedAt: { type: string, format: date-time }
         myReservations:
           type: array
           description: Réservations faites connecté sur des listes dont le compte n'est pas membre.

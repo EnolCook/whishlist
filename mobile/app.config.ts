@@ -2,6 +2,8 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 
 import commonEn from "../locales/en/common.json";
 import commonFr from "../locales/fr/common.json";
+import mobileEn from "../locales/en/mobile.json";
+import mobileFr from "../locales/fr/mobile.json";
 import appLinkRoutes from "../src/site/app-link-routes.json";
 
 // L'adresse du serveur est fixée au build (FR-042) : démo locale, production…
@@ -32,9 +34,10 @@ function appName(brand: string) {
   return IS_DEV ? `${brand} (Dev)` : brand;
 }
 
-function localizedName(brand: string) {
+/** Nom de l'app et texte de la demande d'accès à l'appareil photo (scan du QR code d'une liste, 012), par langue. */
+function localized(brand: string, cameraUsage: string) {
   const name = appName(brand);
-  return { ios: { CFBundleDisplayName: name }, android: { app_name: name } };
+  return { ios: { CFBundleDisplayName: name, NSCameraUsageDescription: cameraUsage }, android: { app_name: name } };
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
@@ -48,7 +51,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "light",
   icon: "./assets/images/icon.png",
   backgroundColor: "#e8f0ff",
-  locales: { fr: localizedName(commonFr.brand), en: localizedName(commonEn.brand) },
+  locales: {
+    fr: localized(commonFr.brand, mobileFr.shared.cameraUsage),
+    en: localized(commonEn.brand, mobileEn.shared.cameraUsage),
+  },
   ios: {
     bundleIdentifier: PACKAGE,
     supportsTablet: false,
@@ -58,8 +64,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: PACKAGE,
-    // Aucune permission demandée (publication future sur les stores).
-    permissions: [],
+    // Seule permission : l'appareil photo, pour scanner le QR code d'une liste à suivre (012, FR-012).
+    permissions: ["android.permission.CAMERA"],
     ...(APP_LINK_DOMAIN
       ? {
           intentFilters: [
@@ -91,6 +97,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ios: { enabled: true, activationRule: { supportsText: true, supportsWebUrlWithMaxCount: 1 } },
         android: { enabled: true, singleShareMimeTypes: ["text/plain"] },
       },
+    ],
+    // Scanner le QR code d'une liste (012) : appareil photo seulement, ni micro ni enregistrement audio.
+    [
+      "expo-camera",
+      { cameraPermission: mobileFr.shared.cameraUsage, microphonePermission: false, recordAudioAndroid: false },
     ],
     [
       "expo-splash-screen",

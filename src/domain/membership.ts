@@ -67,6 +67,7 @@ export function updateWishlistSettings(
 export function wipeWishlist(doc: Database, wishlistId: string): void {
   doc.wishlists = doc.wishlists.filter((w) => w.id !== wishlistId);
   doc.memberships = doc.memberships.filter((m) => m.wishlistId !== wishlistId);
+  doc.subscriptions = doc.subscriptions.filter((s) => s.wishlistId !== wishlistId);
   doc.types = doc.types.filter((t) => t.wishlistId !== wishlistId);
   doc.people = doc.people.filter((p) => p.wishlistId !== wishlistId);
   doc.views = doc.views.filter((v) => v.wishlistId !== wishlistId);
@@ -92,6 +93,9 @@ export function acceptInvite(
     return { ok: true, doc, wishlistId: wishlist.id };
   }
   const next = clone(doc);
+  next.subscriptions = next.subscriptions.filter(
+    (s) => !(s.wishlistId === wishlist.id && s.userId === input.userId),
+  );
   next.memberships.push({
     wishlistId: wishlist.id,
     userId: input.userId,

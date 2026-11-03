@@ -28,7 +28,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example 1.3.0 */
+                            /** @example 1.7.0 */
                             apiVersion: string;
                             /** @description Préremplissage depuis un lien avec IA (sinon seulement les métadonnées de la page). */
                             enrich: boolean;
@@ -983,7 +983,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Mes listes */
+        /** Mes listes et listes suivies */
         get: {
             parameters: {
                 query?: never;
@@ -1001,6 +1001,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             lists: components["schemas"]["ListSummary"][];
+                            subscriptions: components["schemas"]["SubscribedListSummary"][];
                         };
                     };
                 };
@@ -2175,6 +2176,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** S'abonner à une liste publique par son lien ou son jeton */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description unlockToken de cette liste. */
+                    "X-Read-Unlock"?: components["parameters"]["readUnlock"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        urlOrToken: string;
+                        password?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Déjà abonné */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SubscribedListSummary"];
+                    };
+                };
+                /** @description Abonné */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SubscribedListSummary"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                /** @description Mot de passe de lecture nécessaire (`readPasswordRequired`). Le corps contient aussi `title` et `readToken`. */
+                423: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"] & {
+                            title?: string;
+                            readToken?: string;
+                        };
+                    };
+                };
+                429: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{readToken}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                readToken: components["parameters"]["readToken"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Se désabonner d'une liste suivie */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    readToken: components["parameters"]["readToken"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Désabonné */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2250,9 +2364,26 @@ export interface components {
             subtitle: string | null;
             coverImageUrl: string | null;
             theme: components["schemas"]["Theme"];
+            /** @description Depuis 1.7.0. */
+            subscribed: boolean;
+            /** @description Depuis 1.7.0. */
+            isMember: boolean;
             categories: components["schemas"]["Category"][];
             people: components["schemas"]["Label"][];
             items: components["schemas"]["PublicItem"][];
+        };
+        SubscribedListSummary: {
+            id: string;
+            readToken: string;
+            title: string;
+            subtitle: string | null;
+            coverImageUrl: string | null;
+            theme: components["schemas"]["Theme"];
+            itemCount: number;
+            readUrl: string;
+            /** Format: date-time */
+            subscribedAt: string;
+            locked: boolean;
         };
         ListSummary: {
             id: string;
@@ -2359,6 +2490,11 @@ export interface components {
                 newOwnerName: string | null;
             }[];
             reservationsKept: number;
+            /** @description Depuis 1.7.0. Listes publiques suivies sans en être membre, qui ne seront plus suivies. */
+            followedLists?: {
+                id: string;
+                title: string;
+            }[];
         };
         AccountExport: {
             /** @constant */
@@ -2381,6 +2517,14 @@ export interface components {
                 pendingEmail: string | null;
             };
             lists: components["schemas"]["ExportedList"][];
+            /** @description Listes publiques suivies par ce compte. Depuis 1.7.0. */
+            subscriptions: {
+                title: string;
+                subtitle: string | null;
+                publicUrl: string;
+                /** Format: date-time */
+                subscribedAt: string;
+            }[];
             /** @description Réservations faites connecté sur des listes dont le compte n'est pas membre. */
             myReservations: {
                 listTitle: string;

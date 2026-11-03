@@ -40,7 +40,7 @@ test("base de démo : les comptes sont vérifiés, utilisables sans e-mail", asy
       email_verified_at: string | null;
     }[];
     db.close();
-    assert.equal(users.length, 2);
+    assert.equal(users.length, 3);
     for (const user of users) assert.equal(user.email_verified_at, user.created_at);
   } finally {
     await rm(dir, { recursive: true, force: true });

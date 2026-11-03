@@ -8,8 +8,13 @@ test("src/api/schema.d.ts is up to date with the API contract (npm run api:types
   const root = join(__dirname, "../..");
   const out = join(mkdtempSync(join(tmpdir(), "schema-")), "schema.d.ts");
   execFileSync(
-    join(root, "node_modules/.bin/openapi-typescript"),
-    [join(root, "../specs/004-mobile-api/contracts/openapi.yaml"), "-o", out],
+    process.execPath,
+    [
+      join(root, "node_modules/openapi-typescript/bin/cli.js"),
+      join(root, "../specs/004-mobile-api/contracts/openapi.yaml"),
+      "-o",
+      out,
+    ],
     { stdio: "ignore" },
   );
   expect(readFileSync(out, "utf8")).toBe(readFileSync(join(root, "src/api/schema.d.ts"), "utf8"));

@@ -8,7 +8,8 @@
     "passwordHint": "Ask the person who shared the link with you.",
     "submit": "View wish list",
     "badPassword": "The password is incorrect.",
-    "rateLimited": "Too many attempts. Try again in a few minutes."
+    "rateLimited": "Too many attempts. Try again in a few minutes.",
+    "passwordRequiredToFollow": "Enter the list password again to follow it."
   },
   "clickCategory": "Select a category to jump to it.",
   "categoriesNav": "Categories",
@@ -81,5 +82,16 @@
     "join": "Join list",
     "alreadyMember": "You’re already a member of this list."
   },
-  "secondHandBadge": "Second-hand OK"
+  "secondHandBadge": "Second-hand OK",
+  "subscription": {
+    "follow": "Follow this list",
+    "following": "Following",
+    "unfollow": "Unfollow",
+    "unfollowTitle": "Stop following this list?",
+    "unfollowBody": "It will be removed from your followed lists. Any gifts you reserved on this list will stay reserved.",
+    "unfollowConfirm": "Unfollow",
+    "unfollowKeep": "Keep following",
+    "followedTitle": "Added to your followed lists",
+    "followedBody": "You can find it anytime under “My wish lists”."
+  }
 }

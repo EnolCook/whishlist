@@ -83,5 +83,7 @@
   "notFound": "This address does not exist.",
   "serverError": "Something went wrong. Try again later.",
   "idInvalid": "Invalid identifier.",
-  "idConflict": "This identifier is already in use."
+  "idConflict": "This identifier is already in use.",
+  "subscriptionLinkInvalid": "Enter a valid shared wish list link.",
+  "alreadyMember": "You’re already a member of this list."
 }

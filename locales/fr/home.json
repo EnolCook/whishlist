@@ -29,5 +29,18 @@
     "defaultCategory": "Cadeaux",
     "defaultNameNoName": "Ma liste",
     "defaultPerson": "Moi"
+  },
+  "followed": {
+    "title": "Listes suivies",
+    "empty": "Vous ne suivez aucune liste pour le moment. Collez le lien d'une liste partagée par un proche pour la retrouver ici.",
+    "linkLabel": "Lien d'une liste à suivre",
+    "linkPlaceholder": "Collez le lien de la liste (https://…/l/…)",
+    "followSubmit": "Suivre une liste",
+    "lockedBadge": "Mot de passe requis",
+    "unfollow": "Ne plus suivre",
+    "unfollowTitle": "Ne plus suivre « {{title}} » ?",
+    "unfollowBody": "Elle sera retirée de vos listes suivies. Vos réservations sur cette liste resteront actives.",
+    "unfollowConfirm": "Ne plus suivre",
+    "unfollowKeep": "Continuer à suivre"
   }
 }

@@ -29,5 +29,18 @@
     "defaultCategory": "Gifts",
     "defaultNameNoName": "My list",
     "defaultPerson": "Me"
+  },
+  "followed": {
+    "title": "Followed lists",
+    "empty": "You’re not following any lists yet. Paste a wish list link shared by a friend or family member to keep it here.",
+    "linkLabel": "Wish list link to follow",
+    "linkPlaceholder": "Paste the list link (https://…/l/…)",
+    "followSubmit": "Follow a list",
+    "lockedBadge": "Password required",
+    "unfollow": "Unfollow",
+    "unfollowTitle": "Stop following “{{title}}”?",
+    "unfollowBody": "It will be removed from your followed lists. Any gifts you reserved on this list will stay reserved.",
+    "unfollowConfirm": "Unfollow",
+    "unfollowKeep": "Keep following"
   }
 }

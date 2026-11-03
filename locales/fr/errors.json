@@ -83,5 +83,7 @@
   "notFound": "Cette adresse n'existe pas.",
   "serverError": "Une erreur est survenue. Réessayez plus tard.",
   "idInvalid": "Identifiant invalide.",
-  "idConflict": "Cet identifiant est déjà utilisé."
+  "idConflict": "Cet identifiant est déjà utilisé.",
+  "subscriptionLinkInvalid": "Saisissez le lien valide d'une liste partagée.",
+  "alreadyMember": "Vous faites déjà partie des membres de cette liste."
 }

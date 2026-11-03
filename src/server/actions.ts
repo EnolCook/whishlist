@@ -51,7 +51,13 @@ import {
   setItemType,
   type TransferFields,
 } from "./commands/items";
-import { cancelOwn, reserve, unlockPublicList } from "./commands/public-list";
+import {
+  cancelOwn,
+  reserve,
+  subscribeToList,
+  unlockPublicList,
+  unsubscribeFromList,
+} from "./commands/public-list";
 import type { LlmImpact } from "../domain/llm-impact";
 import { isLocale, localeCookie, type Locale } from "../i18n/config";
 import { internalPath, withLocale } from "../i18n/locale-path";
@@ -565,20 +571,39 @@ export async function clearReadPasswordAction(formData: FormData) {
 export async function unlockPublicListAction(formData: FormData) {
   const readToken = String(formData.get("readToken") ?? "");
   const password = String(formData.get("password") ?? "");
+  const wantSubscribe = String(formData.get("subscribe") ?? "") === "1";
+  const subSuffix = wantSubscribe ? "&subscribe=1" : "";
   let result: Awaited<ReturnType<typeof unlockPublicList>>;
   try {
     result = await unlockPublicList(await actionContext(), { readToken, password });
   } catch (error) {
     if (isRateLimitError(error)) {
-      return localeRedirect(`/l/${readToken}?e=rateLimited`);
+      return localeRedirect(`/l/${readToken}?e=rateLimited${subSuffix}`);
     }
     throw error;
   }
   if (!result.ok) {
     if (result.error === "listMissing") return localeRedirect("/");
-    return localeRedirect(`/l/${readToken}?e=badPassword`);
+    return localeRedirect(`/l/${readToken}?e=badPassword${subSuffix}`);
   }
   await grantReadUnlock(result.wishlist);
+  if (wantSubscribe) {
+    const user = await currentUser();
+    if (user && !user.mustChangePassword) {
+      let subscribed: Awaited<ReturnType<typeof subscribeToList>>;
+      try {
+        subscribed = await subscribeToList(await actionContext(), {
+          urlOrToken: readToken,
+          isUnlocked: () => true,
+        });
+      } catch (error) {
+        // La liste est déverrouillée : seul l'abonnement a échoué, on l'affiche sans repasser par le formulaire.
+        if (isRateLimitError(error)) return localeRedirect(`/l/${readToken}?e=rateLimited`);
+        throw error;
+      }
+      if (subscribed.ok) return localeRedirect(`/l/${readToken}?followed=1`);
+    }
+  }
   return localeRedirect(`/l/${readToken}`);
 }
 
@@ -697,6 +722,63 @@ export async function joinInviteAction(token: string) {
   const result = await joinInvite(await actionContext(), { token });
   if (!result.ok) return localeRedirect(`/inviter/${token}?e=${encodeURIComponent(result.error)}`);
   return localeRedirect(`/listes/${result.list.id}`);
+}
+
+export async function subscribeAction(formData: FormData) {
+  const readToken = String(formData.get("readToken") ?? "").trim();
+  const user = await currentUser();
+  if (!user) return localeRedirect(`/connexion?next=${encodeURIComponent(`/l/${readToken}`)}`);
+  await memberId();
+  let result: Awaited<ReturnType<typeof subscribeToList>>;
+  try {
+    result = await subscribeToList(await actionContext(), {
+      urlOrToken: readToken,
+      isUnlocked: hasReadUnlock,
+    });
+  } catch (error) {
+    if (isRateLimitError(error)) return localeRedirect(`/l/${readToken}?e=rateLimited`);
+    throw error;
+  }
+  if (!result.ok) {
+    if (result.error === "listMissing") return localeRedirect("/");
+    // Déverrouillage expiré ou mot de passe changé : le formulaire garde l'intention de suivre la liste.
+    if (result.error === "readPasswordRequired") {
+      return localeRedirect(`/l/${readToken}?e=readPasswordRequired&subscribe=1`);
+    }
+    return localeRedirect(`/l/${readToken}?e=${encodeURIComponent(result.error)}`);
+  }
+  return localeRedirect(`/l/${readToken}?followed=1`);
+}
+
+export async function subscribeByLinkAction(formData: FormData) {
+  const urlOrToken = String(formData.get("urlOrToken") ?? "").trim();
+  await memberId();
+  let result: Awaited<ReturnType<typeof subscribeToList>>;
+  try {
+    result = await subscribeToList(await actionContext(), {
+      urlOrToken,
+      isUnlocked: hasReadUnlock,
+    });
+  } catch (error) {
+    if (isRateLimitError(error)) return localeRedirect("/?fe=rateLimited#suivies");
+    throw error;
+  }
+  if (!result.ok) {
+    if ("readToken" in result) {
+      return localeRedirect(`/l/${result.readToken}?subscribe=1`);
+    }
+    return localeRedirect(`/?fe=${encodeURIComponent(result.error)}#suivies`);
+  }
+  return localeRedirect("/#suivies");
+}
+
+export async function unsubscribeAction(formData: FormData) {
+  const readToken = String(formData.get("readToken") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+  await memberId();
+  await unsubscribeFromList(await actionContext(), { readToken });
+  if (returnTo === "list") return localeRedirect(`/l/${readToken}`);
+  return localeRedirect("/#suivies");
 }
 
 export async function setLocaleAction(locale: Locale) {
