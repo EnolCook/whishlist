@@ -215,11 +215,11 @@ ailleurs en production.
 
 | Zone | Contenu |
 |---|---|
-| Public `/l/[token]` | Filtres qui / budget, « J’offre », lien d’achat, réservations masquées |
+| Public `/l/[token]` | Filtres qui / budget, « J’offre », lien d’achat, réservations masquées ; un compte peut suivre une liste partagée pour la retrouver dans « Listes suivies » |
 | Admin | Kanban par catégorie, archives, réservations, partage, réglages ; une idée peut avoir une description et la case « L’occasion me va », et se déplacer ou se copier vers une autre liste |
 | Enrichissement | Scraping OG/JSON-LD + LLM (nom, prix, image, type, description) |
 | Auth | Compte, reset MDP, force changement MDP 1ʳᵉ connexion, invitations |
-| API | `/api/v1`, pour une app mobile ou un script (voir ci-dessous) |
+| API | `/api/v1` pour l’app mobile ; serveur MCP `/api/mcp` avec une clé d’API, pour un assistant IA ou un script (voir ci-dessous) |
 
 ---
 
