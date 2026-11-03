@@ -183,10 +183,10 @@ test("base existante d'avant les clés : la migration ajoute la table api_keys, 
     const journal = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle", "meta", "_journal.json"), "utf8")) as {
       entries: { tag: string; when: number }[];
     };
-    const before = journal.entries.filter((entry) => entry.tag < "0004");
-    assert.deepEqual(before.map((entry) => entry.tag.slice(0, 4)), ["0000", "0001", "0002", "0003"]);
+    const before = journal.entries.filter((entry) => entry.tag < "0005");
+    assert.deepEqual(before.map((entry) => entry.tag.slice(0, 4)), ["0000", "0001", "0002", "0003", "0004"]);
 
-    // La base telle qu'elle était : les migrations 0000 à 0003 appliquées.
+    // La base telle qu'elle était : les migrations 0000 à 0004 appliquées.
     const old = new Database(file);
     old.exec("CREATE TABLE IF NOT EXISTS __drizzle_migrations (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at numeric)");
     for (const entry of before) {

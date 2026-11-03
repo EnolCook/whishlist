@@ -15,7 +15,7 @@ aa2ef33996408532b36fbcc9df4daab7893c364d  app/api/v1/me/password/route.ts
 373fe3611a14c5455597c68b90231739e4f6b742  app/compte/page.tsx
 e0563b63b05a1f706adf36db6faaece0f4d64539  app/listes/[id]/page.tsx
 cbc7ec98ce54f3cf252750ed572b2c6b70446966  components/site/api-keys-card.tsx
-3384b7e4facfe6d0e7d80aa6b00e70bdca79fab8  drizzle/0004_api_keys.sql
+3384b7e4facfe6d0e7d80aa6b00e70bdca79fab8  drizzle/0005_api_keys.sql
 66a35d35a38ae32cf1bb79edf73ce64866336917  locales/en/auth.json
 9f494e65e272566cd65dd319c74d698f9bc41246  locales/en/errors.json
 92fd58bfa92bd4e2376eed94e26f4986ec46abd9  locales/fr/auth.json
@@ -59,9 +59,9 @@ b8a00677e7898320dcd5519015d4be12bc57b42c  tests/domain/mcp-server.test.ts
 - [x] src/server/mcp/server.ts:359 — `fill_from_url` sans test de réponse. Corrigé : non-membre (`listMissing`) et lien non web (`urlInvalid`).
 - [x] src/server/commands/api-keys.ts:20 — Limite de 10 créations par heure ni documentée ni testée. Corrigé : README et test.
 - [x] tests/domain/api-keys.test.ts:95 — Le test des 120 requêtes par minute passait avec un seau global. Corrigé : une seconde clé du compte reste utilisable.
-- [x] tests/domain/store-import.test.ts:57 — Import legacy et aller-retour store sans `apiKeys`, migration 0004 non testée sur une base existante. Corrigé : défaut `[]`, deux clés dans `edgeDoc`, test de migration depuis 0000–0003.
+- [x] tests/domain/store-import.test.ts:57 — Import legacy et aller-retour store sans `apiKeys`, migration 0005 non testée sur une base existante. Corrigé : défaut `[]`, deux clés dans `edgeDoc`, test de migration depuis 0000–0004.
 - [x] src/domain/account.ts:123 — Export du compte muet sur les clés. Décidé : les accès (sessions, clés) n'en font pas partie ; documenté et testé (aucun `tokenHash` ni nom de clé).
-- [x] README.md:237 — Pas de parcours manuel. Corrigé : `specs/012-api-keys-mcp/quickstart.md`.
+- [x] README.md:237 — Pas de parcours manuel. Corrigé : `specs/013-api-keys-mcp/quickstart.md`.
 
 ## Constitution et sécurité
 

@@ -244,7 +244,7 @@ L’app expose les mêmes parcours que le site sous `/api/v1`, en JSON, pour l�
 
   Mêmes règles que le site : une idée réservée ne se supprime pas, seul le propriétaire supprime une liste, une catégorie ou un « qui » encore utilisé reste. Les outils `delete_*` se déclarent destructifs (`destructiveHint`), pour que l’assistant demande confirmation. Une idée dit seulement si elle est réservée, jamais par qui.
 - Exemple avec Claude Code : `claude mcp add --transport http ohyoushouldnt https://<votre-instance>/api/mcp --header "Authorization: Bearer oys_…"`. Les erreurs des règles (liste introuvable, idée réservée…) sont en français par défaut ; pour un assistant en anglais, ajoutez `--header "Accept-Language: en"`.
-- Vérification à la main : [`specs/012-api-keys-mcp/quickstart.md`](specs/012-api-keys-mcp/quickstart.md).
+- Vérification à la main : [`specs/013-api-keys-mcp/quickstart.md`](specs/013-api-keys-mcp/quickstart.md).
 
 ---
 
