@@ -60,11 +60,11 @@ La revue de code les ignore :
 
 ## Workflow
 
-- Fonctionnalités : `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → revue de code (`wishlist-feature-review`, lancée par le hook `after_implement`).
+- Fonctionnalités : `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → récit du diff dans Crit (`/crit-story`) → revue de code (`wishlist-feature-review`). Les deux sont lancés dans cet ordre par le hook `after_implement`.
 - Bugs : `/speckit-bug-assess` → `/speckit-bug-fix` → `/speckit-bug-test` (rapports dans `.specify/bugs/<slug>/`).
 - Un commit par user story : `tasks.md` finit chaque phase de story par une tâche « Commit de la story » (template `.specify/templates/overrides/tasks-template.md`, qui en donne les règles). Ce commit se crée sans demander l'accord, dès que lint, types et tests sont verts ; seuls le push et le squash sur `main` attendent l'utilisateur. Les corrections de la revue forment un commit à part, avec le `review.md` de la feature ; `.specify/feature.json` reste local (ignoré par Spec Kit).
 
-Hooks Spec Kit (`.specify/extensions.yml`) : lancer `wishlist.feature-review` (le skill `wishlist-feature-review`) sans demander, car il ne fait que rapporter et ne change rien avant que l'utilisateur choisisse les points à corriger. Ne lancer aucun autre hook sans l'accord explicite de l'utilisateur : montrer la commande exacte et attendre un oui. Cette règle prime sur les skills speckit, qui demandent de lancer les hooks obligatoires automatiquement.
+Hooks Spec Kit (`.specify/extensions.yml`) : lancer sans demander, dans l'ordre, `crit-story` (le skill `/crit-story` du plugin Crit) puis `wishlist.feature-review` (le skill `wishlist-feature-review`). Le premier ouvre le récit du diff et attend que l'utilisateur clique « Finish Review » (les commentaires qui sont des questions reçoivent une réponse, sans modifier le code). La revue automatique ne démarre qu'après la fin de la boucle Crit. Elle ne fait que rapporter et ne change rien avant que l'utilisateur choisisse les points à corriger. Les corrections demandées dans Crit forment un commit à part (`fix:`), avant celui de la revue. Ne lancer aucun autre hook sans l'accord explicite de l'utilisateur : montrer la commande exacte et attendre un oui. Cette règle prime sur les skills speckit, qui demandent de lancer les hooks obligatoires automatiquement.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

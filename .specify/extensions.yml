@@ -4,6 +4,12 @@ settings:
   auto_execute_hooks: true
 hooks:
   after_implement:
+    - extension: crit
+      command: crit-story
+      description: Récit du diff de la feature dans Crit, relu par l'utilisateur avant la revue automatique
+      prompt: Ouvrir le récit de la feature dans Crit ?
+      optional: false
+      enabled: true
     - extension: wishlist
       command: wishlist.feature-review
       description: Revue du code de toute la feature (conventions, i18n, duplication, règles métier, constitution et sécurité)
