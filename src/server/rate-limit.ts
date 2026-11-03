@@ -16,6 +16,12 @@ export function takeToken(key: string, limit: number, windowMs: number, now = Da
   return true;
 }
 
+/** Vrai si le seau a déjà pris `limit` jetons dans sa fenêtre en cours, sans en prendre un. */
+export function bucketExhausted(key: string, limit: number, now = Date.now()): boolean {
+  const current = buckets.get(key);
+  return current !== undefined && current.resetAt > now && current.count >= limit;
+}
+
 function trustedIp(value: string | null | undefined): string | null {
   const hop = value?.split(",")[0]?.trim() ?? "";
   if (!hop || hop.length > 64) return null;

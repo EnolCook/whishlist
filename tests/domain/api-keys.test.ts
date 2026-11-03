@@ -4,15 +4,17 @@ import Database from "better-sqlite3";
 import path from "node:path";
 import { before, test } from "node:test";
 import { NextRequest } from "next/server";
+import { API_KEY_PREFIX, createApiKey, findApiKey } from "../../src/auth/api-keys";
 import {
-  API_KEY_PREFIX,
   MAX_API_KEYS,
-  createApiKey,
-  findApiKey,
+  MAX_API_KEY_NAME,
+  addApiKey,
+  apiKeyNameError,
+  findApiKeyByHash,
   listApiKeys,
   revokeApiKey,
   touchApiKey,
-} from "../../src/auth/api-keys";
+} from "../../src/domain/api-keys";
 import { issueApiSession } from "../../src/auth/api-session";
 import { deleteAccount } from "../../src/domain/account";
 import { createPasswordReset, resetPasswordWithToken } from "../../src/domain/password-reset";
@@ -58,6 +60,22 @@ test("création refusée : sans nom, nom trop long, plus de 20 clés", () => {
     if (created.ok) current = created.doc;
   }
   assert.deepEqual(createApiKey(current, alex, { name: "une de trop" }), { ok: false, error: "apiKeyLimit" });
+});
+
+test("règles du domaine : nom de 1 à 60 caractères après nettoyage, la clé garde le hachage et l'indice reçus", () => {
+  assert.equal(apiKeyNameError(""), "apiKeyNeedsName");
+  assert.equal(apiKeyNameError("x".repeat(MAX_API_KEY_NAME)), null);
+  assert.equal(apiKeyNameError("x".repeat(MAX_API_KEY_NAME + 1)), "apiKeyNameTooLong");
+  const doc = apiDoc();
+  const alex = doc.users[0]!;
+  const padded = addApiKey(doc, alex, { name: `  ${"x".repeat(MAX_API_KEY_NAME)}  `, tokenHash: "hachage", hint: "abcd" });
+  assert.ok(padded.ok, "les espaces autour du nom ne comptent pas");
+  if (!padded.ok) return;
+  assert.equal(padded.key.name, "x".repeat(MAX_API_KEY_NAME));
+  assert.equal(padded.key.hint, "abcd");
+  assert.equal(findApiKeyByHash(padded.doc, "hachage")?.user.id, "alex");
+  assert.equal(findApiKeyByHash(padded.doc, "autre"), null);
+  assert.equal(doc.apiKeys.length, 0, "la base reçue n'est pas modifiée");
 });
 
 test("retrouver une clé : bonne clé → son compte ; autre jeton, clé révoquée ou compte supprimé → rien", () => {

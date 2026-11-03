@@ -18,17 +18,19 @@ export const dynamic = "force-dynamic";
 async function serve(req: NextRequest): Promise<Response> {
   const locale = apiLocaleFrom(req.headers.get("accept-language"));
   const site = await origin();
+  const ip = await clientIp();
   const access = await mcpAccess({
     origin: req.headers.get("origin"),
     siteOrigin: site,
     authorization: req.headers.get("authorization"),
+    ip,
   });
   if (!access.ok) {
     const refused = await apiError(access.error, locale);
     if (access.error === "unauthorized") refused.headers.set("www-authenticate", 'Bearer realm="mcp"');
     return refused;
   }
-  const ctx: CommandContext = { user: access.user, ip: await clientIp(), locale, origin: site };
+  const ctx: CommandContext = { user: access.user, ip, locale, origin: site };
   // Une instance par requête, construite pour le compte de la clé ; corps borné comme l'API.
   const handler = createMcpHandler(() => buildMcpServer(ctx), { maxRequestBodySize: MAX_BODY_BYTES });
   const response = await handler.fetch(req);

@@ -16,6 +16,8 @@ export async function mcpAccess(input: {
   origin: string | null;
   siteOrigin: string;
   authorization: string | null;
+  /** IP de confiance du client : les clés inconnues ou révoquées y comptent des échecs (`apiKeyUser`). */
+  ip?: string | null;
 }): Promise<McpAccess> {
   if (originDecision({ origin: input.origin, siteOrigin: input.siteOrigin, allowed: [] }) === "deny") {
     return { ok: false, error: "originNotAllowed" };
@@ -23,7 +25,7 @@ export async function mcpAccess(input: {
   const token = bearerFrom(input.authorization);
   if (!token || !isApiKeyToken(token)) return { ok: false, error: "unauthorized" };
   try {
-    const user = await apiKeyUser(token);
+    const user = await apiKeyUser(token, input.ip ?? null);
     return user ? { ok: true, user } : { ok: false, error: "unauthorized" };
   } catch (error) {
     if (isRateLimitError(error)) return { ok: false, error: "rateLimited" };

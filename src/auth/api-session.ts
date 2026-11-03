@@ -1,7 +1,7 @@
 import { clone } from "../domain/access";
 import { hashSecretToken, newId, newSecretToken } from "../domain/tokens";
 import type { ApiSession, Database, User } from "../domain/types";
-import { API_KEY_PREFIX } from "./api-key-limits";
+import { API_KEY_PREFIX } from "./api-keys";
 import { SESSION_TTL_SEC } from "./session";
 
 /** Même durée qu'une session du site. */

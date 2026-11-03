@@ -5,12 +5,13 @@ import { useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmForm } from "@/components/site/confirm-form";
 import { CopyLinkField } from "@/components/site/copy-link-field";
+import { InsetPanel, InsetPanelItem } from "@/components/site/inset-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { MAX_API_KEY_NAME } from "@/src/auth/api-key-limits";
+import { MAX_API_KEY_NAME } from "@/src/domain/api-key-limits";
 import { createApiKeyAction, revokeApiKeyFormAction } from "@/src/server/actions";
 
 export type ApiKeyRow = { id: string; name: string; hint: string; created: string; lastUsed: string | null };
@@ -57,10 +58,10 @@ export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUr
         </Alert>
       ) : null}
       {token ? (
-        <div className="flex flex-col gap-2 rounded-base border-2 border-border bg-secondary-background p-3 shadow-shadow">
+        <InsetPanel className="flex flex-col gap-2">
           <CopyLinkField id="api-key-token" label={t("apiKeys.tokenLabel")} value={token} copyLabel={t("apiKeys.copy")} />
           <p className="text-sm font-medium text-pretty">{t("apiKeys.copyNow")}</p>
-        </div>
+        </InsetPanel>
       ) : null}
 
       <div className="flex flex-wrap items-end gap-2">
@@ -99,10 +100,7 @@ export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUr
       ) : (
         <ul className="flex flex-col gap-2">
           {keys.map((key) => (
-            <li
-              key={key.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-base border-2 border-border bg-secondary-background p-3 shadow-shadow"
-            >
+            <InsetPanelItem key={key.id} className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 flex-col gap-0.5">
                 <p className="font-bold break-words">
                   {key.name} <span className="font-mono text-sm font-normal text-muted-foreground">…{key.hint}</span>
@@ -124,7 +122,7 @@ export function ApiKeysCard({ keys, mcpUrl, notice }: { keys: ApiKeyRow[]; mcpUr
                 triggerSize="sm"
                 confirmVariant="destructive"
               />
-            </li>
+            </InsetPanelItem>
           ))}
         </ul>
       )}

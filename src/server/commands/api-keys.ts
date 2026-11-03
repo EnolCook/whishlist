@@ -1,4 +1,5 @@
-import { createApiKey, revokeApiKey, type ApiKeyView } from "../../auth/api-keys";
+import { createApiKey } from "../../auth/api-keys";
+import { revokeApiKey, type ApiKeyView } from "../../domain/api-keys";
 import { updateDocument } from "../../store/db";
 import { rateLimitForIp } from "../rate-limit";
 import { activeUser, type CommandContext, type CommandResult } from "./context";
