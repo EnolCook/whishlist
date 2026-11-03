@@ -37,7 +37,7 @@ export function usesApiKey(req: NextRequest): boolean {
 
 /**
  * Compte d'une clé d'API, ou null. Limite le débit de la clé et note son utilisation (au plus une écriture
- * par heure). Partagé par l'API et le serveur MCP.
+ * par heure). Utilisé par le serveur MCP, seul à accepter une clé.
  *
  * Une clé inconnue ou révoquée compte un échec pour l'IP (`ip`, celle du proxy). Une fois ses échecs épuisés,
  * l'IP est refusée (`rateLimited`) avant toute recherche, pour qu'on ne puisse plus tester de clé depuis elle.
@@ -63,11 +63,13 @@ export async function apiKeyUser(token: string, ip: string | null = null): Promi
   return found.user;
 }
 
-/** Compte du jeton bearer (session de l'app ou clé d'API), ou null (pas de jeton, jeton invalide). */
-export async function optionalApiUser(req: NextRequest, ip: string | null = null): Promise<User | null> {
+/**
+ * Compte du jeton de session de l'app, ou null (pas de jeton, jeton invalide). Une clé d'API ne vaut pas ici :
+ * `withApi` la refuse avant (`apiKeyNotAllowed`), elle n'ouvre que le serveur MCP.
+ */
+export async function optionalApiUser(req: NextRequest): Promise<User | null> {
   const token = bearerToken(req);
-  if (!token) return null;
-  if (isApiKeyToken(token)) return apiKeyUser(token, ip);
+  if (!token || isApiKeyToken(token)) return null;
   return findApiSessionUser(await readDocument(), token);
 }
 

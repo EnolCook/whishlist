@@ -15,13 +15,13 @@ export const POST = withApi(async (api) => {
   });
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
   return apiJson(result.me, 200, api.cors);
-}, { refuseApiKey: true });
+});
 
 /** Annule le changement en attente. */
 export const DELETE = withApi(async (api) => {
   const result = await cancelOwnEmailChange(await commandContext(api));
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
   return apiJson(result.me, 200, api.cors);
-}, { refuseApiKey: true });
+});
 
 export const OPTIONS = apiPreflight;

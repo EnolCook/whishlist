@@ -90,5 +90,5 @@
   "apiKeyNameTooLong": "Le nom de la clé est trop long (60 caractères au plus).",
   "apiKeyLimit": "Vous avez déjà 20 clés. Révoquez-en une pour en créer une autre.",
   "apiKeyMissing": "Cette clé n'existe plus.",
-  "apiKeyNotAllowed": "Une clé d'API ne peut pas faire cette action de compte. Connectez-vous avec votre mot de passe."
+  "apiKeyNotAllowed": "Une clé d'API ne sert qu'au serveur MCP (/api/mcp). Pour l'API, connectez-vous avec votre mot de passe."
 }

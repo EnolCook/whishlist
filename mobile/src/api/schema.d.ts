@@ -28,7 +28,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example 1.7.0 */
+                            /** @example 1.8.0 */
                             apiVersion: string;
                             /** @description Préremplissage depuis un lien avec IA (sinon seulement les métadonnées de la page). */
                             enrich: boolean;

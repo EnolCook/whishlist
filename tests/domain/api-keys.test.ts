@@ -20,7 +20,7 @@ import { deleteAccount } from "../../src/domain/account";
 import { createPasswordReset, resetPasswordWithToken } from "../../src/domain/password-reset";
 import { changePassword } from "../../src/domain/users";
 import { apiKeyUser, optionalApiUser, usesApiKey } from "../../src/server/api/auth";
-import { refuseApiKey } from "../../src/server/api/http";
+import { withApi } from "../../src/server/api/http";
 import { createMyApiKey, revokeMyApiKey } from "../../src/server/commands/api-keys";
 import { closeStore, databaseFilePath, openStore, readDocument } from "../../src/store/db";
 import { apiDoc, ctx, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
@@ -100,14 +100,15 @@ test("dernière utilisation : notée, puis pas réécrite avant une heure", () =
   assert.equal(touchApiKey(first!, key.id, Date.parse("2026-11-02T11:01:00Z"))?.apiKeys[0]?.lastUsedAt, "2026-11-02T11:01:00.000Z");
 });
 
-test("API : une clé en bearer donne son compte et note son utilisation ; elle est reconnue comme clé", async () => {
+test("clé valide : donne son compte et note son utilisation ; reconnue comme clé, jamais comme session de l'app", async () => {
   const { doc, token } = withKey();
   await withStore(doc, async () => {
     assert.equal(usesApiKey(bearer(token)), true);
     assert.equal(usesApiKey(bearer("jeton-de-session")), false);
-    assert.equal((await optionalApiUser(bearer(token)))?.id, "alex");
+    assert.equal((await apiKeyUser(token))?.id, "alex");
     assert.ok((await readDocument()).apiKeys[0]?.lastUsedAt);
-    assert.equal(await optionalApiUser(bearer(`${API_KEY_PREFIX}inconnue`)), null);
+    assert.equal(await apiKeyUser(`${API_KEY_PREFIX}inconnue`), null);
+    assert.equal(await optionalApiUser(bearer(token)), null, "l'API JSON ne prend pas une clé pour un compte");
   });
 });
 
@@ -123,30 +124,17 @@ test("API : au-delà de 120 requêtes par minute, la clé est limitée ; une aut
   });
 });
 
-test("routes de compte : une clé est refusée (403 apiKeyNotAllowed), un jeton de session passe", async () => {
+test("API JSON : une clé est refusée sur toute route (403 apiKeyNotAllowed) avant le handler ; elle n'ouvre que /api/mcp", async () => {
   const { token } = withKey();
-  const api = (bearerToken: string) => ({ req: bearer(bearerToken), locale: "fr" as const, ip: null, cors: null });
-  const refused = await refuseApiKey(api(token));
-  assert.equal(refused?.status, 403);
-  assert.equal(((await refused!.json()) as { error: { code: string } }).error.code, "apiKeyNotAllowed");
-  assert.equal(await refuseApiKey(api("jeton-de-session")), null);
-});
-
-test("chaque route de compte refuse une clé (mot de passe, adresse, suppression, export, déconnexion)", () => {
-  for (const [file, handlers] of [
-    ["app/api/v1/me/password/route.ts", ["POST"]],
-    ["app/api/v1/me/email/route.ts", ["POST", "DELETE"]],
-    ["app/api/v1/me/email-verification/route.ts", ["POST"]],
-    ["app/api/v1/me/deletion/route.ts", ["GET", "POST"]],
-    ["app/api/v1/me/export/route.ts", ["GET"]],
-    ["app/api/v1/auth/logout/route.ts", ["POST"]],
-  ] as const) {
-    // Chaque handler de ces routes passe par `withApi(…, { refuseApiKey: true })`, testé ci-dessus via `refuseApiKey`.
-    const source = readFileSync(path.join(process.cwd(), file), "utf8");
-    for (const method of handlers) assert.ok(source.includes(`export const ${method} = withApi(`), `${method} ${file}`);
-    assert.equal(source.match(/withApi\(/g)?.length, handlers.length, file);
-    assert.equal(source.match(/\{ refuseApiKey: true \}\)/g)?.length, handlers.length, file);
-  }
+  let called = false;
+  const route = withApi(async () => {
+    called = true;
+    return new Response(null, { status: 204 });
+  });
+  const refused = await route(bearer(token), { params: Promise.resolve({}) });
+  assert.equal(refused.status, 403);
+  assert.equal(((await refused.json()) as { error: { code: string } }).error.code, "apiKeyNotAllowed");
+  assert.equal(called, false);
 });
 
 test("commandes de la page Compte : créer puis révoquer ; un compte ne révoque pas la clé d'un autre", async () => {

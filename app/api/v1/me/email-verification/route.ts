@@ -10,6 +10,6 @@ export const POST = withApi(async (api) => {
   const result = await resendEmailVerification(await commandContext(api));
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
   return apiJson({ sent: result.sent }, 202, api.cors);
-}, { refuseApiKey: true });
+});
 
 export const OPTIONS = apiPreflight;

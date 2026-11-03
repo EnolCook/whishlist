@@ -12,6 +12,6 @@ export const GET = withApi(async (api) => {
   const response = apiJson(result.data, 200, api.cors);
   response.headers.set("content-disposition", `attachment; filename="${exportFileName(result.data.exportedAt, api.locale)}"`);
   return response;
-}, { refuseApiKey: true });
+});
 
 export const OPTIONS = apiPreflight;

@@ -12,6 +12,6 @@ export const POST = withApi(async (api) => {
   if (!ctx.user || !token) return apiError("unauthorized", api.locale, api.cors);
   await logout(ctx, { token });
   return apiNoContent(api.cors);
-}, { refuseApiKey: true });
+});
 
 export const OPTIONS = apiPreflight;

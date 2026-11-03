@@ -10,7 +10,7 @@ export const GET = withApi(async (api) => {
   const result = await previewOwnDeletion(await commandContext(api));
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
   return apiJson(result.preview, 200, api.cors);
-}, { refuseApiKey: true });
+});
 
 /** Supprime le compte connecté ; le jeton de cette requête ne vaut plus rien ensuite. */
 export const POST = withApi(async (api) => {
@@ -19,6 +19,6 @@ export const POST = withApi(async (api) => {
   const result = await deleteOwnAccount(await commandContext(api), { password: text(body.body.password) });
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
   return apiNoContent(api.cors);
-}, { refuseApiKey: true });
+});
 
 export const OPTIONS = apiPreflight;

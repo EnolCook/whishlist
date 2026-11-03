@@ -16,6 +16,6 @@ export const POST = withApi(async (api) => {
   });
   if (!result.ok) return apiError(result.error, api.locale, api.cors);
   return apiJson(result.session, 200, api.cors);
-}, { refuseApiKey: true });
+});
 
 export const OPTIONS = apiPreflight;

@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
-import { NextRequest } from "next/server";
 import { API_KEY_PREFIX, createApiKey } from "../../src/auth/api-keys";
-import { API_KEY_FAILURE_RATE, apiKeyUser, optionalApiUser } from "../../src/server/api/auth";
+import { API_KEY_FAILURE_RATE, apiKeyUser } from "../../src/server/api/auth";
 import { mcpAccess } from "../../src/server/mcp/gate";
 import { apiDoc, ensurePasswordHash, withStore } from "./helpers/api-fixtures";
 import { withEnv } from "./helpers/env";
@@ -55,17 +54,6 @@ test("une clé révoquée compte comme un échec", async () => {
   await withStore({ ...doc, apiKeys: [] }, async () => {
     for (let i = 0; i < API_KEY_FAILURE_RATE.limit; i++) assert.equal(await apiKeyUser(token, IP), null);
     await assert.rejects(() => apiKeyUser(token, IP), isRateLimited);
-  });
-});
-
-test("API : le bearer d'une clé inconnue compte l'échec de l'IP de la requête", async () => {
-  const { doc } = withKey();
-  const bearer = (n: number) =>
-    new NextRequest("http://localhost/api/v1/lists", { headers: { authorization: `Bearer ${unknownKey(n)}` } });
-  await withStore(doc, async () => {
-    for (let i = 0; i < API_KEY_FAILURE_RATE.limit; i++) assert.equal(await optionalApiUser(bearer(i), IP), null);
-    await assert.rejects(() => optionalApiUser(bearer(99), IP), isRateLimited);
-    assert.equal(await optionalApiUser(new NextRequest("http://localhost/api/v1/lists"), IP), null, "sans jeton : rien à compter");
   });
 });
 

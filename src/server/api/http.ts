@@ -85,10 +85,6 @@ export async function apiError(
   return apiJson({ error: { code: publicCode, message }, ...extra }, apiStatusFor(publicCode), cors);
 }
 
-/** Actions de compte (mot de passe, adresse, suppression, export, déconnexion) : jamais avec une clé d'API. */
-export async function refuseApiKey(api: ApiRequestContext): Promise<NextResponse | null> {
-  return usesApiKey(api.req) ? apiError("apiKeyNotAllowed", api.locale, api.cors) : null;
-}
 
 export type JsonBody = Record<string, unknown>;
 
@@ -168,26 +164,19 @@ export function redactedApiPath(pathname: string): string {
   return pathname.replace(/\/(invitations|public\/lists)\/[^/]+/g, "/$1/…");
 }
 
-export type WithApiOptions = {
-  /** Action de compte : une clé d'API reçoit `403 apiKeyNotAllowed` avant le handler. */
-  refuseApiKey?: boolean;
-};
-
 export function withApi<P = Record<string, never>>(
   handler: (api: ApiRequestContext, params: P) => Promise<Response>,
-  options: WithApiOptions = {},
 ): (req: NextRequest, ctx: HandlerContext<P>) => Promise<Response> {
   return async (req, ctx) => {
     const locale = apiLocaleFrom(req.headers.get("accept-language"));
+    // Une clé d'API n'ouvre que le serveur MCP (`/api/mcp`) : l'API JSON reste aux jetons de session de l'app,
+    // pour qu'une route ajoutée plus tard ne soit jamais ouverte à une clé par oubli.
+    if (usesApiKey(req)) return apiError("apiKeyNotAllowed", locale);
     const { decision, cors } = await decide(req);
     if (decision === "deny") return apiError("originNotAllowed", locale);
     try {
       const params = await ctx.params;
       const api = { req, locale, ip: await clientIp(), cors };
-      if (options.refuseApiKey) {
-        const refused = await refuseApiKey(api);
-        if (refused) return refused;
-      }
       return await handler(api, params);
     } catch (error) {
       if (isRateLimitError(error)) return apiError("rateLimited", locale, cors);

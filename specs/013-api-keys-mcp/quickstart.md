@@ -32,7 +32,7 @@ claude mcp add --transport http ohyoushouldnt-dev http://localhost:3010/api/mcp 
 1. Révoquer la clé pendant que la session de l'assistant est ouverte. Au message suivant, l'assistant rapporte un refus `401` ; rien n'est écrit.
 2. Avec `curl`, sans en-tête, avec un jeton de session de l'app, ou avec une clé révoquée : `401` et `WWW-Authenticate: Bearer realm="mcp"`.
 3. Avec `-H "Origin: https://autre.example.test"` : `403 originNotAllowed`.
-4. Avec une clé, `POST /api/v1/me/password` et `GET /api/v1/me/export` : `403 apiKeyNotAllowed`.
+4. Avec une clé, `GET /api/v1/lists` et `POST /api/v1/me/password` : `403 apiKeyNotAllowed` (une clé n'ouvre que `/api/mcp`).
 5. Changer son mot de passe sur le site : la clé est révoquée (`401`).
 
 ## 4. Limite de débit
@@ -40,7 +40,7 @@ claude mcp add --transport http ohyoushouldnt-dev http://localhost:3010/api/mcp 
 Envoyer 121 requêtes en moins d'une minute avec la même clé :
 
 ```bash
-for i in $(seq 121); do curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer oys_…" http://localhost:3010/api/v1/lists; done | sort | uniq -c
+for i in $(seq 121); do curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer oys_…" -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://localhost:3010/api/mcp; done | sort | uniq -c
 ```
 
 Attendu : 120 réponses `200`, puis `429 rateLimited`. Une deuxième clé du même compte répond encore `200`.

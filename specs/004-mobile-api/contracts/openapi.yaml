@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Oh, You Shouldn't! API
-  version: "1.7.0"
+  version: "1.8.0"
   description: |
     Accès aux listes pour un client autre que le site (app mobile, script).
 
@@ -33,15 +33,14 @@ info:
     - 1.7.0 : abonnements aux listes publiques (`POST /subscriptions`, `DELETE /subscriptions/{readToken}`,
       `subscriptions` dans `GET /lists`, `subscribed` et `isMember` dans `PublicList`,
       `followedLists` dans `AccountDeletionPreview`).
+    - 1.8.0 : une clé d'API (`oys_…`) reçoit `403 apiKeyNotAllowed` sur toutes les routes ; elle
+      n'ouvre que le serveur MCP (`/api/mcp`).
 
     Preuves à garder côté client :
     - `token` (connexion) → `Authorization: Bearer <token>`, 30 jours.
-    - Clé d'API (`oys_…`, créée sur la page Compte du site, jusqu'à sa révocation ou un
-      changement ou une réinitialisation du mot de passe) → le même en-tête
-      `Authorization: Bearer`. Elle agit pour le compte, 120 requêtes par minute au plus, sauf sur
-      `/auth/logout`, `/me/password`, `/me/email`, `/me/email-verification`, `/me/deletion`
-      et `/me/export` (`403 apiKeyNotAllowed`). La même clé
-      ouvre le serveur MCP du site (`/api/mcp`, hors de ce contrat).
+    - Clé d'API (`oys_…`, créée sur la page Compte du site) : elle n'ouvre que le serveur MCP du site
+      (`/api/mcp`, hors de ce contrat). Envoyée à cette API, elle reçoit `403 apiKeyNotAllowed`
+      sur toutes les routes.
     - `unlockToken` (liste protégée) → `X-Read-Unlock`, 14 jours.
     - `claim` (réservation sans compte) → `X-Reservation-Claims`, séparés par des virgules, 90 jours.
 servers:
@@ -80,7 +79,7 @@ paths:
                 type: object
                 required: [apiVersion, enrich, mail, analytics]
                 properties:
-                  apiVersion: { type: string, example: "1.7.0" }
+                  apiVersion: { type: string, example: "1.8.0" }
                   enrich:
                     type: boolean
                     description: Préremplissage depuis un lien avec IA (sinon seulement les métadonnées de la page).
@@ -1197,7 +1196,7 @@ components:
     bearer:
       type: http
       scheme: bearer
-      description: Jeton opaque rendu par /auth/login, /auth/register ou /me/password, ou clé d'API `oys_…` (page Compte du site).
+      description: Jeton opaque rendu par /auth/login, /auth/register ou /me/password. Une clé d'API `oys_…` est refusée (`403 apiKeyNotAllowed`).
 
   parameters:
     readToken: { name: readToken, in: path, required: true, schema: { type: string } }
