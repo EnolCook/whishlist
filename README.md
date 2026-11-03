@@ -190,7 +190,7 @@ Détails Runtipi + Cloudflare : [`deploy/DEPLOY-RUNTIPI.md`](deploy/DEPLOY-RUNTI
 ## Premiers pas après install
 
 1. Ouvre l’URL → **Inscription**
-2. Crée une liste vide, ajoute des idées
+2. Crée une liste (nom, première catégorie et « qui » sont facultatifs : laissés vides, ils prennent une valeur par défaut), ajoute des idées
 3. **Partage** : copie le lien de lecture (`/l/...`) ; invitation / e-mail pour co-éditer
 4. **Réglages** : catégories et « qui » en chips ; suppression de liste
 5. Langue : bouton **FR / EN** dans le header (`?lang=en` force l’anglais)
@@ -216,8 +216,8 @@ ailleurs en production.
 | Zone | Contenu |
 |---|---|
 | Public `/l/[token]` | Filtres qui / budget, « J’offre », lien d’achat, réservations masquées |
-| Admin | Kanban par catégorie, archives, réservations, partage, réglages |
-| Enrichissement | Scraping OG/JSON-LD + LLM (nom, prix, image, type) |
+| Admin | Kanban par catégorie, archives, réservations, partage, réglages ; une idée peut avoir une description et la case « L’occasion me va », et se déplacer ou se copier vers une autre liste |
+| Enrichissement | Scraping OG/JSON-LD + LLM (nom, prix, image, type, description) |
 | Auth | Compte, reset MDP, force changement MDP 1ʳᵉ connexion, invitations |
 | API | `/api/v1`, pour une app mobile ou un script (voir ci-dessous) |
 
@@ -238,7 +238,7 @@ L’app expose les mêmes parcours que le site sous `/api/v1`, en JSON, pour l�
 
 ## App mobile
 
-App Expo (iOS et Android) dans `mobile/`, cliente de l’API : connexion, listes, idées, partage par QR code, et mode hors ligne (copie locale + changements envoyés au retour du réseau). Son design reprend celui du site écran par écran ; ses textes sont lus dans `locales/`.
+App Expo (iOS et Android) dans `mobile/`, cliente de l’API : connexion, listes, idées, partage par QR code, ajout d’une idée depuis le bouton Partager d’une autre app (navigateur, boutique…), et mode hors ligne (copie locale + changements envoyés au retour du réseau). Son design reprend celui du site écran par écran ; ses textes sont lus dans `locales/`.
 
 Elle a son propre `package.json` et ne fait partie ni du build Next, ni de l’image Docker. Elle se lance avec un client de développement (pas Expo Go) :
 
